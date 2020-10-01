@@ -68,7 +68,11 @@ impl Model {
                     - vec2(1.0, 1.0);
 
                 tiles_row.push(
-                    if normalized_pos.len() + (noise.get([x as f64, y as f64]) as f32 / 10.0) > 0.8
+                    if normalized_pos.len()
+                        + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
+                            as f32
+                            / 10.0)
+                        > 0.8
                     {
                         Tile::Water
                     } else {
