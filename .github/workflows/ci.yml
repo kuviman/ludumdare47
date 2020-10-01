@@ -1,0 +1,68 @@
+name: CI
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    container: kuviman/geng
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index
+
+      - name: Cache cargo target dir
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target
+
+      - name: Build Linux
+        run: |
+          cargo geng build --release
+          mkdir -p artifacts && mv target/geng artifacts/linux
+
+      - name: Build Windows
+        run: |
+          cargo geng build --release --target x86_64-pc-windows-gnu
+          mkdir -p artifacts && mv target/geng artifacts/windows
+
+      - name: Build Web
+        run: |
+          cargo geng build --release --target wasm32-unknown-unknown
+          mkdir -p artifacts && mv target/geng artifacts/web
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: artifacts
+          path: artifacts
+
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/master'
+    needs: [web, native]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: artifacts
+          path: artifacts
+
+      - name: Deploy GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          cname: ld47.kuviman.com
+          publish_dir: artifacts/web
