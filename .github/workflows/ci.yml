@@ -87,7 +87,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cat >> ~/.config/systemd/user/ld47.service <<EOF
+            cat > ~/.config/systemd/user/ld47.service <<EOF
             [Unit]
             Description=LD47 server
             After=network.target
