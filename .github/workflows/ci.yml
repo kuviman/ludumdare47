@@ -52,7 +52,6 @@ jobs:
   deploy:
     name: Deploy
     if: github.ref == 'refs/heads/master'
-    needs: [web, native]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v1
