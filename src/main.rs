@@ -1,68 +1,123 @@
 use geng::prelude::*;
 
+mod app;
 mod model;
-mod renderer;
+#[cfg(not(target_arch = "wasm32"))]
+mod server;
 
+use app::App;
 use model::{Id, Model};
-use renderer::Renderer;
+#[cfg(not(target_arch = "wasm32"))]
+use server::Server;
 
-struct App {
-    model: Model,
-    renderer: Renderer,
-    next_tick: f32,
+pub type ClientMessage = model::Message;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum ServerMessage {
+    PlayerId(Id),
+    Model(Model),
 }
 
-impl App {
-    pub fn new(geng: &Rc<Geng>, config: model::Config) -> Self {
-        let mut model = Model::new(config);
-        let renderer = Renderer::new(geng, &mut model);
-        Self {
-            model,
-            renderer,
-            next_tick: Model::TICKS_PER_SECOND,
-        }
-    }
-}
-
-impl geng::State for App {
-    fn update(&mut self, delta_time: f64) {
-        let delta_time = delta_time as f32;
-        self.next_tick -= delta_time;
-        while self.next_tick < 0.0 {
-            self.next_tick += Model::TICKS_PER_SECOND;
-            self.model.tick();
-        }
-        self.renderer.update(delta_time, &mut self.model);
-    }
-    fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
-        self.renderer.draw(framebuffer, &mut self.model);
-    }
-    fn handle_event(&mut self, event: geng::Event) {
-        self.renderer.handle_event(event, &mut self.model);
-    }
-}
+type Connection = geng::net::client::Connection<ServerMessage, ClientMessage>;
 
 #[derive(StructOpt)]
 struct Opt {
     #[structopt(long)]
     config: Option<std::path::PathBuf>,
+    #[structopt(long)]
+    no_server: bool,
+    #[structopt(long)]
+    no_client: bool,
+    #[structopt(long, default_value = "127.0.0.1:7878")]
+    addr: String,
 }
 
 fn main() {
+    logger::init().unwrap();
     let opt: Opt = StructOpt::from_args();
-    let config = opt
-        .config
-        .as_ref()
-        .map(|path| -> anyhow::Result<model::Config> {
-            Ok(serde_json::from_reader(std::io::BufReader::new(
-                std::fs::File::open(path)?,
-            ))?)
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let (server, server_handle) = if !opt.no_server {
+        let config = opt
+            .config
+            .as_ref()
+            .map(|path| -> anyhow::Result<model::Config> {
+                Ok(serde_json::from_reader(std::io::BufReader::new(
+                    std::fs::File::open(path)?,
+                ))?)
+            })
+            .map(|result| result.expect("Failed to load config"))
+            .unwrap_or_default();
+
+        let server = Server::new(opt.addr.as_str(), Model::new(config));
+        let server_handle = server.handle();
+        ctrlc::set_handler({
+            let server_handle = server_handle.clone();
+            move || {
+                server_handle.shutdown();
+            }
         })
-        .map(|result| result.expect("Failed to load config"));
-    let geng = Rc::new(Geng::new(geng::ContextOptions {
-        title: "LudumDare 47".to_owned(),
-        ..default()
-    }));
-    let geng = &geng;
-    geng::run(geng.clone(), App::new(geng, config.unwrap_or_default()));
+        .unwrap();
+        (Some(server), Some(server_handle))
+    } else {
+        (None, None)
+    };
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let server_thread = if let Some(server) = server {
+        if opt.no_client {
+            server.run();
+            None
+        } else {
+            let thread = std::thread::spawn(move || server.run());
+            // std::thread::sleep(std::time::Duration::from_millis(500));
+            Some(thread)
+        }
+    } else {
+        None
+    };
+
+    if !opt.no_client {
+        let geng = Rc::new(Geng::new(geng::ContextOptions {
+            title: "LudumDare 47".to_owned(),
+            ..default()
+        }));
+        let geng = &geng;
+        geng::run(
+            geng.clone(),
+            geng::LoadingScreen::new(
+                geng,
+                geng::EmptyLoadingScreen,
+                {
+                    let geng = geng.clone();
+                    let addr = format!("ws://{}", opt.addr);
+                    async move {
+                        let connection = geng::net::client::connect(&addr).await;
+                        let (message, connection) = connection.into_future().await;
+                        let player_id = match message {
+                            Some(ServerMessage::PlayerId(id)) => id,
+                            _ => unreachable!(),
+                        };
+                        let (message, connection) = connection.into_future().await;
+                        let model = match message {
+                            Some(ServerMessage::Model(model)) => model,
+                            _ => unreachable!(),
+                        };
+                        App::new(&geng, player_id, model, connection)
+                    }
+                },
+                |app| app,
+            ),
+        );
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        if let Some(server_thread) = server_thread {
+            if !opt.no_client {
+                server_handle.unwrap().shutdown();
+            }
+            server_thread.join().unwrap();
+        }
+    }
 }

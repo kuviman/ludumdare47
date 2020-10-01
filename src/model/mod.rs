@@ -35,7 +35,9 @@ pub struct Model {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Message {}
+pub enum Message {
+    Ping,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq)]
 pub enum GroundType {
@@ -78,7 +80,9 @@ impl Model {
     }
     pub fn drop_player(&mut self, player_id: Id) {}
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
-        match message {}
+        match message {
+            Message::Ping => println!("Got ping message"),
+        }
     }
     fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
         let noise = OpenSimplex::new();

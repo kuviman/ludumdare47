@@ -6,32 +6,50 @@ mod ez;
 use camera::Camera;
 use ez::Ez;
 
-pub struct Renderer {
+pub struct App {
     geng: Rc<Geng>,
-    player_id: Id,
     camera: Camera,
     camera_controls: camera::Controls,
     ez: Ez,
+    connection: Connection,
+    player_id: Id,
+    model: Model,
 }
 
-impl Renderer {
-    pub fn new(geng: &Rc<Geng>, model: &mut Model) -> Self {
+impl App {
+    pub fn new(geng: &Rc<Geng>, player_id: Id, model: Model, mut connection: Connection) -> Self {
+        connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
-            player_id: model.new_player(),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
             ez: Ez::new(geng),
+            connection,
+            player_id,
+            model,
         }
     }
-    pub fn update(&mut self, delta_time: f32, model: &mut Model) {
+}
+
+impl geng::State for App {
+    fn update(&mut self, delta_time: f64) {
+        let mut got_message = false;
+        for message in self.connection.new_messages() {
+            got_message = true;
+            match message {
+                ServerMessage::Model(model) => self.model = model,
+                _ => unreachable!(),
+            }
+        }
+        self.connection.send(ClientMessage::Ping);
+        let delta_time = delta_time as f32;
         self.camera_controls.update(&mut self.camera, delta_time);
     }
-    pub fn draw(&mut self, framebuffer: &mut ugli::Framebuffer, model: &mut Model) {
+    fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
         ugli::clear(framebuffer, Some(Color::BLACK), None);
         self.camera_controls.draw(&mut self.camera, framebuffer);
         let mut tiles_to_draw = Vec::new();
-        for (y, tiles_row) in model.tiles.iter().enumerate() {
+        for (y, tiles_row) in self.model.tiles.iter().enumerate() {
             for (x, tile) in tiles_row.iter().enumerate() {
                 let color = match tile.ground_type {
                     model::GroundType::Water => Color::BLUE,
@@ -40,7 +58,7 @@ impl Renderer {
                 tiles_to_draw.push((Vec2::from([x, y]), color));
             }
         }
-        for structure in model.structures.iter() {
+        for structure in self.model.structures.iter() {
             tiles_to_draw.push((structure.pos, Color::GREEN))
         }
         self.ez.quads(
@@ -54,7 +72,7 @@ impl Renderer {
             }),
         );
     }
-    pub fn handle_event(&mut self, event: geng::Event, model: &mut Model) {
+    fn handle_event(&mut self, event: geng::Event) {
         self.camera_controls.handle_event(&mut self.camera, &event);
     }
 }
