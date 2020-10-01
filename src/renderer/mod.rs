@@ -5,6 +5,7 @@ mod ez;
 
 use camera::Camera;
 use ez::Ez;
+use crate::model::Tile;
 
 pub struct Renderer {
     geng: Rc<Geng>,
@@ -45,11 +46,19 @@ impl Renderer {
     pub fn draw(&mut self, framebuffer: &mut ugli::Framebuffer, model: &mut Model) {
         ugli::clear(framebuffer, Some(Color::BLACK), None);
         self.camera_controls.draw(&mut self.camera, framebuffer);
-        self.draw_tile(framebuffer, vec2(1, 2), Color::GREEN);
         for &(_, pos) in &model.dots {
             self.geng
                 .draw_2d()
                 .circle(framebuffer, pos, 10.0, Color::RED);
+        }
+        for (y, tiles_row) in model.tiles.iter().enumerate() {
+            for (x, tile) in tiles_row.iter().enumerate() {
+                let color = match tile {
+                    Tile::Water => Color::BLUE,
+                    Tile::Sand => Color::YELLOW,
+                };
+                self.draw_tile(framebuffer, Vec2::from([x, y]), color);
+            }
         }
     }
     pub fn handle_event(&mut self, event: geng::Event, model: &mut Model) {
