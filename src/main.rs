@@ -90,7 +90,7 @@ fn main() {
                 geng::EmptyLoadingScreen,
                 {
                     let geng = geng.clone();
-                    let addr = format!("ws://{}", opt.addr);
+                    let addr = format!("{}://{}", option_env!("WSS").unwrap_or("ws"), opt.addr);
                     async move {
                         let connection = geng::net::client::connect(&addr).await;
                         let (message, connection) = connection.into_future().await;
