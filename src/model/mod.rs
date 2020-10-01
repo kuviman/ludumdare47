@@ -29,13 +29,15 @@ impl Default for Config {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
+    pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
+    pub structures: Vec<Structure>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {}
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq)]
 pub enum GroundType {
     Water,
     Sand,
@@ -47,12 +49,28 @@ pub struct Tile {
     pub ground_type: GroundType,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub struct Structure {
+    pub pos: Vec2<usize>,
+    pub size: Vec2<usize>,
+    pub structure_type: StructureType,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub enum StructureType {
+    Tree,
+}
+
 impl Model {
     pub const TICKS_PER_SECOND: f32 = 1.0;
     pub fn new(config: Config) -> Self {
-        Self {
+        let mut model = Self {
+            size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
-        }
+            structures: vec![],
+        };
+        model.gen_structures();
+        model
     }
     pub fn tick(&mut self) {}
     pub fn new_player(&mut self) -> Id {
@@ -95,5 +113,26 @@ impl Model {
             tiles.push(tiles_row);
         }
         tiles
+    }
+    fn gen_structures(&mut self) {
+        for _ in 0..10 {
+            let x = global_rng().gen_range(0, self.size.x);
+            let y = global_rng().gen_range(0, self.size.y);
+            if GroundType::Water != self.tiles.get(y).unwrap().get(x).unwrap().ground_type
+                && !self.structures.iter().any(|structure| {
+                    x >= structure.pos.x
+                        && x <= structure.pos.x + structure.size.x
+                        && y >= structure.pos.y
+                        && y <= structure.pos.y + structure.size.y
+                })
+            {
+                let structure = Structure {
+                    pos: vec2(x, y),
+                    size: vec2(1, 1),
+                    structure_type: StructureType::Tree,
+                };
+                self.structures.push(structure);
+            }
+        }
     }
 }

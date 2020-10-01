@@ -40,6 +40,9 @@ impl Renderer {
                 tiles_to_draw.push((Vec2::from([x, y]), color));
             }
         }
+        for structure in model.structures.iter() {
+            tiles_to_draw.push((structure.pos, Color::GREEN))
+        }
         self.ez.quads(
             framebuffer,
             &self.camera,
