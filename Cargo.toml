@@ -1,0 +1,9 @@
+[package]
+name = "ludumdare47"
+version = "0.1.0"
+authors = ["kuviman <kuviman@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+geng = "0.6.0-alpha"
+serde = "1"
