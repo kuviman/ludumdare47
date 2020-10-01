@@ -37,9 +37,10 @@ fn main() {
     let opt: Opt = StructOpt::from_args();
     let addr = opt
         .addr
-        .take()
-        .or(option_env!("DEFAULT_ADDR").to_owned())
-        .unwrap_or("127.0.0.1:7878".to_owned());
+        .as_ref()
+        .map(|s| s.as_str())
+        .or(option_env!("DEFAULT_ADDR"))
+        .unwrap_or("127.0.0.1:7878");
 
     #[cfg(not(target_arch = "wasm32"))]
     let (server, server_handle) = if !opt.no_server {
@@ -54,7 +55,7 @@ fn main() {
             .map(|result| result.expect("Failed to load config"))
             .unwrap_or_default();
 
-        let server = Server::new(opt.addr.as_str(), Model::new(config));
+        let server = Server::new(addr, Model::new(config));
         let server_handle = server.handle();
         ctrlc::set_handler({
             let server_handle = server_handle.clone();
@@ -95,7 +96,7 @@ fn main() {
                 geng::EmptyLoadingScreen,
                 {
                     let geng = geng.clone();
-                    let addr = format!("{}://{}", option_env!("WSS").unwrap_or("ws"), opt.addr);
+                    let addr = format!("{}://{}", option_env!("WSS").unwrap_or("ws"), addr);
                     async move {
                         let connection = geng::net::client::connect(&addr).await;
                         let (message, connection) = connection.into_future().await;
