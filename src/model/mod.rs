@@ -16,14 +16,11 @@ impl Id {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
-    pub dots: Vec<(Id, Vec2<f32>)>,
     pub tiles: Vec<Vec<Tile>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Message {
-    Dot(Vec2<f32>),
-}
+pub enum Message {}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub enum Tile {
@@ -35,21 +32,16 @@ impl Model {
     pub const TICKS_PER_SECOND: f32 = 1.0;
     pub fn new() -> Self {
         Self {
-            dots: Vec::new(),
             tiles: Self::generate_tiles(vec2(20, 20)),
         }
     }
-    pub fn tick(&mut self) {
-        println!("TICK");
-    }
+    pub fn tick(&mut self) {}
     pub fn new_player(&mut self) -> Id {
         Id::new()
     }
     pub fn drop_player(&mut self, player_id: Id) {}
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
-        match message {
-            Message::Dot(pos) => self.dots.push((player_id, pos)),
-        }
+        match message {}
     }
     fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
         let noise = OpenSimplex::new();
