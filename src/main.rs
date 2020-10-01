@@ -13,8 +13,8 @@ struct App {
 }
 
 impl App {
-    pub fn new(geng: &Rc<Geng>) -> Self {
-        let mut model = Model::new();
+    pub fn new(geng: &Rc<Geng>, config: model::Config) -> Self {
+        let mut model = Model::new(config);
         let renderer = Renderer::new(geng, &mut model);
         Self {
             model,
@@ -42,11 +42,27 @@ impl geng::State for App {
     }
 }
 
+#[derive(StructOpt)]
+struct Opt {
+    #[structopt(long)]
+    config: Option<std::path::PathBuf>,
+}
+
 fn main() {
+    let opt: Opt = StructOpt::from_args();
+    let config = opt
+        .config
+        .as_ref()
+        .map(|path| -> anyhow::Result<model::Config> {
+            Ok(serde_json::from_reader(std::io::BufReader::new(
+                std::fs::File::open(path)?,
+            ))?)
+        })
+        .map(|result| result.expect("Failed to load config"));
     let geng = Rc::new(Geng::new(geng::ContextOptions {
         title: "LudumDare 47".to_owned(),
         ..default()
     }));
     let geng = &geng;
-    geng::run(geng.clone(), App::new(geng));
+    geng::run(geng.clone(), App::new(geng, config.unwrap_or_default()));
 }

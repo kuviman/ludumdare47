@@ -14,6 +14,19 @@ impl Id {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Config {
+    pub map_size: Vec2<usize>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            map_size: vec2(20, 20),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
     pub tiles: Vec<Vec<Tile>>,
@@ -30,9 +43,9 @@ pub enum Tile {
 
 impl Model {
     pub const TICKS_PER_SECOND: f32 = 1.0;
-    pub fn new() -> Self {
+    pub fn new(config: Config) -> Self {
         Self {
-            tiles: Self::generate_tiles(vec2(20, 20)),
+            tiles: Self::generate_tiles(config.map_size),
         }
     }
     pub fn tick(&mut self) {}
