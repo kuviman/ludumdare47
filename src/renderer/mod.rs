@@ -15,21 +15,6 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    fn draw_tile(&self, framebuffer: &mut ugli::Framebuffer, tile: Vec2<usize>, color: Color<f32>) {
-        self.ez.quads(
-            framebuffer,
-            &self.camera,
-            std::iter::once(ez::Quad {
-                pos: tile.map(|x| x as f32 + 0.5),
-                rotation: 0.0,
-                size: vec2(0.5, 0.5),
-                color,
-            }),
-        );
-    }
-}
-
-impl Renderer {
     pub fn new(geng: &Rc<Geng>, model: &mut Model) -> Self {
         Self {
             geng: geng.clone(),
@@ -45,15 +30,26 @@ impl Renderer {
     pub fn draw(&mut self, framebuffer: &mut ugli::Framebuffer, model: &mut Model) {
         ugli::clear(framebuffer, Some(Color::BLACK), None);
         self.camera_controls.draw(&mut self.camera, framebuffer);
+        let mut tiles_to_draw = Vec::new();
         for (y, tiles_row) in model.tiles.iter().enumerate() {
             for (x, tile) in tiles_row.iter().enumerate() {
                 let color = match tile {
                     model::Tile::Water => Color::BLUE,
                     model::Tile::Sand => Color::YELLOW,
                 };
-                self.draw_tile(framebuffer, Vec2::from([x, y]), color);
+                tiles_to_draw.push((Vec2::from([x, y]), color));
             }
         }
+        self.ez.quads(
+            framebuffer,
+            &self.camera,
+            tiles_to_draw.into_iter().map(|(pos, color)| ez::Quad {
+                pos: pos.map(|x| x as f32 + 0.5),
+                rotation: 0.0,
+                size: vec2(0.5, 0.5),
+                color,
+            }),
+        );
     }
     pub fn handle_event(&mut self, event: geng::Event, model: &mut Model) {
         self.camera_controls.handle_event(&mut self.camera, &event);
