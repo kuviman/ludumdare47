@@ -78,6 +78,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           source: artifacts/linux/ludumdare47
           target: .
+          strip_components: 2
 
       - name: Deploy server
         uses: appleboy/ssh-action@master
@@ -102,4 +103,4 @@ jobs:
             EOF
 
             systemctl --user daemon-reload
-            systemctl --user restart ld47-server
+            systemctl --user restart ld47
