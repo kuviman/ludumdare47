@@ -36,9 +36,15 @@ pub struct Model {
 pub enum Message {}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub enum Tile {
+pub enum GroundType {
     Water,
     Sand,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub struct Tile {
+    pub height: f32,
+    pub ground_type: GroundType,
 }
 
 impl Model {
@@ -74,9 +80,15 @@ impl Model {
                             / 10.0)
                         > 0.8
                     {
-                        Tile::Water
+                        Tile {
+                            height: 0.0,
+                            ground_type: GroundType::Water,
+                        }
                     } else {
-                        Tile::Sand
+                        Tile {
+                            height: 0.0,
+                            ground_type: GroundType::Sand,
+                        }
                     },
                 );
             }

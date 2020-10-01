@@ -33,9 +33,9 @@ impl Renderer {
         let mut tiles_to_draw = Vec::new();
         for (y, tiles_row) in model.tiles.iter().enumerate() {
             for (x, tile) in tiles_row.iter().enumerate() {
-                let color = match tile {
-                    model::Tile::Water => Color::BLUE,
-                    model::Tile::Sand => Color::YELLOW,
+                let color = match tile.ground_type {
+                    model::GroundType::Water => Color::BLUE,
+                    model::GroundType::Sand => Color::YELLOW,
                 };
                 tiles_to_draw.push((Vec2::from([x, y]), color));
             }
