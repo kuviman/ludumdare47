@@ -28,13 +28,18 @@ struct Opt {
     no_server: bool,
     #[structopt(long)]
     no_client: bool,
-    #[structopt(long, default_value = "127.0.0.1:7878")]
-    addr: String,
+    #[structopt(long)]
+    addr: Option<String>,
 }
 
 fn main() {
     logger::init().unwrap();
     let opt: Opt = StructOpt::from_args();
+    let addr = opt
+        .addr
+        .take()
+        .or(option_env!("DEFAULT_ADDR").to_owned())
+        .unwrap_or("127.0.0.1:7878".to_owned());
 
     #[cfg(not(target_arch = "wasm32"))]
     let (server, server_handle) = if !opt.no_server {

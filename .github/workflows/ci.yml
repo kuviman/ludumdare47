@@ -5,6 +5,9 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      WSS: wss
+      DEFAULT_ADDR: ld47-server.kuviman.com
     container: kuviman/geng
     steps:
       - name: Checkout
@@ -66,3 +69,37 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cname: ld47.kuviman.com
           publish_dir: artifacts/web
+
+      - name: Copy server files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: artifacts/linux/ludumdare47
+          target: .
+
+      - name: Deploy server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cat >> ~/.config/systemd/user/ld47.service <<EOF
+            [Unit]
+            Description=LD47 server
+            After=network.target
+
+            [Install]
+            WantedBy=multi-user.target
+
+            [Service]
+            Type=simple
+            ExecStart=/bin/bash -c "chmod +x ~/ludumdare47 && ~/ludumdare47 --addr 127.0.0.1:7878 --no-client"
+            Restart=always
+            RestartSec=10
+            EOF
+
+            systemctl --user daemon-reload
+            systemctl --user restart ld47-server
