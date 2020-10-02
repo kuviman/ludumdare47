@@ -123,12 +123,12 @@ impl Model {
             pos.x >= structure.pos.x
                 && pos.x <= structure.pos.x + structure.size.x
                 && pos.y >= structure.pos.y
-                && pos.y >= structure.pos.y + structure.size.y
+                && pos.y <= structure.pos.y + structure.size.y
         }) && !self.entities.iter().any(|entity| {
             pos.x >= entity.pos.x
                 && pos.x <= entity.pos.x + entity.size.x
                 && pos.y >= entity.pos.y
-                && pos.y >= entity.pos.y + entity.size.y
+                && pos.y <= entity.pos.y + entity.size.y
         })
     }
     fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
