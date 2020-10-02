@@ -123,6 +123,7 @@ fn main() {
             if !opt.no_client {
                 server_handle.unwrap().shutdown();
             }
+            info!("Waiting for server to shut down");
             server_thread.join().unwrap();
         }
     }
