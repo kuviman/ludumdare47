@@ -32,6 +32,7 @@ pub struct Model {
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
     pub structures: Vec<Structure>,
+    pub entities: Vec<Entity>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -63,6 +64,12 @@ pub enum StructureType {
     Tree,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub struct Entity {
+    pub pos: Vec2<usize>,
+    pub size: Vec2<usize>,
+}
+
 impl Model {
     pub const TICKS_PER_SECOND: f32 = 1.0;
     pub fn new(config: Config) -> Self {
@@ -70,12 +77,21 @@ impl Model {
             size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
+            entities: vec![],
         };
         model.gen_structures();
         model
     }
     pub fn tick(&mut self) {}
     pub fn new_player(&mut self) -> Id {
+        if let Some(pos) = self.get_spawnable_pos(100) {
+            let entity = Entity {
+                pos,
+                size: vec2(1, 1),
+            };
+            self.entities.push(entity);
+        }
+
         Id::new()
     }
     pub fn drop_player(&mut self, player_id: Id) {}
@@ -120,6 +136,17 @@ impl Model {
     }
     fn gen_structures(&mut self) {
         for _ in 0..10 {
+            if let Some(pos) = self.get_spawnable_pos(1) {
+                self.structures.push(Structure {
+                    pos,
+                    size: vec2(1, 1),
+                    structure_type: StructureType::Tree,
+                });
+            }
+        }
+    }
+    fn get_spawnable_pos(&self, max_attempts: usize) -> Option<Vec2<usize>> {
+        for _ in 0..max_attempts {
             let x = global_rng().gen_range(0, self.size.x);
             let y = global_rng().gen_range(0, self.size.y);
             if GroundType::Water != self.tiles.get(y).unwrap().get(x).unwrap().ground_type
@@ -130,13 +157,9 @@ impl Model {
                         && y <= structure.pos.y + structure.size.y
                 })
             {
-                let structure = Structure {
-                    pos: vec2(x, y),
-                    size: vec2(1, 1),
-                    structure_type: StructureType::Tree,
-                };
-                self.structures.push(structure);
+                return Some(vec2(x, y));
             }
         }
+        None
     }
 }
