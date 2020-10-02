@@ -82,7 +82,22 @@ impl Model {
         model.gen_structures();
         model
     }
-    pub fn tick(&mut self) {}
+    pub fn tick(&mut self) {
+        for i in 0..self.entities.len() {
+            let mut entity = self.entities[i].clone();
+            let dir = Self::get_random_dir();
+            let new_pos = vec2(
+                (entity.pos.x as i32 + dir.x) as usize,
+                (entity.pos.y as i32 + dir.y) as usize,
+            );
+            if let Some(tile) = self.get_tile(new_pos) {
+                if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
+                    entity.pos = new_pos;
+                    self.entities[i] = entity;
+                }
+            }
+        }
+    }
     pub fn new_player(&mut self) -> Id {
         if let Some(pos) = self.get_spawnable_pos(100) {
             let entity = Entity {
@@ -99,6 +114,22 @@ impl Model {
         match message {
             Message::Ping => println!("Got ping message"),
         }
+    }
+    fn get_tile(&self, pos: Vec2<usize>) -> Option<&Tile> {
+        self.tiles.get(pos.y)?.get(pos.x)
+    }
+    fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
+        !self.structures.iter().any(|structure| {
+            pos.x >= structure.pos.x
+                && pos.x <= structure.pos.x + structure.size.x
+                && pos.y >= structure.pos.y
+                && pos.y >= structure.pos.y + structure.size.y
+        }) && !self.entities.iter().any(|entity| {
+            pos.x >= entity.pos.x
+                && pos.x <= entity.pos.x + entity.size.x
+                && pos.y >= entity.pos.y
+                && pos.y >= entity.pos.y + entity.size.y
+        })
     }
     fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
         let noise = OpenSimplex::new();
@@ -149,17 +180,18 @@ impl Model {
         for _ in 0..max_attempts {
             let x = global_rng().gen_range(0, self.size.x);
             let y = global_rng().gen_range(0, self.size.y);
+            let pos = vec2(x, y);
             if GroundType::Water != self.tiles.get(y).unwrap().get(x).unwrap().ground_type
-                && !self.structures.iter().any(|structure| {
-                    x >= structure.pos.x
-                        && x <= structure.pos.x + structure.size.x
-                        && y >= structure.pos.y
-                        && y <= structure.pos.y + structure.size.y
-                })
+                && self.is_empty_tile(pos)
             {
-                return Some(vec2(x, y));
+                return Some(pos);
             }
         }
         None
+    }
+    fn get_random_dir() -> Vec2<i32> {
+        let x = global_rng().gen_range(-1, 2);
+        let y = global_rng().gen_range(-1, 2);
+        vec2(x, y)
     }
 }
