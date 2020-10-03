@@ -17,26 +17,36 @@ impl Id {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub map_size: Vec2<usize>,
-    pub player_view_distance: usize,
+    pub player_day_view_distance: f32,
+    pub player_night_view_distance: f32,
+    pub day_length: usize,
+    pub night_length: usize,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             map_size: vec2(20, 20),
-            player_view_distance: 5,
+            player_day_view_distance: 10.0,
+            player_night_view_distance: 3.0,
+            day_length: 100,
+            night_length: 50,
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
-    pub entity_view_distance: usize,
+    pub entity_day_view_distance: f32,
+    pub entity_night_view_distance: f32,
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
     pub structures: Vec<Structure>,
     pub entities: HashMap<Id, Entity>,
     pub recipes: Vec<Recipe>,
+    pub current_time: usize,
+    pub day_length: usize,
+    pub night_length: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -84,7 +94,7 @@ pub enum Item {
 pub struct Entity {
     pub pos: Vec2<usize>,
     pub size: Vec2<usize>,
-    pub view_range: usize,
+    pub view_range: f32,
     pub move_to: Option<(Vec2<usize>, bool)>,
     pub item: Option<Item>,
 }
@@ -142,20 +152,33 @@ impl Model {
             result2: Some(StructureType::Campfire),
         };
         let mut model = Self {
-            entity_view_distance: config.player_view_distance,
+            entity_day_view_distance: config.player_day_view_distance,
+            entity_night_view_distance: config.player_night_view_distance,
             size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
             entities: HashMap::new(),
             recipes: vec![recipe1, recipe2, recipe3, recipe4],
+            current_time: 0,
+            day_length: config.day_length,
+            night_length: config.night_length,
         };
         model.gen_structures();
         model
     }
     pub fn tick(&mut self) {
+        self.current_time += 1;
+        if self.current_time > self.day_length + self.night_length {
+            self.current_time = 0;
+        }
         let ids: Vec<Id> = self.entities.keys().copied().collect();
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
+            entity.view_range = if self.current_time <= self.day_length {
+                self.entity_day_view_distance
+            } else {
+                self.entity_night_view_distance
+            };
             if let Some(move_to) = entity.move_to {
                 if move_to.1 {
                     if (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
@@ -164,7 +187,7 @@ impl Model {
                         let ingredient1 = &mut entity.item;
                         let structure = self.get_structure(move_to.0);
                         let ingredient2 = match structure {
-                            Some((structure_index, structure)) => Some(structure.structure_type),
+                            Some((_, structure)) => Some(structure.structure_type),
                             None => None,
                         };
                         let recipe = self
@@ -174,7 +197,7 @@ impl Model {
                         if let Some(recipe) = recipe {
                             *ingredient1 = recipe.result1;
                             if let Some(structure_type) = recipe.result2 {
-                                if let Some((structure_index, structure)) = structure {
+                                if let Some((structure_index, _)) = structure {
                                     self.structures
                                         .get_mut(structure_index)
                                         .unwrap()
@@ -183,7 +206,7 @@ impl Model {
                                     self.structures.push(Structure {
                                         pos: move_to.0,
                                         size: vec2(1, 1),
-                                        traversable: if let StructureType::Item { item } =
+                                        traversable: if let StructureType::Item { item: _ } =
                                             structure_type
                                         {
                                             true
@@ -193,7 +216,7 @@ impl Model {
                                         structure_type: structure_type,
                                     })
                                 }
-                            } else if let Some((structure_index, structure)) = structure {
+                            } else if let Some((structure_index, _)) = structure {
                                 self.structures.remove(structure_index);
                             }
                         } else if let Some(_) = ingredient1 {
@@ -210,7 +233,8 @@ impl Model {
                         } else {
                             if let Some(structure_type) = ingredient2 {
                                 if let StructureType::Item { item } = structure_type {
-                                    self.structures.remove(structure.unwrap().0);
+                                    let index = structure.unwrap().0;
+                                    self.structures.remove(index);
                                     *ingredient1 = Some(item);
                                 }
                             }
@@ -235,10 +259,10 @@ impl Model {
                 if let Some(tile) = self.get_tile(new_pos) {
                     if GroundType::Water != tile.ground_type && self.is_traversable_tile(new_pos) {
                         entity.pos = new_pos;
-                        *self.entities.get_mut(&id).unwrap() = entity;
                     }
                 }
             }
+            *self.entities.get_mut(&id).unwrap() = entity;
         }
     }
     pub fn new_player(&mut self) -> Id {
@@ -247,7 +271,7 @@ impl Model {
             let entity = Entity {
                 pos,
                 size: vec2(1, 1),
-                view_range: self.entity_view_distance,
+                view_range: self.entity_day_view_distance,
                 move_to: None,
                 item: None,
             };
@@ -272,12 +296,12 @@ impl Model {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = vec![];
         view.push(entity.pos.clone());
-        for x0 in 1..entity.view_range {
+        for x0 in 1..(entity.view_range.round() as usize) {
             view.push(vec2(x0, 0) + entity.pos);
             view.push(vec2(entity.pos.x - x0, entity.pos.y));
         }
-        for y in 1..(entity.view_range + 1) {
-            let x = ((entity.view_range * entity.view_range - y * y) as f32)
+        for y in 1..(entity.view_range.round() as usize + 1) {
+            let x = (entity.view_range * entity.view_range - y as f32 * y as f32)
                 .sqrt()
                 .round() as usize;
             view.push(vec2(entity.pos.x, entity.pos.y + y));
@@ -336,7 +360,7 @@ impl Model {
         self.structures
             .iter()
             .enumerate()
-            .find(|(index, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
+            .find(|(_, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
     }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
         !self
@@ -373,7 +397,7 @@ impl Model {
         self.entities.values().any(|entity| {
             let dx = pos.x - entity.pos.x;
             let dy = pos.y - entity.pos.y;
-            let dist_sqr = dx * dx + dy * dy;
+            let dist_sqr = (dx * dx + dy * dy) as f32;
             dist_sqr <= entity.view_range * entity.view_range
         })
     }
