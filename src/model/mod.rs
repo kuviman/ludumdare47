@@ -17,18 +17,21 @@ impl Id {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub map_size: Vec2<usize>,
+    pub player_view_distance: usize,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             map_size: vec2(20, 20),
+            player_view_distance: 5,
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
+    pub entity_view_distance: usize,
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
     pub structures: Vec<Structure>,
@@ -83,6 +86,7 @@ impl Model {
     pub const TICKS_PER_SECOND: f32 = 1.0;
     pub fn new(config: Config) -> Self {
         let mut model = Self {
+            entity_view_distance: config.player_view_distance,
             size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
@@ -114,7 +118,7 @@ impl Model {
             let entity = Entity {
                 pos,
                 size: vec2(1, 1),
-                view_range: 3,
+                view_range: self.entity_view_distance,
             };
             self.entities.insert(id, entity);
         }
