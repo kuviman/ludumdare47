@@ -417,7 +417,10 @@ impl Model {
         for y in 0..map_size.y {
             let mut tiles_row = vec![];
             for x in 0..map_size.x {
-                let water = height_map[x][y] < 0.0;
+                let water = height_map[x][y] < 0.0
+                    || height_map[x + 1][y] < 0.0
+                    || height_map[x + 1][y + 1] < 0.0
+                    || height_map[x][y + 1] < 0.0;
                 tiles_row.push(Tile {
                     pos: vec2(x, y),
                     ground_type: if water {
