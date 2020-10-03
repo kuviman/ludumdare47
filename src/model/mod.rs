@@ -171,17 +171,22 @@ impl Model {
     }
     pub fn tick(&mut self) {
         self.current_time += 1;
-        if self.current_time > self.day_length + self.night_length {
+        if self.current_time >= self.day_length + self.night_length {
             self.current_time = 0;
         }
         let ids: Vec<Id> = self.entities.keys().copied().collect();
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
-            entity.view_range = if self.current_time <= self.day_length {
-                self.entity_day_view_distance
-            } else {
-                self.entity_night_view_distance
-            };
+            let time = self.current_time as f32;
+            let day = self.day_length as f32;
+            let night = self.night_length as f32;
+            let mut t = 2.0 * (time - day - night / 2.0).abs() / (day + night);
+            if t > 1.0 {
+                t = 2.0 - t;
+            }
+            entity.view_range = self.entity_night_view_distance
+                + t * (self.entity_day_view_distance - self.entity_night_view_distance) as f32;
+            println!("{}, {}, {}, {}", time, day, night, entity.view_range);
             if let Some(move_to) = entity.move_to {
                 if move_to.1 {
                     if (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
