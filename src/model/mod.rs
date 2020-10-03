@@ -76,6 +76,7 @@ pub enum StructureType {
 pub enum Item {
     Pebble,
     Stick,
+    Axe,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -117,26 +118,14 @@ impl Model {
     pub fn new(config: Config) -> Self {
         let recipe1 = Recipe {
             ingredient1: Some(Item::Stick),
-            ingredient2: None,
-            result1: None,
-            result2: Some(StructureType::Item { item: Item::Stick }),
+            ingredient2: Some(StructureType::Item { item: Item::Pebble }),
+            result1: Some(Item::Axe),
+            result2: None,
         };
         let recipe2 = Recipe {
             ingredient1: Some(Item::Pebble),
-            ingredient2: None,
-            result1: None,
-            result2: Some(StructureType::Item { item: Item::Pebble }),
-        };
-        let recipe3 = Recipe {
-            ingredient1: None,
             ingredient2: Some(StructureType::Item { item: Item::Stick }),
-            result1: Some(Item::Stick),
-            result2: None,
-        };
-        let recipe4 = Recipe {
-            ingredient1: None,
-            ingredient2: Some(StructureType::Item { item: Item::Pebble }),
-            result1: Some(Item::Pebble),
+            result1: Some(Item::Axe),
             result2: None,
         };
         let mut model = Self {
@@ -145,7 +134,7 @@ impl Model {
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
             entities: HashMap::new(),
-            recipes: vec![recipe1, recipe2, recipe3, recipe4],
+            recipes: vec![recipe1, recipe2],
         };
         model.gen_structures();
         model
@@ -193,6 +182,24 @@ impl Model {
                                 }
                             } else if let Some((structure_index, structure)) = structure {
                                 self.structures.remove(structure_index);
+                            }
+                        } else if let Some(_) = ingredient1 {
+                            if let None = ingredient2 {
+                                self.structures.push(Structure {
+                                    pos: move_to.0,
+                                    size: vec2(1, 1),
+                                    traversable: true,
+                                    structure_type: StructureType::Item {
+                                        item: ingredient1.take().unwrap(),
+                                    },
+                                })
+                            }
+                        } else {
+                            if let Some(structure_type) = ingredient2 {
+                                if let StructureType::Item { item } = structure_type {
+                                    self.structures.remove(structure.unwrap().0);
+                                    *ingredient1 = Some(item);
+                                }
                             }
                         }
                         entity.move_to = None;
