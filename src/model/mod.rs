@@ -91,6 +91,7 @@ impl Model {
                 (entity.pos.y as i32 + dir.y) as usize,
             );
             if let Some(tile) = self.get_tile(new_pos) {
+                println!("Empty: {:?}", self.is_empty_tile(new_pos));
                 if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
                     entity.pos = new_pos;
                     self.entities[i] = entity;
@@ -121,14 +122,14 @@ impl Model {
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
         !self.structures.iter().any(|structure| {
             pos.x >= structure.pos.x
-                && pos.x <= structure.pos.x + structure.size.x
+                && pos.x <= structure.pos.x + structure.size.x - 1
                 && pos.y >= structure.pos.y
-                && pos.y <= structure.pos.y + structure.size.y
+                && pos.y <= structure.pos.y + structure.size.y - 1
         }) && !self.entities.iter().any(|entity| {
             pos.x >= entity.pos.x
-                && pos.x <= entity.pos.x + entity.size.x
+                && pos.x <= entity.pos.x + entity.size.x - 1
                 && pos.y >= entity.pos.y
-                && pos.y <= entity.pos.y + entity.size.y
+                && pos.y <= entity.pos.y + entity.size.y - 1
         })
     }
     fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
