@@ -71,7 +71,7 @@ pub enum StructureType {
     Tree,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy)]
 pub enum Item {
     Pebble,
     Stick,
