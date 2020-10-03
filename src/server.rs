@@ -71,14 +71,14 @@ impl Server {
         let server_thread = std::thread::spawn({
             let model = self.model;
             let running = running.clone();
+            let mut sleep_time = 0;
             move || {
                 while running.load(std::sync::atomic::Ordering::Relaxed) {
                     // TODO: smoother TPS
-                    std::thread::sleep(std::time::Duration::from_millis(
-                        (1000.0 / Model::TICKS_PER_SECOND) as u64,
-                    ));
+                    std::thread::sleep(std::time::Duration::from_millis(sleep_time));
                     let mut model = model.lock().unwrap();
                     model.tick();
+                    sleep_time = (1000.0 / model.ticks_per_second) as u64;
                 }
             }
         });

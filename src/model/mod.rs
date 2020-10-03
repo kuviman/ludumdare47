@@ -16,6 +16,7 @@ impl Id {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
+    pub ticks_per_second: f32,
     pub map_size: Vec2<usize>,
     pub player_day_view_distance: f32,
     pub player_night_view_distance: f32,
@@ -26,7 +27,8 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            map_size: vec2(20, 20),
+            ticks_per_second: 2.0,
+            map_size: vec2(50, 50),
             player_day_view_distance: 10.0,
             player_night_view_distance: 3.0,
             day_length: 100,
@@ -37,6 +39,7 @@ impl Default for Config {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
+    pub ticks_per_second: f32,
     pub height_map: Vec<Vec<f32>>,
     pub entity_day_view_distance: f32,
     pub entity_night_view_distance: f32,
@@ -128,7 +131,6 @@ impl Recipe {
 }
 
 impl Model {
-    pub const TICKS_PER_SECOND: f32 = 1.0;
     pub fn new(config: Config) -> Self {
         let recipe1 = Recipe {
             ingredient1: Some(Item::Stick),
@@ -182,6 +184,7 @@ impl Model {
         ];
         let (tiles, height_map) = Self::generate_map(config.map_size);
         let mut model = Self {
+            ticks_per_second: config.ticks_per_second,
             entity_day_view_distance: config.player_day_view_distance,
             entity_night_view_distance: config.player_night_view_distance,
             size: config.map_size,
