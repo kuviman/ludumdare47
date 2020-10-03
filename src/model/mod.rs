@@ -128,7 +128,7 @@ impl Recipe {
 }
 
 impl Model {
-    pub const TICKS_PER_SECOND: f32 = 10.0;
+    pub const TICKS_PER_SECOND: f32 = 1.0;
     pub fn new(config: Config) -> Self {
         let recipe1 = Recipe {
             ingredient1: Some(Item::Stick),
