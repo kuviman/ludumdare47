@@ -26,6 +26,8 @@ pub struct Assets {
 
 struct EntityData {
     pos: Vec2<f32>,
+    target_pos: Vec2<usize>,
+    speed: f32,
     rotation: f32,
 }
 
@@ -33,12 +35,18 @@ impl EntityData {
     fn new(entity: &model::Entity) -> Self {
         Self {
             pos: entity.pos.map(|x| x as f32 + 0.5),
+            speed: 0.0,
             rotation: 0.0,
+            target_pos: entity.pos,
         }
     }
-    fn update(&mut self, entity: &model::Entity, delta_time: f32) {
+    fn update(&mut self, entity: &model::Entity, tick_time: f32) {
+        if entity.pos != self.target_pos {
+            self.target_pos = entity.pos;
+            self.speed = (entity.pos.map(|x| x as f32 + 0.5) - self.pos).len();
+        }
         let dpos = entity.pos.map(|x| x as f32 + 0.5) - self.pos;
-        self.pos += dpos * (delta_time * 5.0).min(1.0);
+        self.pos += dpos.clamp(self.speed * tick_time);
         if dpos.len() > 0.5 {
             self.rotation = dpos.arg();
         }
@@ -54,7 +62,7 @@ struct BlackCloud {
 impl Default for BlackCloud {
     fn default() -> Self {
         Self {
-            size: 1.0,
+            size: 0.0,
             rotation: global_rng().gen_range(0.0, 2.0 * f32::PI),
             rotation_speed: global_rng().gen_range(-1.0, 1.0),
         }
@@ -158,22 +166,25 @@ impl App {
         let mut positions = HashSet::new();
         let view = self.model.get_view(self.player_id);
         for tile in &view.tiles {
-            positions.insert(tile.pos);
-            positions.insert(tile.pos + vec2(2, 0));
-            positions.insert(tile.pos + vec2(2, 2));
-            positions.insert(tile.pos + vec2(0, 2));
+            for dx in 0..3 {
+                for dy in 0..3 {
+                    positions.insert(tile.pos + vec2(dx, dy));
+                }
+            }
         }
         for tile in &view.tiles {
             positions.remove(&(tile.pos + vec2(1, 1)));
         }
+        for &pos in &positions {
+            self.black_clouds.entry(pos).or_default();
+        }
         for (&pos, cloud) in &mut self.black_clouds {
-            if !positions.contains(&pos) {
-                cloud.size -= delta_time;
+            if positions.contains(&pos) {
+                cloud.size = 0.8;
+            } else {
+                cloud.size = 0.0;
             }
             cloud.rotation += cloud.rotation_speed * delta_time;
-        }
-        for pos in positions {
-            self.black_clouds.entry(pos).or_default();
         }
         self.black_clouds.retain(|_, cloud| cloud.size > 0.0);
     }
@@ -197,7 +208,7 @@ impl geng::State for App {
 
         for entity in self.model.entities.values() {
             if let Some(prev) = self.entity_positions.get_mut(&entity.id) {
-                prev.update(entity, delta_time);
+                prev.update(entity, delta_time * self.model.ticks_per_second);
             } else {
                 self.entity_positions
                     .insert(entity.id, EntityData::new(entity));
