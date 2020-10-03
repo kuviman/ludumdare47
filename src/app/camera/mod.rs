@@ -13,6 +13,11 @@ pub struct Camera {
     pub perspective: bool,
 }
 
+pub struct Ray {
+    pub from: Vec3<f32>,
+    pub dir: Vec3<f32>,
+}
+
 impl Camera {
     pub fn new() -> Self {
         Self {
@@ -51,7 +56,7 @@ impl Camera {
             u_view_matrix: self.view_matrix(),
         }
     }
-    pub fn screen_to_world(&self, framebuffer_size: Vec2<usize>, pos: Vec2<f32>) -> Vec2<f32> {
+    pub fn pixel_ray(&self, framebuffer_size: Vec2<usize>, pos: Vec2<f32>) -> Ray {
         let pos = vec2(
             pos.x / framebuffer_size.x as f32 * 2.0 - 1.0,
             pos.y / framebuffer_size.y as f32 * 2.0 - 1.0,
@@ -62,12 +67,17 @@ impl Camera {
         let p2 = inv_matrix * pos.extend(1.0).extend(1.0);
         let p1 = p1.xyz() / p1.w;
         let p2 = p2.xyz() / p2.w;
-        let t = p1.z / (p1.z - p2.z);
-        p1.xy() + (p2.xy() - p1.xy()) * t
+        Ray {
+            from: p1,
+            dir: p2 - p1,
+        }
     }
-    pub fn world_to_screen(&self, framebuffer_size: Vec2<usize>, pos: Vec2<f32>) -> Vec2<f32> {
-        let pos = (self.projection_matrix(framebuffer_size) * self.view_matrix())
-            * pos.extend(0.0).extend(1.0);
+    pub fn screen_to_world(&self, framebuffer_size: Vec2<usize>, pos: Vec2<f32>) -> Vec2<f32> {
+        let ray = self.pixel_ray(framebuffer_size, pos);
+        (ray.from - ray.dir * (ray.from.z / ray.dir.z)).xy()
+    }
+    pub fn world_to_screen(&self, framebuffer_size: Vec2<usize>, pos: Vec3<f32>) -> Vec2<f32> {
+        let pos = (self.projection_matrix(framebuffer_size) * self.view_matrix()) * pos.extend(1.0);
         let pos = pos.xy() / pos.w;
         vec2(
             (pos.x + 1.0) / 2.0 * framebuffer_size.x as f32,

@@ -295,7 +295,7 @@ impl Model {
             }
         }
     }
-    pub fn get_view(&mut self, player_id: Id) -> PlayerView {
+    pub fn get_view(&self, player_id: Id) -> PlayerView {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = vec![];
         view.push(entity.pos.clone());

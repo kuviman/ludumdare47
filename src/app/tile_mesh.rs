@@ -88,4 +88,30 @@ impl TileMesh {
             h00 * (1.0 - pos_f.y) + (h01 * (1.0 - pos_f.x) + h11 * pos_f.x) * pos_f.y
         })
     }
+    pub fn intersect(&self, ray: camera::Ray) -> Option<Vec3<f32>> {
+        let mut result: Option<(f32, Vec3<f32>)> = None;
+        for face in self.mesh.chunks_exact(3) {
+            let plane_pos = face[0].a_pos;
+            let normal = face[0].a_normal;
+            // (ray.from + ray.dir * t - plane_pos, normal) = 0
+            let t = Vec3::dot(plane_pos - ray.from, normal) / Vec3::dot(ray.dir, normal);
+            let p = ray.from + ray.dir * t;
+            let mut consider = true;
+            for i in 0..3 {
+                let p1 = face[i].a_pos;
+                let p2 = face[(i + 1) % 3].a_pos;
+                let inside = Vec3::cross(normal, p2 - p1);
+                if Vec3::dot(p - p1, inside) < 0.0 {
+                    consider = false;
+                    break;
+                }
+            }
+            if consider {
+                if result.is_none() || t < result.unwrap().0 {
+                    result = Some((t, p));
+                }
+            }
+        }
+        result.map(|(_, p)| p)
+    }
 }

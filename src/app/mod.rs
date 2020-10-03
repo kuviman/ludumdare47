@@ -30,6 +30,7 @@ pub struct App {
     connection: Connection,
     player_id: Id,
     model: Model,
+    tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
 }
 
@@ -41,6 +42,8 @@ impl App {
         model: Model,
         mut connection: Connection,
     ) -> Self {
+        let view = model.get_view(player_id);
+        let tile_mesh = TileMesh::new(geng, &view.tiles, &view.height_map);
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
@@ -53,6 +56,7 @@ impl App {
             connection,
             player_id,
             model,
+            tile_mesh,
             noise: noise::OpenSimplex::new(),
         }
     }
@@ -79,14 +83,14 @@ impl geng::State for App {
 
         let view = self.model.get_view(self.player_id);
 
-        let tile_mesh = TileMesh::new(&self.geng, &view.tiles, &view.height_map);
+        self.tile_mesh = TileMesh::new(&self.geng, &view.tiles, &view.height_map);
 
         let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 
         self.ez3d.draw(
             framebuffer,
             &self.camera,
-            &tile_mesh.mesh,
+            &self.tile_mesh.mesh,
             std::iter::once(ez3d::Instance {
                 i_pos: vec3(0.0, 0.0, 0.0),
                 i_rotation: 0.0,
@@ -116,7 +120,7 @@ impl geng::State for App {
                 obj.vb(),
                 view.structures.iter().filter_map(|e| {
                     let pos = e.pos.map(|x| x as f32 + 0.5);
-                    let height = tile_mesh.get_height(pos)?;
+                    let height = self.tile_mesh.get_height(pos)?;
                     let pos = pos.extend(height);
                     if e.structure_type == structure_type {
                         Some(ez3d::Instance {
@@ -153,11 +157,11 @@ impl geng::State for App {
     fn handle_event(&mut self, event: geng::Event) {
         match event {
             geng::Event::MouseDown { position, button } => {
-                let pos = self
-                    .camera
-                    .screen_to_world(self.framebuffer_size, position.map(|x| x as f32));
-                if pos.x >= 0.0 && pos.y >= 0.0 {
-                    let pos = pos.map(|x| x as usize);
+                if let Some(pos) = self.tile_mesh.intersect(
+                    self.camera
+                        .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
+                ) {
+                    let pos = pos.xy().map(|x| x as usize);
                     match button {
                         geng::MouseButton::Left => self.connection.send(ClientMessage::Click {
                             pos,
