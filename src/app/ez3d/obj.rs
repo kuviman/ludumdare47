@@ -24,9 +24,22 @@ impl geng::LoadAsset for Obj {
             let mut vn = Vec::new();
             let mut vt = Vec::new();
             let mut mesh = Vec::new();
-            let mut color = Color::WHITE;
             let mut current_material = String::new();
-            let mut materials = HashMap::<String, Color<f32>>::new();
+            #[derive(Clone)]
+            struct Material {
+                color: Color<f32>,
+                emission: f32,
+            }
+            impl Material {
+                fn new() -> Self {
+                    Self {
+                        color: Color::WHITE,
+                        emission: 0.0,
+                    }
+                }
+            }
+            let mut material = Material::new();
+            let mut materials = HashMap::<String, Material>::new();
             for line in mtl_source.lines().chain(obj_source.lines()) {
                 if line.starts_with("v ") {
                     let mut parts = line.split_whitespace();
@@ -59,7 +72,8 @@ impl geng::LoadAsset for Obj {
                         Vertex {
                             a_pos: v[i_v - 1],
                             a_normal: vec3(0.0, 0.0, 0.0),
-                            a_color: color,
+                            a_color: material.color,
+                            a_emission: material.emission,
                             // a_vn: vn[i_vn - 1],
                             // a_vt: vt[i_vt - 1],
                         }
@@ -74,19 +88,24 @@ impl geng::LoadAsset for Obj {
                         mesh.push(cur[i].clone());
                     }
                 } else if line.starts_with("usemtl ") {
-                    let material = line[6..].trim();
-                    color = materials[material];
+                    material = materials[line[6..].trim()].clone();
                 } else if line.starts_with("newmtl ") {
                     current_material = line[6..].trim().to_owned();
-                    materials.insert(current_material.clone(), Color::WHITE);
+                    materials.insert(current_material.clone(), Material::new());
                 } else if line.starts_with("Kd ") {
                     let mut parts = line.split_whitespace();
                     parts.next();
-                    *materials.get_mut(&current_material).unwrap() = Color::rgb(
-                        parts.next().unwrap().parse().unwrap(),
-                        parts.next().unwrap().parse().unwrap(),
-                        parts.next().unwrap().parse().unwrap(),
-                    );
+                    materials.get_mut(&current_material).unwrap().color.r =
+                        parts.next().unwrap().parse().unwrap();
+                    materials.get_mut(&current_material).unwrap().color.g =
+                        parts.next().unwrap().parse().unwrap();
+                    materials.get_mut(&current_material).unwrap().color.b =
+                        parts.next().unwrap().parse().unwrap();
+                } else if line.starts_with("Ke ") {
+                    let mut parts = line.split_whitespace();
+                    parts.next();
+                    materials.get_mut(&current_material).unwrap().emission =
+                        parts.next().unwrap().parse().unwrap();
                 }
             }
             for vertex in &mut mesh {

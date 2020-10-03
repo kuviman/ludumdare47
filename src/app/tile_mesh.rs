@@ -17,31 +17,37 @@ impl TileMesh {
                 mesh.push(ez3d::Vertex {
                     a_pos: vec3(p.x, p.y, h00),
                     a_normal: vec3(0.0, 0.0, 0.0),
+                    a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
                     a_pos: vec3(p.x + 1.0, p.y, h10),
                     a_normal: vec3(0.0, 0.0, 0.0),
+                    a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
                     a_pos: vec3(p.x + 1.0, p.y + 1.0, h11),
                     a_normal: vec3(0.0, 0.0, 0.0),
+                    a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
                     a_pos: vec3(p.x, p.y, h00),
                     a_normal: vec3(0.0, 0.0, 0.0),
+                    a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
                     a_pos: vec3(p.x + 1.0, p.y + 1.0, h11),
                     a_normal: vec3(0.0, 0.0, 0.0),
+                    a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
                     a_pos: vec3(p.x, p.y + 1.0, h01),
                     a_normal: vec3(0.0, 0.0, 0.0),
+                    a_emission: 0.0,
                     a_color,
                 });
             };

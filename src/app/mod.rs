@@ -20,6 +20,7 @@ pub struct Assets {
     stick: ez3d::Obj,
     player: ez3d::Obj,
     axe: ez3d::Obj,
+    campfire: ez3d::Obj,
 }
 
 pub struct App {
@@ -121,6 +122,7 @@ impl geng::State for App {
         );
         for &(obj, structure_type, size) in &[
             (&self.assets.tree, model::StructureType::Tree, 0.7),
+            (&self.assets.campfire, model::StructureType::Campfire, 0.5),
             (
                 &self.assets.pebble,
                 model::StructureType::Item {

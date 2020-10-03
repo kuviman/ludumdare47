@@ -9,6 +9,7 @@ pub struct Vertex {
     pub a_pos: Vec3<f32>,
     pub a_normal: Vec3<f32>,
     pub a_color: Color<f32>,
+    pub a_emission: f32,
 }
 
 pub fn calc_normals(vs: &mut [Vertex]) {
