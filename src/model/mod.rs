@@ -1,5 +1,5 @@
 use super::*;
-use noise::{NoiseFn, OpenSimplex};
+use noise::{NoiseFn, OpenSimplex, Seedable};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq, Copy, Trans)]
 pub struct Id(usize);
@@ -143,7 +143,7 @@ impl Model {
         })
     }
     fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
-        let noise = OpenSimplex::new();
+        let noise = OpenSimplex::new().set_seed(global_rng().gen());
         let mut tiles = vec![];
         for y in 0..map_size.y {
             let mut tiles_row = vec![];
