@@ -52,7 +52,7 @@ pub struct Model {
     pub day_length: usize,
     pub night_length: usize,
     pub regeneration_percent: f32,
-    generation_choices: Vec<(Option<Structure>, usize)>,
+    generation_choices: HashMap<GroundType, Vec<(Option<Structure>, usize)>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -61,10 +61,11 @@ pub enum Message {
     Click { pos: Vec2<usize>, secondary: bool },
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, Hash, PartialEq, Eq)]
 pub enum GroundType {
     Water,
     Sand,
+    Grass,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -163,26 +164,37 @@ impl Model {
             traversable: false,
             structure_type: StructureType::Tree,
         };
-        let generation_choices = vec![
-            (None, 300),
-            (Some(basic_structure.clone()), 10),
-            (
-                Some(Structure {
-                    traversable: true,
-                    structure_type: StructureType::Item { item: Item::Pebble },
-                    ..basic_structure
-                }),
-                30,
-            ),
-            (
-                Some(Structure {
-                    traversable: true,
-                    structure_type: StructureType::Item { item: Item::Stick },
-                    ..basic_structure
-                }),
-                30,
-            ),
-        ];
+        let mut generation_choices = HashMap::new();
+        generation_choices.insert(GroundType::Water, vec![(None, 1)]);
+        generation_choices.insert(
+            GroundType::Sand,
+            vec![
+                (None, 100),
+                (
+                    Some(Structure {
+                        traversable: true,
+                        structure_type: StructureType::Item { item: Item::Pebble },
+                        ..basic_structure
+                    }),
+                    1,
+                ),
+            ],
+        );
+        generation_choices.insert(
+            GroundType::Grass,
+            vec![
+                (None, 100),
+                (Some(basic_structure.clone()), 30),
+                (
+                    Some(Structure {
+                        traversable: true,
+                        structure_type: StructureType::Item { item: Item::Stick },
+                        ..basic_structure
+                    }),
+                    10,
+                ),
+            ],
+        );
         let (tiles, height_map) = Self::generate_map(config.map_size);
         let mut model = Self {
             ticks_per_second: config.ticks_per_second,
@@ -505,12 +517,19 @@ impl Model {
                     || height_map[x + 1][y] < 0.0
                     || height_map[x + 1][y + 1] < 0.0
                     || height_map[x][y + 1] < 0.0;
+                let middle_height = (height_map[x][y]
+                    + height_map[x + 1][y]
+                    + height_map[x + 1][y + 1]
+                    + height_map[x][y + 1])
+                    / 4.0;
                 tiles_row.push(Tile {
                     pos: vec2(x, y),
                     ground_type: if water {
                         GroundType::Water
-                    } else {
+                    } else if middle_height < 0.3 {
                         GroundType::Sand
+                    } else {
+                        GroundType::Grass
                     },
                 });
             }
@@ -520,8 +539,7 @@ impl Model {
     }
     fn generate_tile(&mut self, pos: Vec2<usize>) {
         let mut rng = global_rng();
-        let choice = &self
-            .generation_choices
+        let choice = &self.generation_choices[&self.tiles[pos.x][pos.y].ground_type]
             .choose_weighted(&mut rng, |item| item.1)
             .unwrap()
             .0;

@@ -60,6 +60,7 @@ impl TileMesh {
                 height_map[tile.pos.x][tile.pos.y + 1],
                 match tile.ground_type {
                     model::GroundType::Water => Color::rgb(0.8, 0.8, 0.0),
+                    model::GroundType::Grass => Color::rgb(0.0, 0.8, 0.0),
                     model::GroundType::Sand => Color::YELLOW,
                 },
             );
