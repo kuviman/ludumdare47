@@ -74,6 +74,7 @@ pub struct Entity {
     pub pos: Vec2<usize>,
     pub size: Vec2<usize>,
     pub view_range: usize,
+    pub move_to: Option<Vec2<usize>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -100,26 +101,32 @@ impl Model {
         let ids: Vec<Id> = self.entities.keys().copied().collect();
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
-            let dir = Self::get_random_dir();
-            let new_pos = vec2(
-                (entity.pos.x as i32 + dir.x) as usize,
-                (entity.pos.y as i32 + dir.y) as usize,
-            );
-            if let Some(tile) = self.get_tile(new_pos) {
-                if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
-                    entity.pos = new_pos;
-                    *self.entities.get_mut(&id).unwrap() = entity;
+            if let Some(move_to) = entity.move_to {
+                let dir = vec2(
+                    (move_to.x as i32 - entity.pos.x as i32).signum(),
+                    (move_to.y as i32 - entity.pos.y as i32).signum(),
+                );
+                let new_pos = vec2(
+                    (entity.pos.x as i32 + dir.x) as usize,
+                    (entity.pos.y as i32 + dir.y) as usize,
+                );
+                if let Some(tile) = self.get_tile(new_pos) {
+                    if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
+                        entity.pos = new_pos;
+                        *self.entities.get_mut(&id).unwrap() = entity;
+                    }
                 }
             }
         }
     }
     pub fn new_player(&mut self) -> Id {
         let id = Id::new();
-        if let Some(pos) = self.get_spawnable_pos(100) {
+        if let Some(pos) = self.get_spawnable_pos() {
             let entity = Entity {
                 pos,
                 size: vec2(1, 1),
                 view_range: self.entity_view_distance,
+                move_to: None,
             };
             self.entities.insert(id, entity);
         }
@@ -129,7 +136,13 @@ impl Model {
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         match message {
             Message::Ping => println!("Got ping message"),
-            Message::Click { pos, secondary } => println!("Got click at {}:{}", pos, secondary),
+            Message::Click { pos, secondary } => {
+                println!("Got click at {}:{}", pos, secondary);
+                if pos.x < self.size.x && pos.y < self.size.y {
+                    let mut entity = self.entities.get_mut(&player_id).unwrap();
+                    entity.move_to = Some(pos);
+                }
+            }
         }
     }
     pub fn get_view(&mut self, player_id: Id) -> PlayerView {
@@ -245,7 +258,7 @@ impl Model {
     }
     fn gen_structures(&mut self) {
         for _ in 0..10 {
-            if let Some(pos) = self.get_spawnable_pos(1) {
+            if let Some(pos) = self.get_spawnable_pos() {
                 self.structures.push(Structure {
                     pos,
                     size: vec2(1, 1),
@@ -254,7 +267,7 @@ impl Model {
             }
         }
     }
-    fn get_spawnable_pos(&self, max_attempts: usize) -> Option<Vec2<usize>> {
+    fn get_spawnable_pos(&self) -> Option<Vec2<usize>> {
         let mut positions = vec![];
         for y in 0..self.size.y {
             for x in 0..self.size.x {
@@ -273,10 +286,5 @@ impl Model {
         } else {
             None
         }
-    }
-    fn get_random_dir() -> Vec2<i32> {
-        let x = global_rng().gen_range(-1, 2);
-        let y = global_rng().gen_range(-1, 2);
-        vec2(x, y)
     }
 }
