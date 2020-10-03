@@ -245,26 +245,20 @@ impl Model {
                     * 2.0
                     - vec2(1.0, 1.0);
 
-                tiles_row.push(
-                    if normalized_pos.len()
-                        + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
-                            as f32
-                            / 10.0)
-                        > 0.8
-                    {
-                        Tile {
-                            pos: vec2(x, y),
-                            height: 0.0,
-                            ground_type: GroundType::Water,
-                        }
+                let height = 0.8 - normalized_pos.len()
+                    + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
+                        as f32
+                        / 10.0);
+
+                tiles_row.push(Tile {
+                    pos: vec2(x, y),
+                    height,
+                    ground_type: if height > 0.0 {
+                        GroundType::Sand
                     } else {
-                        Tile {
-                            pos: vec2(x, y),
-                            height: 0.0,
-                            ground_type: GroundType::Sand,
-                        }
+                        GroundType::Water
                     },
-                );
+                });
             }
             tiles.push(tiles_row);
         }
