@@ -31,7 +31,7 @@ impl Ez3D {
         &self,
         framebuffer: &mut ugli::Framebuffer,
         camera: &Camera,
-        vertices: impl Iterator<Item = Vertex>,
+        vertices: &ugli::VertexBuffer<Vertex>,
         instances: impl Iterator<Item = Instance>,
     ) {
         let uniforms = camera.uniforms(framebuffer.size());
@@ -40,7 +40,7 @@ impl Ez3D {
             &self.program,
             ugli::DrawMode::Triangles,
             ugli::instanced(
-                &ugli::VertexBuffer::new_dynamic(self.geng.ugli(), vertices.collect()),
+                vertices,
                 &ugli::VertexBuffer::new_dynamic(self.geng.ugli(), instances.collect()),
             ),
             uniforms,

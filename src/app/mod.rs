@@ -3,10 +3,12 @@ use super::*;
 mod camera;
 mod ez;
 mod ez3d;
+mod tile_mesh;
 
 use camera::Camera;
 use ez::Ez;
 use ez3d::Ez3D;
+use tile_mesh::TileMesh;
 
 pub struct App {
     geng: Rc<Geng>,
@@ -35,54 +37,6 @@ impl App {
             model,
         }
     }
-
-    fn tile_mesh(tiles: &[model::Tile]) -> Vec<ez3d::Vertex> {
-        let mut mesh = Vec::new();
-        let tiles: HashMap<Vec2<usize>, model::Tile> =
-            tiles.iter().map(|tile| (tile.pos, tile.clone())).collect();
-        let mut append = |tile00: &model::Tile| -> Option<()> {
-            let tile01 = tiles.get(&(tile00.pos + vec2(0, 1)))?;
-            let tile11 = tiles.get(&(tile00.pos + vec2(1, 1)))?;
-            let tile10 = tiles.get(&(tile00.pos + vec2(1, 0)))?;
-            let a_color = match tile00.ground_type {
-                model::GroundType::Water => Color::BLUE,
-                model::GroundType::Sand => Color::YELLOW,
-            };
-            let p00 = tile00.pos.map(|x| x as f32).extend(tile00.height);
-            let p01 = tile01.pos.map(|x| x as f32).extend(tile01.height);
-            let p11 = tile11.pos.map(|x| x as f32).extend(tile11.height);
-            let p10 = tile10.pos.map(|x| x as f32).extend(tile10.height);
-            mesh.push(ez3d::Vertex {
-                a_pos: p00,
-                a_color,
-            });
-            mesh.push(ez3d::Vertex {
-                a_pos: p10,
-                a_color,
-            });
-            mesh.push(ez3d::Vertex {
-                a_pos: p11,
-                a_color,
-            });
-            mesh.push(ez3d::Vertex {
-                a_pos: p00,
-                a_color,
-            });
-            mesh.push(ez3d::Vertex {
-                a_pos: p11,
-                a_color,
-            });
-            mesh.push(ez3d::Vertex {
-                a_pos: p01,
-                a_color,
-            });
-            Some(())
-        };
-        for tile00 in tiles.values() {
-            append(tile00);
-        }
-        mesh
-    }
 }
 
 impl geng::State for App {
@@ -103,13 +57,17 @@ impl geng::State for App {
         self.framebuffer_size = framebuffer.size();
         ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
         self.camera_controls.draw(&mut self.camera, framebuffer);
-        let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 
         let view = self.model.get_view(self.player_id);
+
+        let tile_mesh = TileMesh::new(&self.geng, &view.tiles);
+
+        let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
+
         self.ez3d.draw(
             framebuffer,
             &self.camera,
-            Self::tile_mesh(&view.tiles).into_iter(),
+            &tile_mesh.mesh,
             std::iter::once(ez3d::Instance {
                 i_pos: vec3(0.0, 0.0, 0.0),
                 i_size: 1.0,
