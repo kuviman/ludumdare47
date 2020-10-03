@@ -18,6 +18,7 @@ pub struct Assets {
     pebble: ez3d::Obj,
     stick: ez3d::Obj,
     player: ez3d::Obj,
+    axe: ez3d::Obj,
 }
 
 pub struct App {
@@ -127,6 +128,13 @@ impl geng::State for App {
                 },
                 0.5,
             ),
+            (
+                &self.assets.axe,
+                model::StructureType::Item {
+                    item: model::Item::Axe,
+                },
+                0.2,
+            ),
         ] {
             self.ez3d.draw(
                 framebuffer,
@@ -171,7 +179,7 @@ impl geng::State for App {
                     framebuffer,
                     &self.camera,
                     match item {
-                        model::Item::Axe => &self.assets.stick,
+                        model::Item::Axe => &self.assets.axe,
                         model::Item::Pebble => &self.assets.pebble,
                         model::Item::Stick => &self.assets.stick,
                     }
