@@ -68,6 +68,7 @@ pub enum StructureType {
 pub struct Entity {
     pub pos: Vec2<usize>,
     pub size: Vec2<usize>,
+    pub view_range: usize,
 }
 
 impl Model {
@@ -91,7 +92,6 @@ impl Model {
                 (entity.pos.y as i32 + dir.y) as usize,
             );
             if let Some(tile) = self.get_tile(new_pos) {
-                println!("Empty: {:?}", self.is_empty_tile(new_pos));
                 if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
                     entity.pos = new_pos;
                     self.entities[i] = entity;
@@ -104,6 +104,7 @@ impl Model {
             let entity = Entity {
                 pos,
                 size: vec2(1, 1),
+                view_range: 3,
             };
             self.entities.push(entity);
         }
@@ -130,6 +131,14 @@ impl Model {
                 && pos.x <= entity.pos.x + entity.size.x - 1
                 && pos.y >= entity.pos.y
                 && pos.y <= entity.pos.y + entity.size.y - 1
+        })
+    }
+    fn is_under_view(&self, pos: Vec2<usize>) -> bool {
+        self.entities.iter().any(|entity| {
+            let dx = pos.x - entity.pos.x;
+            let dy = pos.y - entity.pos.y;
+            let dist_sqr = dx * dx + dy * dy;
+            dist_sqr <= entity.view_range * entity.view_range
         })
     }
     fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
@@ -184,6 +193,7 @@ impl Model {
             let pos = vec2(x, y);
             if GroundType::Water != self.tiles.get(y).unwrap().get(x).unwrap().ground_type
                 && self.is_empty_tile(pos)
+                && !self.is_under_view(pos)
             {
                 return Some(pos);
             }
