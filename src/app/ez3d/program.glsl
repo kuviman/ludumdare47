@@ -16,11 +16,13 @@ uniform mat4 u_view_matrix;
 
 void main()
 {
+    vec3 pos = a_pos;
+    pos.xy = rotate(pos.xy, i_rotation);
+    vec3 normal = a_normal;
+    normal.xy = rotate(normal.xy, i_rotation);
     float light = AMBIENT + max(0.0, dot(a_normal, normalize(vec3(10.0, 3.0, 5.0)))) * (1.0 - AMBIENT);
     v_color = a_color;
     v_color.xyz *= light;
-    vec3 pos = a_pos;
-    pos.xy = rotate(pos.xy, i_rotation);
     gl_Position = u_projection_matrix * u_view_matrix * vec4(i_pos + pos * i_size, 1.0);
 }
 #endif
