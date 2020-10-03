@@ -31,6 +31,7 @@ pub struct App {
     camera_controls: camera::Controls,
     ez: Ez,
     ez3d: Ez3D,
+    pentagon: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
     model: Model,
@@ -63,6 +64,23 @@ impl App {
             player_id,
             model,
             tile_mesh,
+            pentagon: ugli::VertexBuffer::new_static(geng.ugli(), {
+                const N: usize = 5;
+                (0..=N)
+                    .flat_map(|i| {
+                        (0..2).map(move |j| ez3d::Vertex {
+                            a_pos: Vec2::rotated(
+                                vec2(1.0 - j as f32 * 0.1, 0.0),
+                                2.0 * f32::PI * i as f32 / N as f32,
+                            )
+                            .extend(0.0),
+                            a_normal: vec3(0.0, 0.0, 0.0),
+                            a_emission: 1.0,
+                            a_color: Color::WHITE,
+                        })
+                    })
+                    .collect()
+            }),
             noise: noise::OpenSimplex::new(),
             light,
         }
@@ -120,6 +138,29 @@ impl geng::State for App {
                 i_size: 1.0,
             }),
         );
+
+        if let Some(pos) = self.tile_mesh.intersect(self.camera.pixel_ray(
+            self.framebuffer_size,
+            self.geng.window().mouse_pos().map(|x| x as f32),
+        )) {
+            let tile = pos.xy().map(|x| x as usize);
+            let pos = tile.map(|x| x as f32 + 0.5);
+            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+            self.ez3d.draw_with(
+                framebuffer,
+                &self.camera,
+                &self.light,
+                &self.pentagon,
+                std::iter::once(ez3d::Instance {
+                    i_pos: pos,
+                    i_size: 0.5,
+                    i_rotation: self.noise.get([tile.x as f64, tile.y as f64]) as f32,
+                }),
+                ugli::DrawMode::TriangleStrip,
+                default(),
+            );
+        }
+
         for &(obj, structure_type, size) in &[
             (&self.assets.tree, model::StructureType::Tree, 0.7),
             (&self.assets.campfire, model::StructureType::Campfire, 0.5),

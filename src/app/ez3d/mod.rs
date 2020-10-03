@@ -52,22 +52,42 @@ impl Ez3D {
         vertices: &ugli::VertexBuffer<Vertex>,
         instances: impl Iterator<Item = Instance>,
     ) {
-        let uniforms = (camera.uniforms(framebuffer.size()), light);
-        ugli::draw(
+        self.draw_with(
             framebuffer,
-            &self.program,
+            camera,
+            light,
+            vertices,
+            instances,
             ugli::DrawMode::Triangles,
-            ugli::instanced(
-                vertices,
-                &ugli::VertexBuffer::new_dynamic(self.geng.ugli(), instances.collect()),
-            ),
-            uniforms,
             ugli::DrawParameters {
                 blend_mode: Some(default()),
                 depth_func: Some(default()),
                 cull_face: Some(ugli::CullFace::Back),
                 ..default()
             },
+        );
+    }
+    pub fn draw_with(
+        &self,
+        framebuffer: &mut ugli::Framebuffer,
+        camera: &Camera,
+        light: &light::Uniforms,
+        vertices: &ugli::VertexBuffer<Vertex>,
+        instances: impl Iterator<Item = Instance>,
+        mode: ugli::DrawMode,
+        params: ugli::DrawParameters,
+    ) {
+        let uniforms = (camera.uniforms(framebuffer.size()), light);
+        ugli::draw(
+            framebuffer,
+            &self.program,
+            mode,
+            ugli::instanced(
+                vertices,
+                &ugli::VertexBuffer::new_dynamic(self.geng.ugli(), instances.collect()),
+            ),
+            uniforms,
+            params,
         );
     }
 }
