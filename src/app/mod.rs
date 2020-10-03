@@ -23,6 +23,27 @@ pub struct Assets {
     campfire: ez3d::Obj,
 }
 
+struct EntityData {
+    pos: Vec2<f32>,
+    rotation: f32,
+}
+
+impl EntityData {
+    fn new(entity: &model::Entity) -> Self {
+        Self {
+            pos: entity.pos.map(|x| x as f32 + 0.5),
+            rotation: 0.0,
+        }
+    }
+    fn update(&mut self, entity: &model::Entity, delta_time: f32) {
+        let dpos = entity.pos.map(|x| x as f32 + 0.5) - self.pos;
+        self.pos += dpos * (delta_time * 5.0).min(1.0);
+        if dpos.len() > 0.5 {
+            self.rotation = dpos.arg();
+        }
+    }
+}
+
 pub struct App {
     geng: Rc<Geng>,
     assets: Assets,
@@ -38,7 +59,7 @@ pub struct App {
     tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
     light: light::Uniforms,
-    entity_positions: HashMap<Id, Vec2<f32>>,
+    entity_positions: HashMap<Id, EntityData>,
 }
 
 impl App {
@@ -132,18 +153,19 @@ impl geng::State for App {
         }
 
         for entity in self.model.entities.values() {
-            let mut pos = entity.pos.map(|x| x as f32 + 0.5);
-            if let Some(&prev_pos) = self.entity_positions.get(&entity.id) {
-                pos = prev_pos + (pos - prev_pos) * (delta_time * 5.0).min(1.0);
+            if let Some(prev) = self.entity_positions.get_mut(&entity.id) {
+                prev.update(entity, delta_time);
+            } else {
+                self.entity_positions
+                    .insert(entity.id, EntityData::new(entity));
             }
-            self.entity_positions.insert(entity.id, pos);
         }
         self.entity_positions.retain({
             let model = &self.model;
             move |id, _| model.entities.contains_key(id)
         });
 
-        self.camera.center += (*self.entity_positions.get(&self.player_id).unwrap()
+        self.camera.center += (self.entity_positions.get(&self.player_id).unwrap().pos
             - self.camera.center)
             * (delta_time * 5.0).min(1.0);
         self.camera_controls.update(&mut self.camera, delta_time);
@@ -174,8 +196,8 @@ impl geng::State for App {
             }),
         );
 
-        if let Some(&pos) = self.entity_positions.get(&self.player_id) {
-            self.draw_pentagon(framebuffer, pos, Color::GREEN);
+        if let Some(data) = self.entity_positions.get(&self.player_id) {
+            self.draw_pentagon(framebuffer, data.pos, Color::GREEN);
         }
         if let Some(pos) = self.tile_mesh.intersect(self.camera.pixel_ray(
             self.framebuffer_size,
@@ -237,11 +259,11 @@ impl geng::State for App {
             );
         }
         for entity in &view.entities {
-            let pos = self
+            let (pos, rotation) = self
                 .entity_positions
                 .get(&entity.id)
-                .copied()
-                .unwrap_or(entity.pos.map(|x| x as f32 + 0.5));
+                .map(|data| (data.pos, data.rotation))
+                .unwrap_or((entity.pos.map(|x| x as f32 + 0.5), 0.0));
             let height = self
                 .tile_mesh
                 .get_height(pos)
@@ -255,7 +277,7 @@ impl geng::State for App {
                 std::iter::once(ez3d::Instance {
                     i_pos: pos,
                     i_size: 0.2,
-                    i_rotation: 0.0,
+                    i_rotation: -rotation,
                     i_color: Color::WHITE,
                 }),
             );
@@ -271,9 +293,9 @@ impl geng::State for App {
                     }
                     .vb(),
                     std::iter::once(ez3d::Instance {
-                        i_pos: pos + vec3(0.0, 0.5, 0.6),
+                        i_pos: pos + Vec2::rotated(vec2(0.5, 0.0), rotation).extend(0.6),
                         i_size: 0.3,
-                        i_rotation: 0.0,
+                        i_rotation: -rotation,
                         i_color: Color::WHITE,
                     }),
                 );
