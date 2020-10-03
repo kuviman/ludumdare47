@@ -128,13 +128,19 @@ impl Model {
             result1: Some(Item::Axe),
             result2: None,
         };
+        let recipe3 = Recipe {
+            ingredient1: Some(Item::Axe),
+            ingredient2: Some(StructureType::Tree),
+            result1: Some(Item::Axe),
+            result2: Some(StructureType::Item { item: Item::Stick }),
+        };
         let mut model = Self {
             entity_view_distance: config.player_view_distance,
             size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
             entities: HashMap::new(),
-            recipes: vec![recipe1, recipe2],
+            recipes: vec![recipe1, recipe2, recipe3],
         };
         model.gen_structures();
         model
