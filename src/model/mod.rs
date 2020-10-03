@@ -82,7 +82,7 @@ pub struct Entity {
     pub pos: Vec2<usize>,
     pub size: Vec2<usize>,
     pub view_range: usize,
-    pub move_to: Option<Vec2<usize>>,
+    pub move_to: Option<(Vec2<usize>, bool)>,
     pub item: Option<Item>,
 }
 
@@ -111,8 +111,8 @@ impl Model {
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
             if let Some(move_to) = entity.move_to {
-                let dir_x = (move_to.x as i32 - entity.pos.x as i32).signum();
-                let dir_y = (move_to.y as i32 - entity.pos.y as i32).signum();
+                let dir_x = (move_to.0.x as i32 - entity.pos.x as i32).signum();
+                let dir_y = (move_to.0.y as i32 - entity.pos.y as i32).signum();
                 let new_pos = vec2(
                     (entity.pos.x as i32 + dir_x) as usize,
                     (entity.pos.y as i32 + dir_y) as usize,
@@ -120,7 +120,20 @@ impl Model {
                 if let Some(tile) = self.get_tile(new_pos) {
                     if GroundType::Water != tile.ground_type && self.is_traversable_tile(new_pos) {
                         entity.pos = new_pos;
-                        if new_pos == move_to {
+                        if new_pos == move_to.0 {
+                            if move_to.1 {
+                                if let None = entity.item {
+                                    if let Some((index, structure)) = self.get_structure(new_pos) {
+                                        if let StructureType::Item { item } =
+                                            &structure.structure_type
+                                        {
+                                            let structure = self.structures.remove(index);
+                                            entity.item =
+                                                Some(Self::structure_to_item(structure).1.unwrap());
+                                        }
+                                    }
+                                }
+                            }
                             entity.move_to = None;
                         }
                         *self.entities.get_mut(&id).unwrap() = entity;
@@ -151,7 +164,7 @@ impl Model {
                 println!("Got click at {}:{}", pos, secondary);
                 if pos.x < self.size.x && pos.y < self.size.y {
                     let mut entity = self.entities.get_mut(&player_id).unwrap();
-                    entity.move_to = Some(pos);
+                    entity.move_to = Some((pos, secondary));
                 }
             }
         }
@@ -219,6 +232,19 @@ impl Model {
     }
     fn get_tile(&self, pos: Vec2<usize>) -> Option<&Tile> {
         self.tiles.get(pos.y)?.get(pos.x)
+    }
+    fn get_structure(&self, pos: Vec2<usize>) -> Option<(usize, &Structure)> {
+        self.structures
+            .iter()
+            .enumerate()
+            .find(|(index, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
+    }
+    fn structure_to_item(structure: Structure) -> (Option<Structure>, Option<Item>) {
+        if let StructureType::Item { item } = structure.structure_type {
+            (None, Some(item))
+        } else {
+            (Some(structure), None)
+        }
     }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
         !self
