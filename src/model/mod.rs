@@ -242,10 +242,15 @@ impl Model {
                             *ingredient1 = recipe.result1;
                             if let Some(structure_type) = recipe.result2 {
                                 if let Some((structure_index, _)) = structure {
-                                    self.structures
-                                        .get_mut(structure_index)
-                                        .unwrap()
-                                        .structure_type = structure_type;
+                                    let structure =
+                                        self.structures.get_mut(structure_index).unwrap();
+                                    structure.structure_type = structure_type;
+                                    structure.traversable =
+                                        if let StructureType::Item { item: _ } = structure_type {
+                                            true
+                                        } else {
+                                            false
+                                        };
                                 } else {
                                     self.structures.push(Structure {
                                         pos: move_to.0,
@@ -520,7 +525,6 @@ impl Model {
             .enumerate()
             .find(|(_, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
         {
-            println!("remove");
             self.structures.remove(index);
         }
     }
