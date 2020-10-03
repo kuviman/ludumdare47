@@ -47,10 +47,11 @@ impl Ez3D {
         &self,
         framebuffer: &mut ugli::Framebuffer,
         camera: &Camera,
+        light: &light::Uniforms,
         vertices: &ugli::VertexBuffer<Vertex>,
         instances: impl Iterator<Item = Instance>,
     ) {
-        let uniforms = camera.uniforms(framebuffer.size());
+        let uniforms = (camera.uniforms(framebuffer.size()), light);
         ugli::draw(
             framebuffer,
             &self.program,

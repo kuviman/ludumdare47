@@ -5,6 +5,7 @@ use noise::NoiseFn;
 mod camera;
 mod ez;
 mod ez3d;
+mod light;
 mod tile_mesh;
 
 use camera::Camera;
@@ -34,6 +35,7 @@ pub struct App {
     model: Model,
     tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
+    light: light::Uniforms,
 }
 
 impl App {
@@ -44,6 +46,7 @@ impl App {
         model: Model,
         mut connection: Connection,
     ) -> Self {
+        let light = light::Uniforms::new(&model);
         let view = model.get_view(player_id);
         let tile_mesh = TileMesh::new(geng, &view.tiles, &view.height_map);
         connection.send(ClientMessage::Ping);
@@ -60,6 +63,7 @@ impl App {
             model,
             tile_mesh,
             noise: noise::OpenSimplex::new(),
+            light,
         }
     }
 }
@@ -93,6 +97,8 @@ impl geng::State for App {
     }
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
         self.framebuffer_size = framebuffer.size();
+        self.light = light::Uniforms::new(&self.model);
+
         ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
         self.camera_controls.draw(&mut self.camera, framebuffer);
 
@@ -105,6 +111,7 @@ impl geng::State for App {
         self.ez3d.draw(
             framebuffer,
             &self.camera,
+            &self.light,
             &self.tile_mesh.mesh,
             std::iter::once(ez3d::Instance {
                 i_pos: vec3(0.0, 0.0, 0.0),
@@ -139,6 +146,7 @@ impl geng::State for App {
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
+                &self.light,
                 obj.vb(),
                 view.structures.iter().filter_map(|e| {
                     let pos = e.pos.map(|x| x as f32 + 0.5);
@@ -167,6 +175,7 @@ impl geng::State for App {
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
+                &self.light,
                 self.assets.player.vb(),
                 std::iter::once(ez3d::Instance {
                     i_pos: pos,
@@ -178,6 +187,7 @@ impl geng::State for App {
                 self.ez3d.draw(
                     framebuffer,
                     &self.camera,
+                    &self.light,
                     match item {
                         model::Item::Axe => &self.assets.axe,
                         model::Item::Pebble => &self.assets.pebble,
