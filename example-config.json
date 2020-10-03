@@ -2,5 +2,6 @@
   "map_size": {
     "x": 100,
     "y": 100
-  }
+  },
+  "player_view_distance": 5
 }
