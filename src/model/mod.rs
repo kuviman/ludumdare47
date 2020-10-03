@@ -36,6 +36,7 @@ pub struct Model {
     pub tiles: Vec<Vec<Tile>>,
     pub structures: Vec<Structure>,
     pub entities: HashMap<Id, Entity>,
+    pub recipes: Vec<Recipe>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -93,15 +94,58 @@ pub struct PlayerView {
     pub structures: Vec<Structure>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub struct Recipe {
+    pub ingredient1: Option<Item>,
+    pub ingredient2: Option<StructureType>,
+    pub result1: Option<Item>,
+    pub result2: Option<StructureType>,
+}
+
+impl Recipe {
+    fn ingredients_equal(
+        &self,
+        ingredient1: Option<Item>,
+        ingredient2: Option<StructureType>,
+    ) -> bool {
+        ingredient1 == self.ingredient1 && ingredient2 == self.ingredient2
+    }
+}
+
 impl Model {
     pub const TICKS_PER_SECOND: f32 = 1.0;
     pub fn new(config: Config) -> Self {
+        let recipe1 = Recipe {
+            ingredient1: Some(Item::Stick),
+            ingredient2: None,
+            result1: None,
+            result2: Some(StructureType::Item { item: Item::Stick }),
+        };
+        let recipe2 = Recipe {
+            ingredient1: Some(Item::Pebble),
+            ingredient2: None,
+            result1: None,
+            result2: Some(StructureType::Item { item: Item::Pebble }),
+        };
+        let recipe3 = Recipe {
+            ingredient1: None,
+            ingredient2: Some(StructureType::Item { item: Item::Stick }),
+            result1: Some(Item::Stick),
+            result2: None,
+        };
+        let recipe4 = Recipe {
+            ingredient1: None,
+            ingredient2: Some(StructureType::Item { item: Item::Pebble }),
+            result1: Some(Item::Pebble),
+            result2: None,
+        };
         let mut model = Self {
             entity_view_distance: config.player_view_distance,
             size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
             entities: HashMap::new(),
+            recipes: vec![recipe1, recipe2, recipe3, recipe4],
         };
         model.gen_structures();
         model
@@ -115,17 +159,41 @@ impl Model {
                     if (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
                         && (entity.pos.y as i32 - move_to.0.y as i32).abs() <= 1
                     {
-                        if let Some((index, structure)) = self.get_structure(move_to.0) {
-                            if let None = entity.item {
-                                if let StructureType::Item { item } = &structure.structure_type {
-                                    let structure = self.structures.remove(index);
-                                    entity.item =
-                                        Some(Self::structure_to_item(structure).1.unwrap());
+                        let ingredient1 = &mut entity.item;
+                        let structure = self.get_structure(move_to.0);
+                        let ingredient2 = match structure {
+                            Some((structure_index, structure)) => Some(structure.structure_type),
+                            None => None,
+                        };
+                        let recipe = self
+                            .recipes
+                            .iter()
+                            .find(|recipe| recipe.ingredients_equal(*ingredient1, ingredient2));
+                        if let Some(recipe) = recipe {
+                            *ingredient1 = recipe.result1;
+                            if let Some(structure_type) = recipe.result2 {
+                                if let Some((structure_index, structure)) = structure {
+                                    self.structures
+                                        .get_mut(structure_index)
+                                        .unwrap()
+                                        .structure_type = structure_type;
+                                } else {
+                                    self.structures.push(Structure {
+                                        pos: move_to.0,
+                                        size: vec2(1, 1),
+                                        traversable: if let StructureType::Item { item } =
+                                            structure_type
+                                        {
+                                            true
+                                        } else {
+                                            false
+                                        },
+                                        structure_type: structure_type,
+                                    })
                                 }
+                            } else if let Some((structure_index, structure)) = structure {
+                                self.structures.remove(structure_index);
                             }
-                        } else if let Some(item) = entity.item.take() {
-                            let structure = Self::item_to_structure(item, move_to.0);
-                            self.structures.push(structure);
                         }
                         entity.move_to = None;
                         *self.entities.get_mut(&id).unwrap() = entity;
@@ -249,21 +317,6 @@ impl Model {
             .iter()
             .enumerate()
             .find(|(index, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
-    }
-    fn structure_to_item(structure: Structure) -> (Option<Structure>, Option<Item>) {
-        if let StructureType::Item { item } = structure.structure_type {
-            (None, Some(item))
-        } else {
-            (Some(structure), None)
-        }
-    }
-    fn item_to_structure(item: Item, pos: Vec2<usize>) -> Structure {
-        Structure {
-            pos,
-            size: vec2(1, 1),
-            traversable: true,
-            structure_type: StructureType::Item { item },
-        }
     }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
         !self
