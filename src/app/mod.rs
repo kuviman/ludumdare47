@@ -10,8 +10,14 @@ use ez::Ez;
 use ez3d::Ez3D;
 use tile_mesh::TileMesh;
 
+#[derive(geng::Assets)]
+pub struct Assets {
+    tree: ez3d::Obj,
+}
+
 pub struct App {
     geng: Rc<Geng>,
+    assets: Assets,
     framebuffer_size: Vec2<usize>,
     camera: Camera,
     camera_controls: camera::Controls,
@@ -23,10 +29,17 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(geng: &Rc<Geng>, player_id: Id, model: Model, mut connection: Connection) -> Self {
+    pub fn new(
+        geng: &Rc<Geng>,
+        assets: Assets,
+        player_id: Id,
+        model: Model,
+        mut connection: Connection,
+    ) -> Self {
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
+            assets,
             framebuffer_size: vec2(1, 1),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
@@ -73,6 +86,26 @@ impl geng::State for App {
                 i_size: 1.0,
             }),
         );
+        for &(obj, structure_type) in &[(&self.assets.tree, model::StructureType::Tree)] {
+            self.ez3d.draw(
+                framebuffer,
+                &self.camera,
+                obj.vb(),
+                view.structures.iter().filter_map(|e| {
+                    let pos = e.pos.map(|x| x as f32 + 0.5);
+                    let height = tile_mesh.get_height(pos)?;
+                    let pos = pos.extend(height);
+                    if e.structure_type == structure_type {
+                        Some(ez3d::Instance {
+                            i_pos: pos,
+                            i_size: 1.0,
+                        })
+                    } else {
+                        None
+                    }
+                }),
+            );
+        }
         for structure in view.structures.iter() {
             tiles_to_draw.push((structure.pos, Color::GREEN));
         }

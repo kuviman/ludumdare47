@@ -65,7 +65,7 @@ pub struct Structure {
     pub structure_type: StructureType,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy)]
 pub enum StructureType {
     Pebble,
     Stick,

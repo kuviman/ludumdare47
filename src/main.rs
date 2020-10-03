@@ -33,6 +33,10 @@ struct Opt {
 }
 
 fn main() {
+    if let Some(dir) = std::env::var_os("CARGO_MANIFEST_DIR") {
+        std::env::set_current_dir(std::path::Path::new(&dir).join("static")).unwrap();
+    }
+
     logger::init().unwrap();
     let opt: Opt = StructOpt::from_args();
     let addr = opt
@@ -98,6 +102,9 @@ fn main() {
                     let geng = geng.clone();
                     let addr = format!("{}://{}", option_env!("WSS").unwrap_or("ws"), addr);
                     async move {
+                        let assets = geng::LoadAsset::load(&geng, ".")
+                            .await
+                            .expect("Failed to load assets");
                         let connection = geng::net::client::connect(&addr).await;
                         let (message, connection) = connection.into_future().await;
                         let player_id = match message {
@@ -109,7 +116,7 @@ fn main() {
                             Some(ServerMessage::Model(model)) => model,
                             _ => unreachable!(),
                         };
-                        App::new(&geng, player_id, model, connection)
+                        App::new(&geng, assets, player_id, model, connection)
                     }
                 },
                 |app| app,

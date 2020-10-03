@@ -56,4 +56,17 @@ impl TileMesh {
             mesh: ugli::VertexBuffer::new_dynamic(geng.ugli(), mesh),
         }
     }
+    pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
+        let pos_f = pos.map(|x| x.fract());
+        let pos = pos.map(|x| x as usize);
+        let h00 = self.tiles.get(&pos)?.height;
+        let h01 = self.tiles.get(&(pos + vec2(0, 1)))?.height;
+        let h11 = self.tiles.get(&(pos + vec2(1, 1)))?.height;
+        let h10 = self.tiles.get(&(pos + vec2(1, 0)))?.height;
+        Some(if pos_f.y < pos_f.x {
+            h00 * (1.0 - pos_f.x) + (h10 * (1.0 - pos_f.y) + h11 * pos_f.y) * pos_f.x / 2.0
+        } else {
+            h00 * (1.0 - pos_f.y) + (h01 * (1.0 - pos_f.x) + h11 * pos_f.x) * pos_f.y / 2.0
+        })
+    }
 }

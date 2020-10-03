@@ -1,6 +1,10 @@
 use super::*;
 
-#[derive(ugli::Vertex)]
+mod obj;
+
+pub use obj::*;
+
+#[derive(ugli::Vertex, Debug, Clone)]
 pub struct Vertex {
     pub a_pos: Vec3<f32>,
     pub a_color: Color<f32>,
