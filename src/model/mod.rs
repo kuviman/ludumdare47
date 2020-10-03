@@ -365,7 +365,9 @@ impl Model {
         }
         player_id
     }
-    pub fn drop_player(&mut self, player_id: Id) {}
+    pub fn drop_player(&mut self, player_id: Id) {
+        self.entities.remove(&player_id);
+    }
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         match message {
             Message::Ping => println!("Got ping message"),
