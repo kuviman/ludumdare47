@@ -17,6 +17,7 @@ pub struct Assets {
     tree: ez3d::Obj,
     pebble: ez3d::Obj,
     stick: ez3d::Obj,
+    player: ez3d::Obj,
 }
 
 pub struct App {
@@ -98,7 +99,7 @@ impl geng::State for App {
             }),
         );
         for &(obj, structure_type, size) in &[
-            (&self.assets.tree, model::StructureType::Tree, 0.5),
+            (&self.assets.tree, model::StructureType::Tree, 0.7),
             (
                 &self.assets.pebble,
                 model::StructureType::Item {
@@ -135,9 +136,24 @@ impl geng::State for App {
                 }),
             );
         }
-        for entity in view.entities.iter() {
-            tiles_to_draw.push((entity.pos, Color::RED));
-        }
+        self.ez3d.draw(
+            framebuffer,
+            &self.camera,
+            self.assets.player.vb(),
+            view.entities.iter().map(|e| {
+                let pos = e.pos.map(|x| x as f32 + 0.5);
+                let height = self
+                    .tile_mesh
+                    .get_height(pos)
+                    .expect("Failed to get player's height");
+                let pos = pos.extend(height);
+                ez3d::Instance {
+                    i_pos: pos,
+                    i_size: 0.2,
+                    i_rotation: 0.0,
+                }
+            }),
+        );
         self.ez.quads(
             framebuffer,
             &self.camera,
