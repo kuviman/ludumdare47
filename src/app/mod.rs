@@ -13,6 +13,8 @@ use tile_mesh::TileMesh;
 #[derive(geng::Assets)]
 pub struct Assets {
     tree: ez3d::Obj,
+    pebble: ez3d::Obj,
+    stick: ez3d::Obj,
 }
 
 pub struct App {
@@ -86,8 +88,23 @@ impl geng::State for App {
                 i_size: 1.0,
             }),
         );
-        for &(obj, structure_type, size) in &[(&self.assets.tree, model::StructureType::Tree, 0.5)]
-        {
+        for &(obj, structure_type, size) in &[
+            (&self.assets.tree, model::StructureType::Tree, 0.5),
+            (
+                &self.assets.pebble,
+                model::StructureType::Item {
+                    item: model::Item::Pebble,
+                },
+                0.2,
+            ),
+            (
+                &self.assets.stick,
+                model::StructureType::Item {
+                    item: model::Item::Stick,
+                },
+                0.5,
+            ),
+        ] {
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
@@ -95,7 +112,7 @@ impl geng::State for App {
                 view.structures.iter().filter_map(|e| {
                     let pos = e.pos.map(|x| x as f32 + 0.5);
                     let height = tile_mesh.get_height(pos)?;
-                    let pos = pos.extend(height);
+                    let pos = pos.extend(height + 0.1);
                     if e.structure_type == structure_type {
                         Some(ez3d::Instance {
                             i_pos: pos,
