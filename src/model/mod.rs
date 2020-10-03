@@ -102,17 +102,18 @@ impl Model {
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
             if let Some(move_to) = entity.move_to {
-                let dir = vec2(
-                    (move_to.x as i32 - entity.pos.x as i32).signum(),
-                    (move_to.y as i32 - entity.pos.y as i32).signum(),
-                );
+                let dir_x = (move_to.x as i32 - entity.pos.x as i32).signum();
+                let dir_y = (move_to.y as i32 - entity.pos.y as i32).signum();
                 let new_pos = vec2(
-                    (entity.pos.x as i32 + dir.x) as usize,
-                    (entity.pos.y as i32 + dir.y) as usize,
+                    (entity.pos.x as i32 + dir_x) as usize,
+                    (entity.pos.y as i32 + dir_y) as usize,
                 );
                 if let Some(tile) = self.get_tile(new_pos) {
                     if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
                         entity.pos = new_pos;
+                        if new_pos == move_to {
+                            entity.move_to = None;
+                        }
                         *self.entities.get_mut(&id).unwrap() = entity;
                     }
                 }
