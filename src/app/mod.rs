@@ -138,7 +138,7 @@ impl geng::State for App {
             .pos
             .map(|x| x as f32 + 0.5)
             - self.camera.center)
-            * delta_time;
+            * (delta_time * 5.0).min(1.0);
         self.camera_controls.update(&mut self.camera, delta_time);
     }
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
