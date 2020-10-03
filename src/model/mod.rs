@@ -48,6 +48,8 @@ pub struct Model {
     pub current_time: usize,
     pub day_length: usize,
     pub night_length: usize,
+    pub regeneration_percent: f32,
+    generation_choices: Vec<(Option<Structure>, usize)>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -152,6 +154,32 @@ impl Model {
             result1: None,
             result2: Some(StructureType::Campfire),
         };
+        let basic_structure = Structure {
+            pos: vec2(0, 0),
+            size: vec2(1, 1),
+            traversable: false,
+            structure_type: StructureType::Tree,
+        };
+        let generation_choices = vec![
+            (None, 300),
+            (Some(basic_structure.clone()), 10),
+            (
+                Some(Structure {
+                    traversable: true,
+                    structure_type: StructureType::Item { item: Item::Pebble },
+                    ..basic_structure
+                }),
+                30,
+            ),
+            (
+                Some(Structure {
+                    traversable: true,
+                    structure_type: StructureType::Item { item: Item::Stick },
+                    ..basic_structure
+                }),
+                30,
+            ),
+        ];
         let (tiles, height_map) = Self::generate_map(config.map_size);
         let mut model = Self {
             entity_day_view_distance: config.player_day_view_distance,
@@ -165,8 +193,17 @@ impl Model {
             current_time: 0,
             day_length: config.day_length,
             night_length: config.night_length,
+            regeneration_percent: 0.1,
+            generation_choices,
         };
-        model.gen_structures();
+        for y in 0..model.size.y {
+            for x in 0..model.size.x {
+                let pos = vec2(x, y);
+                if model.is_spawnable_tile(pos) {
+                    model.generate_tile(pos);
+                }
+            }
+        }
         model
     }
     pub fn tick(&mut self) {
@@ -270,6 +307,19 @@ impl Model {
                 }
             }
             *self.entities.get_mut(&id).unwrap() = entity;
+        }
+        for y in 0..self.size.y {
+            for x in 0..self.size.x {
+                if global_rng().gen_range(0.0, 1.0) < self.regeneration_percent {
+                    let pos = vec2(x, y);
+                    if !self.is_under_view(pos) {
+                        self.remove_at(pos);
+                    }
+                    if self.is_spawnable_tile(pos) {
+                        self.generate_tile(pos);
+                    }
+                }
+            }
         }
     }
     pub fn new_player(&mut self) -> Id {
@@ -446,31 +496,32 @@ impl Model {
         }
         (tiles, height_map)
     }
-    fn gen_structures(&mut self) {
-        self.spawn_structure(10, |pos| Structure {
-            pos,
-            size: vec2(1, 1),
-            traversable: false,
-            structure_type: StructureType::Tree,
-        });
-        self.spawn_structure(self.size.x / 2, |pos| Structure {
-            pos,
-            size: vec2(1, 1),
-            traversable: true,
-            structure_type: StructureType::Item { item: Item::Pebble },
-        });
-        self.spawn_structure(self.size.x / 2, |pos| Structure {
-            pos,
-            size: vec2(1, 1),
-            traversable: true,
-            structure_type: StructureType::Item { item: Item::Stick },
-        });
+    fn generate_tile(&mut self, pos: Vec2<usize>) {
+        let mut rng = global_rng();
+        let choice = &self
+            .generation_choices
+            .choose_weighted(&mut rng, |item| item.1)
+            .unwrap()
+            .0;
+        if let Some(structure) = choice {
+            let structure = Structure { pos, ..*structure };
+            self.structures.push(structure);
+        }
     }
-    fn spawn_structure(&mut self, count: usize, structure: fn(Vec2<usize>) -> Structure) {
-        for _ in 0..count {
-            if let Some(pos) = self.get_spawnable_pos() {
-                self.structures.push(structure(pos));
-            }
+    fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
+        self.get_tile(pos).unwrap().ground_type != GroundType::Water
+            && self.is_empty_tile(pos)
+            && !self.is_under_view(pos)
+    }
+    fn remove_at(&mut self, pos: Vec2<usize>) {
+        if let Some((index, _)) = self
+            .structures
+            .iter()
+            .enumerate()
+            .find(|(_, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
+        {
+            println!("remove");
+            self.structures.remove(index);
         }
     }
     fn get_spawnable_pos(&self) -> Option<Vec2<usize>> {
@@ -478,10 +529,7 @@ impl Model {
         for y in 0..self.size.y {
             for x in 0..self.size.x {
                 let pos = vec2(x, y);
-                if GroundType::Water != self.tiles.get(y).unwrap().get(x).unwrap().ground_type
-                    && self.is_empty_tile(pos)
-                    && !self.is_under_view(pos)
-                {
+                if self.is_spawnable_tile(pos) {
                     positions.push(pos);
                 }
             }
