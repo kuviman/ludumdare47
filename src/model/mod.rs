@@ -186,7 +186,6 @@ impl Model {
             }
             entity.view_range = self.entity_night_view_distance
                 + t * (self.entity_day_view_distance - self.entity_night_view_distance) as f32;
-            println!("{}, {}, {}, {}", time, day, night, entity.view_range);
             if let Some(move_to) = entity.move_to {
                 if move_to.1 {
                     if (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
@@ -303,23 +302,13 @@ impl Model {
     pub fn get_view(&mut self, player_id: Id) -> PlayerView {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = vec![];
-        view.push(entity.pos.clone());
-        for x0 in 1..(entity.view_range.round() as usize) {
-            view.push(vec2(x0, 0) + entity.pos);
-            view.push(vec2(entity.pos.x - x0, entity.pos.y));
-        }
-        for y in 1..(entity.view_range.round() as usize + 1) {
-            let x = (entity.view_range * entity.view_range - y as f32 * y as f32)
-                .sqrt()
-                .round() as usize;
-            view.push(vec2(entity.pos.x, entity.pos.y + y));
-            view.push(vec2(entity.pos.x, entity.pos.y - y));
-            for x0 in 1..x {
-                view.push(vec2(entity.pos.x + x0, entity.pos.y + y));
-                view.push(vec2(entity.pos.x + x0, entity.pos.y - y));
-                view.push(vec2(entity.pos.x - x0, entity.pos.y + y));
-                view.push(vec2(entity.pos.x - x0, entity.pos.y - y));
-            }
+        Self::add_view_radius(&mut view, entity.pos, entity.view_range);
+        for light_source in self
+            .structures
+            .iter()
+            .filter(|structure| structure.structure_type == StructureType::Campfire)
+        {
+            Self::add_view_radius(&mut view, light_source.pos, 5.0);
         }
 
         let vision = PlayerView {
@@ -351,6 +340,24 @@ impl Model {
                 .collect(),
         };
         vision
+    }
+    fn add_view_radius(view: &mut Vec<Vec2<usize>>, center_pos: Vec2<usize>, radius: f32) {
+        view.push(center_pos.clone());
+        for x0 in 1..(radius.round() as usize) {
+            view.push(vec2(x0, 0) + center_pos);
+            view.push(vec2(center_pos.x - x0, center_pos.y));
+        }
+        for y in 1..(radius.round() as usize + 1) {
+            let x = (radius * radius - y as f32 * y as f32).sqrt().round() as usize;
+            view.push(vec2(center_pos.x, center_pos.y + y));
+            view.push(vec2(center_pos.x, center_pos.y - y));
+            for x0 in 1..x {
+                view.push(vec2(center_pos.x + x0, center_pos.y + y));
+                view.push(vec2(center_pos.x + x0, center_pos.y - y));
+                view.push(vec2(center_pos.x - x0, center_pos.y + y));
+                view.push(vec2(center_pos.x - x0, center_pos.y - y));
+            }
+        }
     }
     fn get_tile(&self, pos: Vec2<usize>) -> Option<&Tile> {
         self.tiles.get(pos.y)?.get(pos.x)
