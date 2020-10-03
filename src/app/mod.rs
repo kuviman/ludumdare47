@@ -1,5 +1,7 @@
 use super::*;
 
+use noise::NoiseFn;
+
 mod camera;
 mod ez;
 mod ez3d;
@@ -28,6 +30,7 @@ pub struct App {
     connection: Connection,
     player_id: Id,
     model: Model,
+    noise: noise::OpenSimplex,
 }
 
 impl App {
@@ -50,6 +53,7 @@ impl App {
             connection,
             player_id,
             model,
+            noise: noise::OpenSimplex::new(),
         }
     }
 }
@@ -85,6 +89,7 @@ impl geng::State for App {
             &tile_mesh.mesh,
             std::iter::once(ez3d::Instance {
                 i_pos: vec3(0.0, 0.0, 0.0),
+                i_rotation: 0.0,
                 i_size: 1.0,
             }),
         );
@@ -117,6 +122,8 @@ impl geng::State for App {
                         Some(ez3d::Instance {
                             i_pos: pos,
                             i_size: size,
+                            i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32
+                                * f32::PI,
                         })
                     } else {
                         None
