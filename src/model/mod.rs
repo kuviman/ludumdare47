@@ -122,8 +122,8 @@ impl Model {
                         entity.pos = new_pos;
                         if new_pos == move_to.0 {
                             if move_to.1 {
-                                if let None = entity.item {
-                                    if let Some((index, structure)) = self.get_structure(new_pos) {
+                                if let Some((index, structure)) = self.get_structure(new_pos) {
+                                    if let None = entity.item {
                                         if let StructureType::Item { item } =
                                             &structure.structure_type
                                         {
@@ -132,6 +132,9 @@ impl Model {
                                                 Some(Self::structure_to_item(structure).1.unwrap());
                                         }
                                     }
+                                } else if let Some(item) = entity.item.take() {
+                                    let structure = Self::item_to_structure(item, entity.pos);
+                                    self.structures.push(structure);
                                 }
                             }
                             entity.move_to = None;
@@ -244,6 +247,14 @@ impl Model {
             (None, Some(item))
         } else {
             (Some(structure), None)
+        }
+    }
+    fn item_to_structure(item: Item, pos: Vec2<usize>) -> Structure {
+        Structure {
+            pos,
+            size: vec2(1, 1),
+            traversable: true,
+            structure_type: StructureType::Item { item },
         }
     }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
