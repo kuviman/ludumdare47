@@ -24,26 +24,32 @@ impl TileMesh {
             let p10 = tile10.pos.map(|x| x as f32).extend(tile10.height);
             mesh.push(ez3d::Vertex {
                 a_pos: p00,
+                a_normal: vec3(0.0, 0.0, 0.0),
                 a_color,
             });
             mesh.push(ez3d::Vertex {
                 a_pos: p10,
+                a_normal: vec3(0.0, 0.0, 0.0),
                 a_color,
             });
             mesh.push(ez3d::Vertex {
                 a_pos: p11,
+                a_normal: vec3(0.0, 0.0, 0.0),
                 a_color,
             });
             mesh.push(ez3d::Vertex {
                 a_pos: p00,
+                a_normal: vec3(0.0, 0.0, 0.0),
                 a_color,
             });
             mesh.push(ez3d::Vertex {
                 a_pos: p11,
+                a_normal: vec3(0.0, 0.0, 0.0),
                 a_color,
             });
             mesh.push(ez3d::Vertex {
                 a_pos: p01,
+                a_normal: vec3(0.0, 0.0, 0.0),
                 a_color,
             });
             Some(())
@@ -51,6 +57,7 @@ impl TileMesh {
         for tile00 in tiles.values() {
             append(tile00);
         }
+        ez3d::calc_normals(&mut mesh);
         Self {
             tiles,
             mesh: ugli::VertexBuffer::new_dynamic(geng.ugli(), mesh),
@@ -64,9 +71,9 @@ impl TileMesh {
         let h11 = self.tiles.get(&(pos + vec2(1, 1)))?.height;
         let h10 = self.tiles.get(&(pos + vec2(1, 0)))?.height;
         Some(if pos_f.y < pos_f.x {
-            h00 * (1.0 - pos_f.x) + (h10 * (1.0 - pos_f.y) + h11 * pos_f.y) * pos_f.x / 2.0
+            h00 * (1.0 - pos_f.x) + (h10 * (1.0 - pos_f.y) + h11 * pos_f.y) * pos_f.x
         } else {
-            h00 * (1.0 - pos_f.y) + (h01 * (1.0 - pos_f.x) + h11 * pos_f.x) * pos_f.y / 2.0
+            h00 * (1.0 - pos_f.y) + (h01 * (1.0 - pos_f.x) + h11 * pos_f.x) * pos_f.y
         })
     }
 }

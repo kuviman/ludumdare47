@@ -112,7 +112,7 @@ impl geng::State for App {
                 view.structures.iter().filter_map(|e| {
                     let pos = e.pos.map(|x| x as f32 + 0.5);
                     let height = tile_mesh.get_height(pos)?;
-                    let pos = pos.extend(height + 0.1);
+                    let pos = pos.extend(height);
                     if e.structure_type == structure_type {
                         Some(ez3d::Instance {
                             i_pos: pos,

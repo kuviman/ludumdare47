@@ -58,6 +58,7 @@ impl geng::LoadAsset for Obj {
                         let i_vn: usize = parts.next().unwrap().parse().unwrap();
                         Vertex {
                             a_pos: v[i_v - 1],
+                            a_normal: vec3(0.0, 0.0, 0.0),
                             a_color: color,
                             // a_vn: vn[i_vn - 1],
                             // a_vt: vt[i_vt - 1],
@@ -90,10 +91,11 @@ impl geng::LoadAsset for Obj {
             }
             for vertex in &mut mesh {
                 fn fix(v: Vec3<f32>) -> Vec3<f32> {
-                    vec3(v.x, v.z, v.y)
+                    vec3(v.x, -v.z, v.y)
                 }
                 vertex.a_pos = fix(vertex.a_pos);
             }
+            calc_normals(&mut mesh);
             Ok(Self {
                 vb: ugli::VertexBuffer::new_static(geng.ugli(), mesh),
             })
