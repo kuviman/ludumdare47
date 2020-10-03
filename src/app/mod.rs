@@ -149,24 +149,41 @@ impl geng::State for App {
                 }),
             );
         }
-        self.ez3d.draw(
-            framebuffer,
-            &self.camera,
-            self.assets.player.vb(),
-            view.entities.iter().map(|e| {
-                let pos = e.pos.map(|x| x as f32 + 0.5);
-                let height = self
-                    .tile_mesh
-                    .get_height(pos)
-                    .expect("Failed to get player's height");
-                let pos = pos.extend(height);
-                ez3d::Instance {
+        for entity in &view.entities {
+            let pos = entity.pos.map(|x| x as f32 + 0.5);
+            let height = self
+                .tile_mesh
+                .get_height(pos)
+                .expect("Failed to get player's height");
+            let pos = pos.extend(height);
+            self.ez3d.draw(
+                framebuffer,
+                &self.camera,
+                self.assets.player.vb(),
+                std::iter::once(ez3d::Instance {
                     i_pos: pos,
                     i_size: 0.2,
                     i_rotation: 0.0,
-                }
-            }),
-        );
+                }),
+            );
+            if let Some(item) = &entity.item {
+                self.ez3d.draw(
+                    framebuffer,
+                    &self.camera,
+                    match item {
+                        model::Item::Axe => &self.assets.stick,
+                        model::Item::Pebble => &self.assets.pebble,
+                        model::Item::Stick => &self.assets.stick,
+                    }
+                    .vb(),
+                    std::iter::once(ez3d::Instance {
+                        i_pos: pos + vec3(0.0, 0.5, 0.6),
+                        i_size: 0.3,
+                        i_rotation: 0.0,
+                    }),
+                );
+            }
+        }
         self.ez.quads(
             framebuffer,
             &self.camera,
