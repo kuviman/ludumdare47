@@ -85,6 +85,33 @@ impl App {
             light,
         }
     }
+
+    fn draw_pentagon(
+        &self,
+        framebuffer: &mut ugli::Framebuffer,
+        tile: Vec2<usize>,
+        color: Color<f32>,
+    ) {
+        let pos = tile.map(|x| x as f32 + 0.5);
+        let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+        self.ez3d.draw_with(
+            framebuffer,
+            &self.camera,
+            &self.light,
+            &self.pentagon,
+            std::iter::once(ez3d::Instance {
+                i_pos: pos,
+                i_size: 0.5,
+                i_rotation: self.noise.get([tile.x as f64, tile.y as f64]) as f32,
+                i_color: color,
+            }),
+            ugli::DrawMode::TriangleStrip,
+            ugli::DrawParameters {
+                blend_mode: Some(default()),
+                ..default()
+            },
+        );
+    }
 }
 
 impl geng::State for App {
@@ -136,28 +163,23 @@ impl geng::State for App {
                 i_pos: vec3(0.0, 0.0, 0.0),
                 i_rotation: 0.0,
                 i_size: 1.0,
+                i_color: Color::WHITE,
             }),
         );
 
+        self.draw_pentagon(
+            framebuffer,
+            self.model.entities.get(&self.player_id).unwrap().pos,
+            Color::GREEN,
+        );
         if let Some(pos) = self.tile_mesh.intersect(self.camera.pixel_ray(
             self.framebuffer_size,
             self.geng.window().mouse_pos().map(|x| x as f32),
         )) {
-            let tile = pos.xy().map(|x| x as usize);
-            let pos = tile.map(|x| x as f32 + 0.5);
-            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
-            self.ez3d.draw_with(
+            self.draw_pentagon(
                 framebuffer,
-                &self.camera,
-                &self.light,
-                &self.pentagon,
-                std::iter::once(ez3d::Instance {
-                    i_pos: pos,
-                    i_size: 0.5,
-                    i_rotation: self.noise.get([tile.x as f64, tile.y as f64]) as f32,
-                }),
-                ugli::DrawMode::TriangleStrip,
-                default(),
+                pos.xy().map(|x| x as usize),
+                Color::rgba(1.0, 1.0, 1.0, 0.5),
             );
         }
 
@@ -201,6 +223,7 @@ impl geng::State for App {
                             i_size: size,
                             i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32
                                 * f32::PI,
+                            i_color: Color::WHITE,
                         })
                     } else {
                         None
@@ -224,6 +247,7 @@ impl geng::State for App {
                     i_pos: pos,
                     i_size: 0.2,
                     i_rotation: 0.0,
+                    i_color: Color::WHITE,
                 }),
             );
             if let Some(item) = &entity.item {
@@ -241,6 +265,7 @@ impl geng::State for App {
                         i_pos: pos + vec3(0.0, 0.5, 0.6),
                         i_size: 0.3,
                         i_rotation: 0.0,
+                        i_color: Color::WHITE,
                     }),
                 );
             }

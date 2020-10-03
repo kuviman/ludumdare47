@@ -27,6 +27,7 @@ pub struct Instance {
     pub i_pos: Vec3<f32>,
     pub i_size: f32,
     pub i_rotation: f32,
+    pub i_color: Color<f32>,
 }
 
 pub struct Ez3D {
