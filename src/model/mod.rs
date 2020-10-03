@@ -38,6 +38,7 @@ pub struct Model {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {
     Ping,
+    Click { pos: Vec2<usize>, secondary: bool },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq)]
@@ -124,6 +125,7 @@ impl Model {
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         match message {
             Message::Ping => println!("Got ping message"),
+            Message::Click { pos, secondary } => println!("Got click at {}:{}", pos, secondary),
         }
     }
     pub fn get_view(&mut self, player_id: Id) -> PlayerView {

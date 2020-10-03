@@ -8,6 +8,7 @@ use ez::Ez;
 
 pub struct App {
     geng: Rc<Geng>,
+    framebuffer_size: Vec2<usize>,
     camera: Camera,
     camera_controls: camera::Controls,
     ez: Ez,
@@ -21,6 +22,7 @@ impl App {
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
+            framebuffer_size: vec2(1, 1),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
             ez: Ez::new(geng),
@@ -46,6 +48,7 @@ impl geng::State for App {
         self.camera_controls.update(&mut self.camera, delta_time);
     }
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
+        self.framebuffer_size = framebuffer.size();
         ugli::clear(framebuffer, Some(Color::BLACK), None);
         self.camera_controls.draw(&mut self.camera, framebuffer);
         let mut tiles_to_draw = Vec::new();
@@ -76,6 +79,28 @@ impl geng::State for App {
         );
     }
     fn handle_event(&mut self, event: geng::Event) {
+        match event {
+            geng::Event::MouseDown { position, button } => {
+                let pos = self
+                    .camera
+                    .screen_to_world(self.framebuffer_size, position.map(|x| x as f32));
+                if pos.x >= 0.0 && pos.y >= 0.0 {
+                    let pos = pos.map(|x| x as usize);
+                    match button {
+                        geng::MouseButton::Left => self.connection.send(ClientMessage::Click {
+                            pos,
+                            secondary: false,
+                        }),
+                        geng::MouseButton::Right => self.connection.send(ClientMessage::Click {
+                            pos,
+                            secondary: true,
+                        }),
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
         self.camera_controls.handle_event(&mut self.camera, &event);
     }
 }
