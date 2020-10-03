@@ -70,6 +70,7 @@ pub struct Structure {
 pub enum StructureType {
     Item { item: Item },
     Tree,
+    Campfire,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy)]
@@ -134,13 +135,19 @@ impl Model {
             result1: Some(Item::Axe),
             result2: Some(StructureType::Item { item: Item::Stick }),
         };
+        let recipe4 = Recipe {
+            ingredient1: Some(Item::Stick),
+            ingredient2: Some(StructureType::Item { item: Item::Stick }),
+            result1: None,
+            result2: Some(StructureType::Campfire),
+        };
         let mut model = Self {
             entity_view_distance: config.player_view_distance,
             size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
             entities: HashMap::new(),
-            recipes: vec![recipe1, recipe2, recipe3],
+            recipes: vec![recipe1, recipe2, recipe3, recipe4],
         };
         model.gen_structures();
         model
