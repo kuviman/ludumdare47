@@ -61,7 +61,7 @@ impl geng::State for App {
         for structure in self.model.structures.iter() {
             tiles_to_draw.push((structure.pos, Color::GREEN));
         }
-        for entity in self.model.entities.iter() {
+        for entity in self.model.entities.values() {
             tiles_to_draw.push((entity.pos, Color::RED));
         }
         self.ez.quads(

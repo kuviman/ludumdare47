@@ -32,7 +32,7 @@ pub struct Model {
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
     pub structures: Vec<Structure>,
-    pub entities: Vec<Entity>,
+    pub entities: HashMap<Id, Entity>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -78,14 +78,15 @@ impl Model {
             size: config.map_size,
             tiles: Self::generate_tiles(config.map_size),
             structures: vec![],
-            entities: vec![],
+            entities: HashMap::new(),
         };
         model.gen_structures();
         model
     }
     pub fn tick(&mut self) {
-        for i in 0..self.entities.len() {
-            let mut entity = self.entities[i].clone();
+        let ids: Vec<Id> = self.entities.keys().copied().collect();
+        for id in ids {
+            let mut entity = self.entities.get(&id).unwrap().clone();
             let dir = Self::get_random_dir();
             let new_pos = vec2(
                 (entity.pos.x as i32 + dir.x) as usize,
@@ -94,22 +95,22 @@ impl Model {
             if let Some(tile) = self.get_tile(new_pos) {
                 if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
                     entity.pos = new_pos;
-                    self.entities[i] = entity;
+                    *self.entities.get_mut(&id).unwrap() = entity;
                 }
             }
         }
     }
     pub fn new_player(&mut self) -> Id {
+        let id = Id::new();
         if let Some(pos) = self.get_spawnable_pos(100) {
             let entity = Entity {
                 pos,
                 size: vec2(1, 1),
                 view_range: 3,
             };
-            self.entities.push(entity);
+            self.entities.insert(id, entity);
         }
-
-        Id::new()
+        id
     }
     pub fn drop_player(&mut self, player_id: Id) {}
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
@@ -126,7 +127,7 @@ impl Model {
                 && pos.x <= structure.pos.x + structure.size.x - 1
                 && pos.y >= structure.pos.y
                 && pos.y <= structure.pos.y + structure.size.y - 1
-        }) && !self.entities.iter().any(|entity| {
+        }) && !self.entities.values().any(|entity| {
             pos.x >= entity.pos.x
                 && pos.x <= entity.pos.x + entity.size.x - 1
                 && pos.y >= entity.pos.y
@@ -134,7 +135,7 @@ impl Model {
         })
     }
     fn is_under_view(&self, pos: Vec2<usize>) -> bool {
-        self.entities.iter().any(|entity| {
+        self.entities.values().any(|entity| {
             let dx = pos.x - entity.pos.x;
             let dy = pos.y - entity.pos.y;
             let dist_sqr = dx * dx + dy * dy;
