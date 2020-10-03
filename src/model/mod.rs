@@ -175,7 +175,17 @@ impl Model {
                     let tile_row = self.tiles.get(y).unwrap();
                     for x in 0..self.size.x {
                         let pos = vec2(x, y);
-                        if view.contains(&pos) {
+                        let mut visible = view.contains(&pos);
+                        if pos.x > 0 {
+                            visible = visible || view.contains(&vec2(pos.x - 1, pos.y));
+                        }
+                        if pos.y > 0 {
+                            visible = visible || view.contains(&vec2(pos.x, pos.y - 1));
+                        }
+                        if pos.x > 0 && pos.y > 0 {
+                            visible = visible || view.contains(&vec2(pos.x - 1, pos.y - 1));
+                        }
+                        if visible {
                             tiles.push(tile_row.get(x).unwrap().clone());
                         }
                     }

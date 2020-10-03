@@ -106,13 +106,6 @@ impl geng::State for App {
         let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 
         let view = self.model.get_view(self.player_id);
-        for tile in view.tiles.iter() {
-            let color = match tile.ground_type {
-                model::GroundType::Water => Color::BLUE,
-                model::GroundType::Sand => Color::YELLOW,
-            };
-            tiles_to_draw.push((tile.pos, color));
-        }
         self.ez3d.draw(
             framebuffer,
             &self.camera,
