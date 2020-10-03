@@ -124,9 +124,6 @@ impl geng::State for App {
                 }),
             );
         }
-        for structure in view.structures.iter() {
-            tiles_to_draw.push((structure.pos, Color::GREEN));
-        }
         for entity in view.entities.iter() {
             tiles_to_draw.push((entity.pos, Color::RED));
         }
