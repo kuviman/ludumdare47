@@ -187,18 +187,24 @@ impl Model {
         }
     }
     fn get_spawnable_pos(&self, max_attempts: usize) -> Option<Vec2<usize>> {
-        for _ in 0..max_attempts {
-            let x = global_rng().gen_range(0, self.size.x);
-            let y = global_rng().gen_range(0, self.size.y);
-            let pos = vec2(x, y);
-            if GroundType::Water != self.tiles.get(y).unwrap().get(x).unwrap().ground_type
-                && self.is_empty_tile(pos)
-                && !self.is_under_view(pos)
-            {
-                return Some(pos);
+        let mut positions = vec![];
+        for y in 0..self.size.y {
+            for x in 0..self.size.x {
+                let pos = vec2(x, y);
+                if GroundType::Water != self.tiles.get(y).unwrap().get(x).unwrap().ground_type
+                    && self.is_empty_tile(pos)
+                    && !self.is_under_view(pos)
+                {
+                    positions.push(pos);
+                }
             }
         }
-        None
+        let length = positions.len();
+        if length > 0 {
+            positions.get(global_rng().gen_range(0, length)).copied()
+        } else {
+            None
+        }
     }
     fn get_random_dir() -> Vec2<i32> {
         let x = global_rng().gen_range(-1, 2);
