@@ -79,7 +79,7 @@ impl geng::State for App {
 
         let view = self.model.get_view(self.player_id);
 
-        let tile_mesh = TileMesh::new(&self.geng, &view.tiles);
+        let tile_mesh = TileMesh::new(&self.geng, &view.tiles, &view.height_map);
 
         let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 

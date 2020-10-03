@@ -37,6 +37,7 @@ impl Default for Config {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
+    pub height_map: Vec<Vec<f32>>,
     pub entity_day_view_distance: f32,
     pub entity_night_view_distance: f32,
     pub size: Vec2<usize>,
@@ -64,7 +65,6 @@ pub enum GroundType {
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Tile {
     pub pos: Vec2<usize>,
-    pub height: f32,
     pub ground_type: GroundType,
 }
 
@@ -101,6 +101,7 @@ pub struct Entity {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct PlayerView {
+    pub height_map: Vec<Vec<f32>>,
     pub tiles: Vec<Tile>,
     pub entities: Vec<Entity>,
     pub structures: Vec<Structure>,
@@ -151,11 +152,13 @@ impl Model {
             result1: None,
             result2: Some(StructureType::Campfire),
         };
+        let (tiles, height_map) = Self::generate_map(config.map_size);
         let mut model = Self {
             entity_day_view_distance: config.player_day_view_distance,
             entity_night_view_distance: config.player_night_view_distance,
             size: config.map_size,
-            tiles: Self::generate_tiles(config.map_size),
+            tiles,
+            height_map,
             structures: vec![],
             entities: HashMap::new(),
             recipes: vec![recipe1, recipe2, recipe3, recipe4],
@@ -321,23 +324,14 @@ impl Model {
                     let tile_row = self.tiles.get(y).unwrap();
                     for x in 0..self.size.x {
                         let pos = vec2(x, y);
-                        let mut visible = view.contains(&pos);
-                        if pos.x > 0 {
-                            visible = visible || view.contains(&vec2(pos.x - 1, pos.y));
-                        }
-                        if pos.y > 0 {
-                            visible = visible || view.contains(&vec2(pos.x, pos.y - 1));
-                        }
-                        if pos.x > 0 && pos.y > 0 {
-                            visible = visible || view.contains(&vec2(pos.x - 1, pos.y - 1));
-                        }
-                        if visible {
+                        if view.contains(&pos) {
                             tiles.push(tile_row.get(x).unwrap().clone());
                         }
                     }
                 }
                 tiles
             },
+            height_map: self.height_map.clone(),
             entities: self
                 .entities
                 .iter()
@@ -401,35 +395,41 @@ impl Model {
             dist_sqr <= entity.view_range * entity.view_range
         })
     }
-    fn generate_tiles(map_size: Vec2<usize>) -> Vec<Vec<Tile>> {
+    fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
-        let mut tiles = vec![];
-        for y in 0..map_size.y {
-            let mut tiles_row = vec![];
-            for x in 0..map_size.x {
+        let mut height_map = vec![];
+        for y in 0..map_size.y + 1 {
+            let mut row = vec![];
+            for x in 0..map_size.x + 1 {
                 let pos = vec2(x, y).map(|x| x as f32);
                 let normalized_pos = vec2(pos.x / map_size.x as f32, pos.y / map_size.y as f32)
                     * 2.0
                     - vec2(1.0, 1.0);
-
                 let height = 0.8 - normalized_pos.len()
                     + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
                         as f32
                         / 10.0);
-
+                row.push(height);
+            }
+            height_map.push(row);
+        }
+        let mut tiles = vec![];
+        for y in 0..map_size.y {
+            let mut tiles_row = vec![];
+            for x in 0..map_size.x {
+                let water = height_map[x][y] < 0.0;
                 tiles_row.push(Tile {
                     pos: vec2(x, y),
-                    height,
-                    ground_type: if height > 0.0 {
-                        GroundType::Sand
-                    } else {
+                    ground_type: if water {
                         GroundType::Water
+                    } else {
+                        GroundType::Sand
                     },
                 });
             }
             tiles.push(tiles_row);
         }
-        tiles
+        (tiles, height_map)
     }
     fn gen_structures(&mut self) {
         self.spawn_structure(10, |pos| Structure {
