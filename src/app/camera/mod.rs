@@ -22,9 +22,9 @@ impl Camera {
     pub fn new() -> Self {
         Self {
             center: vec2(0.0, 0.0),
-            distance: 32.0,
-            rotation: 0.0,
-            attack: f32::PI / 2.0,
+            distance: 10.0,
+            rotation: 1.0,
+            attack: 1.0,
             perspective: true,
         }
     }
