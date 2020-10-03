@@ -1,7 +1,7 @@
 {
   "map_size": {
-    "x": 100,
-    "y": 100
+    "x": 20,
+    "y": 20
   },
   "player_view_distance": 5
 }
