@@ -86,7 +86,8 @@ impl geng::State for App {
                 i_size: 1.0,
             }),
         );
-        for &(obj, structure_type) in &[(&self.assets.tree, model::StructureType::Tree)] {
+        for &(obj, structure_type, size) in &[(&self.assets.tree, model::StructureType::Tree, 0.5)]
+        {
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
@@ -98,7 +99,7 @@ impl geng::State for App {
                     if e.structure_type == structure_type {
                         Some(ez3d::Instance {
                             i_pos: pos,
-                            i_size: 1.0,
+                            i_size: size,
                         })
                     } else {
                         None
