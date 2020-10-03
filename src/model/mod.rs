@@ -214,15 +214,7 @@ impl Model {
         let ids: Vec<Id> = self.entities.keys().copied().collect();
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
-            let time = self.current_time as f32;
-            let day = self.day_length as f32;
-            let night = self.night_length as f32;
-            let mut t = 2.0 * (time - day - night / 2.0).abs() / (day + night);
-            if t > 1.0 {
-                t = 2.0 - t;
-            }
-            entity.view_range = self.entity_night_view_distance
-                + t * (self.entity_day_view_distance - self.entity_night_view_distance) as f32;
+            entity.view_range = self.calc_view_range();
             if let Some(move_to) = entity.move_to {
                 if move_to.1 {
                     if (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
@@ -327,13 +319,24 @@ impl Model {
             }
         }
     }
+    fn calc_view_range(&self) -> f32 {
+        let time = self.current_time as f32;
+        let day = self.day_length as f32;
+        let night = self.night_length as f32;
+        let mut t = 2.0 * (time - day - night / 2.0).abs() / (day + night);
+        if t > 1.0 {
+            t = 2.0 - t;
+        }
+        self.entity_night_view_distance
+            + t * (self.entity_day_view_distance - self.entity_night_view_distance) as f32
+    }
     pub fn new_player(&mut self) -> Id {
         let id = Id::new();
         if let Some(pos) = self.get_spawnable_pos() {
             let entity = Entity {
                 pos,
                 size: vec2(1, 1),
-                view_range: self.entity_day_view_distance,
+                view_range: self.calc_view_range(),
                 move_to: None,
                 item: None,
             };
