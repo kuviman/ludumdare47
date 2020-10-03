@@ -311,9 +311,9 @@ impl Model {
                     let pos = vec2(x, y);
                     if !self.is_under_view(pos) {
                         self.remove_at(pos);
-                    }
-                    if self.is_spawnable_tile(pos) {
-                        self.generate_tile(pos);
+                        if self.is_spawnable_tile(pos) {
+                            self.generate_tile(pos);
+                        }
                     }
                 }
             }
@@ -459,10 +459,15 @@ impl Model {
     }
     fn is_under_view(&self, pos: Vec2<usize>) -> bool {
         self.entities.values().any(|entity| {
-            let dx = pos.x - entity.pos.x;
-            let dy = pos.y - entity.pos.y;
-            let dist_sqr = (dx * dx + dy * dy) as f32;
-            dist_sqr <= entity.view_range * entity.view_range
+            let dx = pos.x as f32 - entity.pos.x as f32;
+            let dy = pos.y as f32 - entity.pos.y as f32;
+            let dist_sqr = dx * dx + dy * dy;
+            dist_sqr <= entity.view_range * entity.view_range + 0.5
+        }) || self.structures.iter().any(|structure| {
+            let dx = pos.x as f32 - structure.pos.x as f32;
+            let dy = pos.y as f32 - structure.pos.y as f32;
+            let dist_sqr = dx * dx + dy * dy;
+            dist_sqr <= 5.0 * 5.0 + 0.5 && structure.structure_type == StructureType::Campfire
         })
     }
     fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
@@ -517,9 +522,7 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.get_tile(pos).unwrap().ground_type != GroundType::Water
-            && self.is_empty_tile(pos)
-            && !self.is_under_view(pos)
+        self.get_tile(pos).unwrap().ground_type != GroundType::Water && self.is_empty_tile(pos)
     }
     fn remove_at(&mut self, pos: Vec2<usize>) {
         if let Some((index, _)) = self
