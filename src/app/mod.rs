@@ -49,19 +49,19 @@ impl geng::State for App {
         ugli::clear(framebuffer, Some(Color::BLACK), None);
         self.camera_controls.draw(&mut self.camera, framebuffer);
         let mut tiles_to_draw = Vec::new();
-        for (y, tiles_row) in self.model.tiles.iter().enumerate() {
-            for (x, tile) in tiles_row.iter().enumerate() {
-                let color = match tile.ground_type {
-                    model::GroundType::Water => Color::BLUE,
-                    model::GroundType::Sand => Color::YELLOW,
-                };
-                tiles_to_draw.push((Vec2::from([x, y]), color));
-            }
+
+        let vision = self.model.get_view(self.player_id);
+        for tile in vision.tiles.iter() {
+            let color = match tile.ground_type {
+                model::GroundType::Water => Color::BLUE,
+                model::GroundType::Sand => Color::YELLOW,
+            };
+            tiles_to_draw.push((tile.pos, color));
         }
-        for structure in self.model.structures.iter() {
+        for structure in vision.structures.iter() {
             tiles_to_draw.push((structure.pos, Color::GREEN));
         }
-        for entity in self.model.entities.values() {
+        for entity in vision.entities.iter() {
             tiles_to_draw.push((entity.pos, Color::RED));
         }
         self.ez.quads(

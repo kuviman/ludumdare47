@@ -48,6 +48,7 @@ pub enum GroundType {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Tile {
+    pub pos: Vec2<usize>,
     pub height: f32,
     pub ground_type: GroundType,
 }
@@ -69,6 +70,13 @@ pub struct Entity {
     pub pos: Vec2<usize>,
     pub size: Vec2<usize>,
     pub view_range: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub struct PlayerView {
+    pub tiles: Vec<Tile>,
+    pub entities: Vec<Entity>,
+    pub structures: Vec<Structure>,
 }
 
 impl Model {
@@ -118,6 +126,57 @@ impl Model {
             Message::Ping => println!("Got ping message"),
         }
     }
+    pub fn get_view(&mut self, player_id: Id) -> PlayerView {
+        let entity = self.entities.get(&player_id).unwrap();
+        let mut view = vec![];
+        view.push(entity.pos.clone());
+        for x0 in 1..entity.view_range {
+            view.push(vec2(x0, 0) + entity.pos);
+            view.push(vec2(entity.pos.x - x0, entity.pos.y));
+        }
+        for y in 1..(entity.view_range + 1) {
+            let x = ((entity.view_range * entity.view_range - y * y) as f32)
+                .sqrt()
+                .round() as usize;
+            view.push(vec2(entity.pos.x, entity.pos.y + y));
+            view.push(vec2(entity.pos.x, entity.pos.y - y));
+            for x0 in 1..x {
+                view.push(vec2(entity.pos.x + x0, entity.pos.y + y));
+                view.push(vec2(entity.pos.x + x0, entity.pos.y - y));
+                view.push(vec2(entity.pos.x - x0, entity.pos.y + y));
+                view.push(vec2(entity.pos.x - x0, entity.pos.y - y));
+            }
+        }
+
+        let vision = PlayerView {
+            tiles: {
+                let mut tiles = vec![];
+                for y in 0..self.size.y {
+                    let tile_row = self.tiles.get(y).unwrap();
+                    for x in 0..self.size.x {
+                        let pos = vec2(x, y);
+                        if view.contains(&pos) {
+                            tiles.push(tile_row.get(x).unwrap().clone());
+                        }
+                    }
+                }
+                tiles
+            },
+            entities: self
+                .entities
+                .iter()
+                .filter(|(_, entity)| view.contains(&entity.pos))
+                .map(|(_, entity)| entity.clone())
+                .collect(),
+            structures: self
+                .structures
+                .iter()
+                .filter(|structure| view.contains(&structure.pos))
+                .map(|structure| structure.clone())
+                .collect(),
+        };
+        vision
+    }
     fn get_tile(&self, pos: Vec2<usize>) -> Option<&Tile> {
         self.tiles.get(pos.y)?.get(pos.x)
     }
@@ -161,11 +220,13 @@ impl Model {
                         > 0.8
                     {
                         Tile {
+                            pos: vec2(x, y),
                             height: 0.0,
                             ground_type: GroundType::Water,
                         }
                     } else {
                         Tile {
+                            pos: vec2(x, y),
                             height: 0.0,
                             ground_type: GroundType::Sand,
                         }
