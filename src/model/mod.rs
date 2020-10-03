@@ -67,9 +67,14 @@ pub struct Structure {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy)]
 pub enum StructureType {
+    Item { item: Item },
+    Tree,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub enum Item {
     Pebble,
     Stick,
-    Tree,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -78,6 +83,7 @@ pub struct Entity {
     pub size: Vec2<usize>,
     pub view_range: usize,
     pub move_to: Option<Vec2<usize>>,
+    pub item: Option<Item>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -112,7 +118,7 @@ impl Model {
                     (entity.pos.y as i32 + dir_y) as usize,
                 );
                 if let Some(tile) = self.get_tile(new_pos) {
-                    if GroundType::Water != tile.ground_type && self.is_empty_tile(new_pos) {
+                    if GroundType::Water != tile.ground_type && self.is_traversable_tile(new_pos) {
                         entity.pos = new_pos;
                         if new_pos == move_to {
                             entity.move_to = None;
@@ -131,6 +137,7 @@ impl Model {
                 size: vec2(1, 1),
                 view_range: self.entity_view_distance,
                 move_to: None,
+                item: None,
             };
             self.entities.insert(id, entity);
         }
@@ -214,17 +221,35 @@ impl Model {
         self.tiles.get(pos.y)?.get(pos.x)
     }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
-        !self.structures.iter().any(|structure| {
-            pos.x >= structure.pos.x
-                && pos.x <= structure.pos.x + structure.size.x - 1
-                && pos.y >= structure.pos.y
-                && pos.y <= structure.pos.y + structure.size.y - 1
-        }) && !self.entities.values().any(|entity| {
-            pos.x >= entity.pos.x
-                && pos.x <= entity.pos.x + entity.size.x - 1
-                && pos.y >= entity.pos.y
-                && pos.y <= entity.pos.y + entity.size.y - 1
-        })
+        !self
+            .structures
+            .iter()
+            .any(|structure| Self::is_pos_inside(pos, structure.pos, structure.size))
+            && !self
+                .entities
+                .values()
+                .any(|entity| Self::is_pos_inside(pos, entity.pos, entity.size))
+    }
+    fn is_traversable_tile(&self, pos: Vec2<usize>) -> bool {
+        !self
+            .structures
+            .iter()
+            .filter(|structure| !structure.traversable)
+            .any(|structure| Self::is_pos_inside(pos, structure.pos, structure.size))
+            && !self
+                .entities
+                .values()
+                .any(|entity| Self::is_pos_inside(pos, entity.pos, entity.size))
+    }
+    fn is_pos_inside(
+        pos: Vec2<usize>,
+        structure_pos: Vec2<usize>,
+        structure_size: Vec2<usize>,
+    ) -> bool {
+        pos.x >= structure_pos.x
+            && pos.x <= structure_pos.x + structure_size.x - 1
+            && pos.y >= structure_pos.y
+            && pos.y <= structure_pos.y + structure_size.y - 1
     }
     fn is_under_view(&self, pos: Vec2<usize>) -> bool {
         self.entities.values().any(|entity| {
@@ -274,14 +299,14 @@ impl Model {
         self.spawn_structure(self.size.x / 2, |pos| Structure {
             pos,
             size: vec2(1, 1),
-            traversable: false,
-            structure_type: StructureType::Pebble,
+            traversable: true,
+            structure_type: StructureType::Item { item: Item::Pebble },
         });
         self.spawn_structure(self.size.x / 2, |pos| Structure {
             pos,
             size: vec2(1, 1),
-            traversable: false,
-            structure_type: StructureType::Stick,
+            traversable: true,
+            structure_type: StructureType::Item { item: Item::Stick },
         });
     }
     fn spawn_structure(&mut self, count: usize, structure: fn(Vec2<usize>) -> Structure) {
