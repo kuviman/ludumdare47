@@ -38,6 +38,7 @@ pub struct App {
     tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
     light: light::Uniforms,
+    entity_positions: HashMap<Id, Vec2<f32>>,
 }
 
 impl App {
@@ -83,16 +84,16 @@ impl App {
             }),
             noise: noise::OpenSimplex::new(),
             light,
+            entity_positions: HashMap::new(),
         }
     }
 
     fn draw_pentagon(
         &self,
         framebuffer: &mut ugli::Framebuffer,
-        tile: Vec2<usize>,
+        pos: Vec2<f32>,
         color: Color<f32>,
     ) {
-        let pos = tile.map(|x| x as f32 + 0.5);
         let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
         self.ez3d.draw_with(
             framebuffer,
@@ -102,7 +103,7 @@ impl App {
             std::iter::once(ez3d::Instance {
                 i_pos: pos,
                 i_size: 0.5,
-                i_rotation: self.noise.get([tile.x as f64, tile.y as f64]) as f32,
+                i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32,
                 i_color: color,
             }),
             ugli::DrawMode::TriangleStrip,
@@ -130,13 +131,19 @@ impl geng::State for App {
             self.connection.send(ClientMessage::Ping);
         }
 
-        self.camera.center += (self
-            .model
-            .entities
-            .get(&self.player_id)
-            .unwrap()
-            .pos
-            .map(|x| x as f32 + 0.5)
+        for entity in self.model.entities.values() {
+            let mut pos = entity.pos.map(|x| x as f32 + 0.5);
+            if let Some(&prev_pos) = self.entity_positions.get(&entity.id) {
+                pos = prev_pos + (pos - prev_pos) * (delta_time * 5.0).min(1.0);
+            }
+            self.entity_positions.insert(entity.id, pos);
+        }
+        self.entity_positions.retain({
+            let model = &self.model;
+            move |id, _| model.entities.contains_key(id)
+        });
+
+        self.camera.center += (*self.entity_positions.get(&self.player_id).unwrap()
             - self.camera.center)
             * (delta_time * 5.0).min(1.0);
         self.camera_controls.update(&mut self.camera, delta_time);
@@ -167,18 +174,16 @@ impl geng::State for App {
             }),
         );
 
-        self.draw_pentagon(
-            framebuffer,
-            self.model.entities.get(&self.player_id).unwrap().pos,
-            Color::GREEN,
-        );
+        if let Some(&pos) = self.entity_positions.get(&self.player_id) {
+            self.draw_pentagon(framebuffer, pos, Color::GREEN);
+        }
         if let Some(pos) = self.tile_mesh.intersect(self.camera.pixel_ray(
             self.framebuffer_size,
             self.geng.window().mouse_pos().map(|x| x as f32),
         )) {
             self.draw_pentagon(
                 framebuffer,
-                pos.xy().map(|x| x as usize),
+                pos.xy().map(|x| x as usize as f32 + 0.5),
                 Color::rgba(1.0, 1.0, 1.0, 0.5),
             );
         }
@@ -232,7 +237,11 @@ impl geng::State for App {
             );
         }
         for entity in &view.entities {
-            let pos = entity.pos.map(|x| x as f32 + 0.5);
+            let pos = self
+                .entity_positions
+                .get(&entity.id)
+                .copied()
+                .unwrap_or(entity.pos.map(|x| x as f32 + 0.5));
             let height = self
                 .tile_mesh
                 .get_height(pos)

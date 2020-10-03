@@ -97,6 +97,7 @@ pub enum Item {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Entity {
+    pub id: Id,
     pub pos: Vec2<usize>,
     pub size: Vec2<usize>,
     pub view_range: f32,
@@ -334,18 +335,23 @@ impl Model {
             + t * (self.entity_day_view_distance - self.entity_night_view_distance) as f32
     }
     pub fn new_player(&mut self) -> Id {
-        let id = Id::new();
+        let player_id;
         if let Some(pos) = self.get_spawnable_pos() {
             let entity = Entity {
+                id: Id::new(),
                 pos,
                 size: vec2(1, 1),
                 view_range: self.calc_view_range(),
                 move_to: None,
                 item: None,
             };
-            self.entities.insert(id, entity);
+            player_id = entity.id;
+            self.entities.insert(entity.id, entity);
+        } else {
+            error!("Did not find spawnable position");
+            player_id = Id::new(); // TODO
         }
-        id
+        player_id
     }
     pub fn drop_player(&mut self, player_id: Id) {}
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
