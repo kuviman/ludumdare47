@@ -65,6 +65,8 @@ impl App {
 
 impl geng::State for App {
     fn update(&mut self, delta_time: f64) {
+        let delta_time = delta_time as f32;
+
         let mut got_message = false;
         for message in self.connection.new_messages() {
             got_message = true;
@@ -73,8 +75,19 @@ impl geng::State for App {
                 _ => unreachable!(),
             }
         }
-        self.connection.send(ClientMessage::Ping);
-        let delta_time = delta_time as f32;
+        if got_message {
+            self.connection.send(ClientMessage::Ping);
+        }
+
+        self.camera.center += (self
+            .model
+            .entities
+            .get(&self.player_id)
+            .unwrap()
+            .pos
+            .map(|x| x as f32 + 0.5)
+            - self.camera.center)
+            * delta_time;
         self.camera_controls.update(&mut self.camera, delta_time);
     }
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
