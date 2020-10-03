@@ -111,6 +111,33 @@ impl Model {
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
             if let Some(move_to) = entity.move_to {
+                if move_to.1 {
+                    if (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
+                        && (entity.pos.y as i32 - move_to.0.y as i32).abs() <= 1
+                    {
+                        if let Some((index, structure)) = self.get_structure(move_to.0) {
+                            if let None = entity.item {
+                                if let StructureType::Item { item } = &structure.structure_type {
+                                    let structure = self.structures.remove(index);
+                                    entity.item =
+                                        Some(Self::structure_to_item(structure).1.unwrap());
+                                }
+                            }
+                        } else if let Some(item) = entity.item.take() {
+                            let structure = Self::item_to_structure(item, move_to.0);
+                            self.structures.push(structure);
+                        }
+                        entity.move_to = None;
+                        *self.entities.get_mut(&id).unwrap() = entity;
+                        continue;
+                    }
+                } else {
+                    if entity.pos == move_to.0 {
+                        entity.move_to = None;
+                        *self.entities.get_mut(&id).unwrap() = entity;
+                        continue;
+                    }
+                }
                 let dir_x = (move_to.0.x as i32 - entity.pos.x as i32).signum();
                 let dir_y = (move_to.0.y as i32 - entity.pos.y as i32).signum();
                 let new_pos = vec2(
@@ -120,25 +147,6 @@ impl Model {
                 if let Some(tile) = self.get_tile(new_pos) {
                     if GroundType::Water != tile.ground_type && self.is_traversable_tile(new_pos) {
                         entity.pos = new_pos;
-                        if new_pos == move_to.0 {
-                            if move_to.1 {
-                                if let Some((index, structure)) = self.get_structure(new_pos) {
-                                    if let None = entity.item {
-                                        if let StructureType::Item { item } =
-                                            &structure.structure_type
-                                        {
-                                            let structure = self.structures.remove(index);
-                                            entity.item =
-                                                Some(Self::structure_to_item(structure).1.unwrap());
-                                        }
-                                    }
-                                } else if let Some(item) = entity.item.take() {
-                                    let structure = Self::item_to_structure(item, entity.pos);
-                                    self.structures.push(structure);
-                                }
-                            }
-                            entity.move_to = None;
-                        }
                         *self.entities.get_mut(&id).unwrap() = entity;
                     }
                 }
