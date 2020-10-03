@@ -61,11 +61,14 @@ pub struct Tile {
 pub struct Structure {
     pub pos: Vec2<usize>,
     pub size: Vec2<usize>,
+    pub traversable: bool,
     pub structure_type: StructureType,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub enum StructureType {
+    Pebble,
+    Stick,
     Tree,
 }
 
@@ -258,13 +261,29 @@ impl Model {
         tiles
     }
     fn gen_structures(&mut self) {
-        for _ in 0..10 {
+        self.spawn_structure(10, |pos| Structure {
+            pos,
+            size: vec2(1, 1),
+            traversable: false,
+            structure_type: StructureType::Tree,
+        });
+        self.spawn_structure(self.size.x / 2, |pos| Structure {
+            pos,
+            size: vec2(1, 1),
+            traversable: false,
+            structure_type: StructureType::Pebble,
+        });
+        self.spawn_structure(self.size.x / 2, |pos| Structure {
+            pos,
+            size: vec2(1, 1),
+            traversable: false,
+            structure_type: StructureType::Stick,
+        });
+    }
+    fn spawn_structure(&mut self, count: usize, structure: fn(Vec2<usize>) -> Structure) {
+        for _ in 0..count {
             if let Some(pos) = self.get_spawnable_pos() {
-                self.structures.push(Structure {
-                    pos,
-                    size: vec2(1, 1),
-                    structure_type: StructureType::Tree,
-                });
+                self.structures.push(structure(pos));
             }
         }
     }
