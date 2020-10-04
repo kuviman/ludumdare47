@@ -96,12 +96,16 @@ impl Model {
                     } else if middle_height < 0.05 {
                         Biome::Beach
                     } else {
-                        let value = noise.get([
-                            x as f64 / map_size.x as f64 * 10.0,
-                            y as f64 / map_size.y as f64 * 10.0,
-                        ]) / 2.0
-                            + 0.5;
-                        if value <= 0.7 {
+                        let xf = x as f64 / map_size.x as f64;
+                        let yf = y as f64 / map_size.y as f64;
+                        let value = noise.get([xf * 10.0, yf * 10.0]) / 2.0 + 0.5;
+                        if value <= 0.15 {
+                            height_map[x][y] = value as f32 / 1.5 - 0.15;
+                            Biome::Water
+                        } else if value <= 0.3 {
+                            height_map[x][y] = value as f32 / 1.5 - 0.15;
+                            Biome::Beach
+                        } else if value <= 0.7 {
                             Biome::Forest
                         } else if value <= 0.9 {
                             Biome::Hills
