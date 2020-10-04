@@ -49,6 +49,11 @@ impl Model {
                             false,
                         ));
                         self.structures.remove(&structure.take().unwrap().pos);
+                    } else if let Some(StructureType::Item {
+                        item: Item::TreasureMark,
+                    }) = ingredient2
+                    {
+                        // Stop forward checks to prevent picking it up
                     } else if let Some(_) = ingredient1 {
                         if let None = ingredient2 {
                             structure.take();

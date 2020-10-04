@@ -42,4 +42,6 @@ pub enum Item {
     GoldPickaxe,
     GoldNugget,
     CrystalShard,
+    TreasureMark,
+    TreasureChest,
 }

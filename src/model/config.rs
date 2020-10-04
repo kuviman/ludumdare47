@@ -45,10 +45,24 @@ impl Config {
                 conditions: None,
             },
             Recipe {
+                ingredient1: Some(Item::Pebble),
+                ingredient2: Some(StructureType::Item { item: Item::Stick }),
+                result1: Some(Item::Shovel),
+                result2: None,
+                conditions: None,
+            },
+            Recipe {
                 ingredient1: Some(Item::Stick),
                 ingredient2: Some(StructureType::Item {
                     item: Item::SharpStone,
                 }),
+                result1: Some(Item::Axe),
+                result2: None,
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::SharpStone),
+                ingredient2: Some(StructureType::Item { item: Item::Stick }),
                 result1: Some(Item::Axe),
                 result2: None,
                 conditions: None,
@@ -63,6 +77,13 @@ impl Config {
                 conditions: None,
             },
             Recipe {
+                ingredient1: Some(Item::SharpStone),
+                ingredient2: Some(StructureType::Item { item: Item::Axe }),
+                result1: Some(Item::Pickaxe),
+                result2: None,
+                conditions: None,
+            },
+            Recipe {
                 ingredient1: Some(Item::Stick),
                 ingredient2: Some(StructureType::Item {
                     item: Item::GoldNugget,
@@ -72,9 +93,9 @@ impl Config {
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Pebble),
+                ingredient1: Some(Item::GoldNugget),
                 ingredient2: Some(StructureType::Item { item: Item::Stick }),
-                result1: Some(Item::Axe),
+                result1: Some(Item::GoldPickaxe),
                 result2: None,
                 conditions: None,
             },
@@ -147,6 +168,17 @@ impl Config {
                 }),
                 conditions: None,
             },
+            Recipe {
+                ingredient1: Some(Item::Shovel),
+                ingredient2: Some(StructureType::Item {
+                    item: Item::TreasureMark,
+                }),
+                result1: Some(Item::Shovel),
+                result2: Some(StructureType::Item {
+                    item: Item::TreasureChest,
+                }),
+                conditions: None,
+            },
         ]
     }
 
@@ -157,7 +189,21 @@ impl Config {
         };
         let mut generation_choices = HashMap::new();
         generation_choices.insert(Biome::Water, vec![(None, 1)]);
-        generation_choices.insert(Biome::Beach, vec![(None, 1)]);
+        generation_choices.insert(
+            Biome::Beach,
+            vec![
+                (None, 200),
+                (
+                    Some(Structure {
+                        structure_type: StructureType::Item {
+                            item: Item::TreasureMark,
+                        },
+                        ..basic_structure
+                    }),
+                    1,
+                ),
+            ],
+        );
         generation_choices.insert(
             Biome::Forest,
             vec![
