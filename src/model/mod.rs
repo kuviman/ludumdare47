@@ -539,7 +539,7 @@ impl Model {
     }
     fn generate_tile(&mut self, pos: Vec2<usize>) {
         let mut rng = global_rng();
-        let choice = &self.generation_choices[&self.tiles[pos.x][pos.y].ground_type]
+        let choice = &self.generation_choices[&self.tiles[pos.y][pos.x].ground_type]
             .choose_weighted(&mut rng, |item| item.1)
             .unwrap()
             .0;
@@ -549,7 +549,7 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.tiles[pos.x][pos.y].ground_type != GroundType::Water && self.is_empty_tile(pos)
+        self.tiles[pos.y][pos.x].ground_type != GroundType::Water && self.is_empty_tile(pos)
     }
     fn remove_at(&mut self, pos: Vec2<usize>) {
         if let Some((index, _)) = self
