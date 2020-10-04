@@ -28,6 +28,20 @@ pub struct Assets {
     raft: ez3d::Obj,
 }
 
+impl Assets {
+    fn item(&self, item: model::Item) -> &ez3d::Obj {
+        match item {
+            model::Item::Axe => &self.axe,
+            model::Item::DoubleStick => &self.double_stick,
+            model::Item::Log => &self.log,
+            model::Item::Pebble => &self.pebble,
+            model::Item::Planks => &self.planks,
+            model::Item::Stick => &self.stick,
+            _ => &self.black_cloud,
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 enum Rafted {
     Not,
@@ -328,68 +342,35 @@ impl geng::State for App {
             );
         }
 
-        for &(obj, structure_type) in &[
-            (&self.assets.tree, model::StructureType::Tree),
-            (&self.assets.campfire, model::StructureType::Campfire),
-            (
-                &self.assets.pebble,
-                model::StructureType::Item {
-                    item: model::Item::Pebble,
-                },
-            ),
-            (
-                &self.assets.stick,
-                model::StructureType::Item {
-                    item: model::Item::Stick,
-                },
-            ),
-            (
-                &self.assets.axe,
-                model::StructureType::Item {
-                    item: model::Item::Axe,
-                },
-            ),
-            (
-                &self.assets.double_stick,
-                model::StructureType::Item {
-                    item: model::Item::DoubleStick,
-                },
-            ),
-            (
-                &self.assets.log,
-                model::StructureType::Item {
-                    item: model::Item::Log,
-                },
-            ),
-            (
-                &self.assets.planks,
-                model::StructureType::Item {
-                    item: model::Item::Planks,
-                },
-            ),
-            (&self.assets.raft, model::StructureType::Raft),
-        ] {
+        let mut instances: HashMap<model::StructureType, Vec<ez3d::Instance>> = HashMap::new();
+        for structure in &view.structures {
+            let pos = structure.pos.map(|x| x as f32 + 0.5);
+            let height = self.tile_mesh.get_height(pos).unwrap();
+            let pos = pos.extend(height);
+            instances
+                .entry(structure.structure_type)
+                .or_default()
+                .push(ez3d::Instance {
+                    i_pos: pos,
+                    i_size: 0.5,
+                    i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32 * f32::PI,
+                    i_color: Color::WHITE,
+                });
+        }
+        for (structure_type, instances) in instances {
+            let obj = match structure_type {
+                model::StructureType::Tree => &self.assets.tree,
+                model::StructureType::Campfire => &self.assets.campfire,
+                model::StructureType::Raft => &self.assets.raft,
+                model::StructureType::Item { item } => self.assets.item(item),
+                _ => &self.assets.black_cloud,
+            };
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
                 &self.light,
                 obj.vb(),
-                view.structures.iter().filter_map(|e| {
-                    let pos = e.pos.map(|x| x as f32 + 0.5);
-                    let height = self.tile_mesh.get_height(pos)?;
-                    let pos = pos.extend(height);
-                    if e.structure_type == structure_type {
-                        Some(ez3d::Instance {
-                            i_pos: pos,
-                            i_size: 0.5,
-                            i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32
-                                * f32::PI,
-                            i_color: Color::WHITE,
-                        })
-                    } else {
-                        None
-                    }
-                }),
+                instances.into_iter(),
             );
         }
         for entity in &view.entities {
@@ -436,20 +417,12 @@ impl geng::State for App {
                     }),
                 );
             }
-            if let Some(item) = &entity.item {
+            if let Some(item) = entity.item {
                 self.ez3d.draw(
                     framebuffer,
                     &self.camera,
                     &self.light,
-                    match item {
-                        model::Item::Axe => &self.assets.axe,
-                        model::Item::Pebble => &self.assets.pebble,
-                        model::Item::Stick => &self.assets.stick,
-                        model::Item::DoubleStick => &self.assets.double_stick,
-                        model::Item::Planks => &self.assets.planks,
-                        model::Item::Log => &self.assets.log,
-                    }
-                    .vb(),
+                    self.assets.item(item).vb(),
                     std::iter::once(ez3d::Instance {
                         i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
                         i_size: 0.5,

@@ -82,7 +82,7 @@ pub struct Structure {
     pub structure_type: StructureType,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy, Hash)]
 pub enum StructureType {
     Item { item: Item },
     Tree,
@@ -90,7 +90,7 @@ pub enum StructureType {
     Raft,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy, Hash)]
 pub enum Item {
     Pebble,
     Stick,
