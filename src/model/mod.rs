@@ -485,12 +485,19 @@ impl Model {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = vec![];
         Self::add_view_radius(&mut view, entity.pos, entity.view_range);
-        for light_source in self
-            .structures
-            .iter()
-            .filter(|structure| structure.structure_type == StructureType::Campfire)
-        {
-            Self::add_view_radius(&mut view, light_source.pos, self.campfire_light);
+        for light_source in self.structures.iter().filter(|structure| {
+            structure.structure_type == StructureType::Campfire
+                || structure.structure_type == StructureType::Item { item: Item::Torch }
+        }) {
+            Self::add_view_radius(
+                &mut view,
+                light_source.pos,
+                match light_source.structure_type {
+                    StructureType::Campfire => self.campfire_light,
+                    StructureType::Item { item: Item::Torch } => self.torch_light,
+                    _ => unreachable!(),
+                },
+            );
         }
 
         let vision = PlayerView {
@@ -591,8 +598,10 @@ impl Model {
             let dx = pos.x as f32 - structure.pos.x as f32;
             let dy = pos.y as f32 - structure.pos.y as f32;
             let dist_sqr = dx * dx + dy * dy;
-            dist_sqr <= self.campfire_light + 0.5
-                && structure.structure_type == StructureType::Campfire
+            structure.structure_type == StructureType::Campfire
+                && dist_sqr <= self.campfire_light * self.campfire_light + 0.5
+                || structure.structure_type == StructureType::Item { item: Item::Torch }
+                    && dist_sqr <= self.torch_light * self.torch_light + 0.5
         })
     }
     fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
