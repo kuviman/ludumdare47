@@ -575,6 +575,17 @@ impl geng::State for App {
             48.0,
             Color::WHITE,
         );
+        self.geng.default_font().draw_aligned(
+            framebuffer,
+            &format!("Players online: {}", self.view.players_online),
+            vec2(
+                self.framebuffer_size.x as f32 / 2.0,
+                self.framebuffer_size.y as f32 - 100.0,
+            ),
+            0.5,
+            32.0,
+            Color::WHITE,
+        );
     }
     fn handle_event(&mut self, event: geng::Event) {
         match event {
