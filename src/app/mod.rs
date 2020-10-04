@@ -45,6 +45,7 @@ pub struct Assets {
     shovel: ez3d::Obj,
     magic_crystal: ez3d::Obj,
     crystal_shard: ez3d::Obj,
+    statue: ez3d::Obj,
 }
 
 impl Assets {
