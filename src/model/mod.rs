@@ -39,6 +39,7 @@ impl Id {
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
     pub rules: Rules,
+    pub score: i32,
     pub ticks_per_second: f32,
     pub height_map: Vec<Vec<f32>>,
     pub size: Vec2<usize>,
@@ -49,6 +50,7 @@ pub struct Model {
     pub day_length: usize,
     pub night_length: usize,
     pub recipes: Vec<Recipe>,
+    pub scores_map: HashMap<Item, i32>,
     generation_choices: HashMap<Biome, Vec<(Option<Structure>, usize)>>,
 }
 

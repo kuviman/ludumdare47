@@ -54,6 +54,13 @@ impl Model {
                     }) = ingredient2
                     {
                         // Stop forward checks to prevent picking it up
+                    } else if let Some(StructureType::Statue) = ingredient2 {
+                        if let Some(item) = ingredient1.take() {
+                            self.score += match self.scores_map.get(&item) {
+                                Some(score) => *score,
+                                None => 0,
+                            };
+                        }
                     } else if let Some(_) = ingredient1 {
                         if let None = ingredient2 {
                             structure.take();

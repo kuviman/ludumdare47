@@ -275,4 +275,13 @@ impl Config {
         );
         generation_choices
     }
+    pub fn default_scores_map() -> HashMap<Item, i32> {
+        let mut scores_map = HashMap::new();
+        scores_map.insert(Item::TreasureChest, 5);
+        scores_map.insert(Item::CrystalShard, 5);
+        scores_map.insert(Item::GoldNugget, 5);
+        scores_map.insert(Item::Stick, -1);
+        scores_map.insert(Item::Pebble, -1);
+        scores_map
+    }
 }

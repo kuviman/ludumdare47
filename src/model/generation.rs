@@ -15,6 +15,7 @@ impl Model {
         };
         let mut model = Self {
             rules,
+            score: 0,
             ticks_per_second: config.ticks_per_second,
             size: config.map_size,
             tiles,
@@ -25,6 +26,7 @@ impl Model {
             day_length: config.day_length,
             night_length: config.night_length,
             recipes,
+            scores_map: Config::default_scores_map(),
             generation_choices: Config::default_generation_choices(),
         };
         for y in 0..model.size.y {
