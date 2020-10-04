@@ -76,6 +76,7 @@ impl Assets {
             model::StructureType::GoldRock => &self.gold_rock,
             model::StructureType::BigMushroom => &self.big_mushroom,
             model::StructureType::MagicCrystal => &self.magic_crystal,
+            model::StructureType::Statue => &self.statue,
             model::StructureType::Item { item } => self.item(item),
             _ => &self.black_cloud,
         }

@@ -34,6 +34,15 @@ impl Model {
                 }
             }
         }
+        if let Some(pos) = model.get_spawnable_pos(Biome::Forest) {
+            let statue = Structure {
+                pos,
+                structure_type: StructureType::Statue,
+            };
+            model.structures.insert(pos, statue);
+        } else {
+            error!("Did not find a position for a statue");
+        }
         model
     }
     pub fn new_player(&mut self) -> Id {
