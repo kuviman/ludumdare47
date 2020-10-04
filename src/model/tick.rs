@@ -18,7 +18,7 @@ impl Model {
                     && (entity.pos.y as i32 - move_to.0.y as i32).abs() <= 1
                 {
                     let ingredient1 = &mut entity.item;
-                    let structure = self.structures.remove(&move_to.0);
+                    let mut structure = self.structures.remove(&move_to.0);
                     let conditions = self.get_tile(move_to.0).unwrap().ground_type;
                     let ingredient2 = match &structure {
                         Some(structure) => Some(structure.structure_type),
@@ -30,6 +30,7 @@ impl Model {
                     if let Some(recipe) = recipe {
                         *ingredient1 = recipe.result1;
                         if let Some(structure_type) = recipe.result2 {
+                            structure.take();
                             let structure = Structure {
                                 pos: move_to.0,
                                 structure_type,
@@ -47,9 +48,11 @@ impl Model {
                             ),
                             false,
                         ));
-                        self.structures.remove(&structure.unwrap().pos);
+                        structure.take();
+                        self.structures.remove(&structure.take().unwrap().pos);
                     } else if let Some(_) = ingredient1 {
                         if let None = ingredient2 {
+                            structure.take();
                             let structure = Structure {
                                 pos: move_to.0,
                                 structure_type: StructureType::Item {
@@ -57,16 +60,16 @@ impl Model {
                                 },
                             };
                             self.structures.insert(structure.pos, structure);
-                        } else if let Some(structure) = structure {
-                            self.structures.insert(structure.pos, structure);
                         }
                         entity.move_to = None;
                     } else if let Some(structure_type) = ingredient2 {
                         if let StructureType::Item { item } = structure_type {
+                            structure.take();
                             *ingredient1 = Some(item);
                         }
                         entity.move_to = None;
-                    } else if let Some(structure) = structure {
+                    }
+                    if let Some(structure) = structure {
                         self.structures.insert(structure.pos, structure);
                     }
                 }
