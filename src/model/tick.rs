@@ -127,6 +127,7 @@ impl Model {
         }
         for light_source in self.structures.values().filter(|structure| {
             structure.structure_type == StructureType::Campfire
+                || structure.structure_type == StructureType::Statue
                 || structure.structure_type == StructureType::Item { item: Item::Torch }
         }) {
             Self::add_view_radius(
@@ -134,6 +135,7 @@ impl Model {
                 light_source.pos,
                 match light_source.structure_type {
                     StructureType::Campfire => self.rules.campfire_light,
+                    StructureType::Statue => self.rules.statue_light,
                     StructureType::Item { item: Item::Torch } => self.rules.torch_light,
                     _ => unreachable!(),
                 },
