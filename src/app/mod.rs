@@ -22,6 +22,9 @@ pub struct Assets {
     axe: ez3d::Obj,
     campfire: ez3d::Obj,
     black_cloud: ez3d::Obj,
+    double_stick: ez3d::Obj,
+    log: ez3d::Obj,
+    planks: ez3d::Obj,
 }
 
 struct EntityData {
@@ -324,6 +327,27 @@ impl geng::State for App {
                 },
                 0.2,
             ),
+            (
+                &self.assets.double_stick,
+                model::StructureType::Item {
+                    item: model::Item::DoubleStick,
+                },
+                0.2,
+            ),
+            (
+                &self.assets.log,
+                model::StructureType::Item {
+                    item: model::Item::Log,
+                },
+                0.2,
+            ),
+            (
+                &self.assets.planks,
+                model::StructureType::Item {
+                    item: model::Item::Planks,
+                },
+                0.2,
+            ),
         ] {
             self.ez3d.draw(
                 framebuffer,
@@ -380,6 +404,9 @@ impl geng::State for App {
                         model::Item::Axe => &self.assets.axe,
                         model::Item::Pebble => &self.assets.pebble,
                         model::Item::Stick => &self.assets.stick,
+                        model::Item::DoubleStick => &self.assets.double_stick,
+                        model::Item::Planks => &self.assets.planks,
+                        model::Item::Log => &self.assets.log,
                     }
                     .vb(),
                     std::iter::once(ez3d::Instance {
