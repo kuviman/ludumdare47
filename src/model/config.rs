@@ -15,7 +15,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             ticks_per_second: 2.0,
-            map_size: vec2(50, 50),
+            map_size: vec2(500, 500),
             player_day_view_distance: 10.0,
             player_night_view_distance: 3.0,
             day_length: 100,

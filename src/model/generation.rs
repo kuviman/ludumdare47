@@ -67,7 +67,7 @@ impl Model {
                 let normalized_pos = vec2(pos.x / map_size.x as f32, pos.y / map_size.y as f32)
                     * 2.0
                     - vec2(1.0, 1.0);
-                let height = 0.8 - normalized_pos.len()
+                let height = 1.0 - normalized_pos.len() * 1.2
                     + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
                         as f32
                         / 10.0);
@@ -92,7 +92,7 @@ impl Model {
                     pos: vec2(x, y),
                     ground_type: if water {
                         GroundType::Water
-                    } else if middle_height < 0.3 {
+                    } else if middle_height < 0.05 {
                         GroundType::Sand
                     } else {
                         GroundType::Grass
