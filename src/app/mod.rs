@@ -25,6 +25,7 @@ pub struct Assets {
     double_stick: ez3d::Obj,
     log: ez3d::Obj,
     planks: ez3d::Obj,
+    raft: ez3d::Obj,
 }
 
 struct EntityData {
@@ -342,6 +343,7 @@ impl geng::State for App {
                     item: model::Item::Planks,
                 },
             ),
+            (&self.assets.raft, model::StructureType::Raft),
         ] {
             self.ez3d.draw(
                 framebuffer,
