@@ -206,6 +206,13 @@ impl Model {
                 result2: Some(StructureType::Raft),
                 conditions: Some(GroundType::Water),
             },
+            Recipe {
+                ingredient1: Some(Item::DoubleStick),
+                ingredient2: None,
+                result1: Some(Item::Stick),
+                result2: Some(StructureType::Item { item: Item::Stick }),
+                conditions: None,
+            },
         ]
         .to_vec();
         let basic_structure = Structure {
