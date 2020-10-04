@@ -15,7 +15,7 @@ pub type ClientMessage = model::Message;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ServerMessage {
     PlayerId(Id),
-    Model(Model),
+    View(model::PlayerView),
 }
 
 type Connection = geng::net::client::Connection<ServerMessage, ClientMessage>;
@@ -112,11 +112,11 @@ fn main() {
                             _ => unreachable!(),
                         };
                         let (message, connection) = connection.into_future().await;
-                        let model = match message {
-                            Some(ServerMessage::Model(model)) => model,
+                        let view = match message {
+                            Some(ServerMessage::View(view)) => view,
                             _ => unreachable!(),
                         };
-                        App::new(&geng, assets, player_id, model, connection)
+                        App::new(&geng, assets, player_id, view, connection)
                     }
                 },
                 |app| app,

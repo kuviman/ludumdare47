@@ -6,10 +6,10 @@ pub struct Uniforms {
 }
 
 impl Uniforms {
-    pub fn new(model: &Model) -> Self {
-        let is_day = model.current_time < model.day_length;
+    pub fn new(view: &model::PlayerView) -> Self {
+        let is_day = view.current_time < view.day_length;
         if is_day {
-            let angle = model.current_time as f32 / model.day_length as f32 * f32::PI;
+            let angle = view.current_time as f32 / view.day_length as f32 * f32::PI;
             Self {
                 u_light_direction: vec3(angle.cos(), 0.0, angle.sin()) * angle.sin(),
             }

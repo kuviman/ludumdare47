@@ -174,6 +174,10 @@ pub struct Entity {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct PlayerView {
+    pub current_time: usize,
+    pub ticks_per_second: f32,
+    pub day_length: usize,
+    pub night_length: usize,
     pub height_map: Vec<Vec<f32>>,
     pub tiles: Vec<Tile>,
     pub entities: Vec<Entity>,
@@ -563,6 +567,10 @@ impl Model {
         }
 
         let vision = PlayerView {
+            ticks_per_second: self.ticks_per_second,
+            current_time: self.current_time,
+            day_length: self.day_length,
+            night_length: self.night_length,
             tiles: {
                 let mut tiles = vec![];
                 for y in 0..self.size.y {

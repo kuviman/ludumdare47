@@ -19,7 +19,9 @@ impl geng::net::Receiver<ClientMessage> for Client {
     fn handle(&mut self, message: ClientMessage) {
         let mut server_model = self.server_model.lock().unwrap();
         if let ClientMessage::Ping = &message {
-            self.sender.send(ServerMessage::Model(server_model.clone())); // TODO: Diff?
+            // TODO: Diff?
+            self.sender
+                .send(ServerMessage::View(server_model.get_view(self.player_id)));
         } else {
             server_model.handle_message(self.player_id, message);
         }
@@ -36,7 +38,7 @@ impl geng::net::server::App for ServerApp {
         let mut model = self.model.lock().unwrap();
         let player_id = model.new_player();
         sender.send(ServerMessage::PlayerId(player_id));
-        sender.send(ServerMessage::Model(model.clone()));
+        sender.send(ServerMessage::View(model.get_view(player_id)));
         Client {
             server_model: self.model.clone(),
             player_id,

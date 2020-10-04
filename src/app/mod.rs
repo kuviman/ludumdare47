@@ -139,7 +139,7 @@ pub struct App {
     pentagon: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
-    model: Model,
+    view: model::PlayerView,
     tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
     light: light::Uniforms,
@@ -152,12 +152,11 @@ impl App {
         geng: &Rc<Geng>,
         assets: Assets,
         player_id: Id,
-        model: Model,
+        view: model::PlayerView,
         mut connection: Connection,
     ) -> Self {
         let noise = noise::OpenSimplex::new();
-        let light = light::Uniforms::new(&model);
-        let view = model.get_view(player_id);
+        let light = light::Uniforms::new(&view);
         let tile_mesh = TileMesh::new(geng, &view.tiles, &view.height_map, &noise);
         connection.send(ClientMessage::Ping);
         Self {
@@ -170,7 +169,7 @@ impl App {
             ez3d: Ez3D::new(geng),
             connection,
             player_id,
-            model,
+            view,
             tile_mesh,
             pentagon: ugli::VertexBuffer::new_static(geng.ugli(), {
                 const N: usize = 5;
@@ -224,15 +223,14 @@ impl App {
 
     fn update_black_clouds(&mut self, delta_time: f32) {
         let mut positions = HashSet::new();
-        let view = self.model.get_view(self.player_id);
-        for tile in &view.tiles {
+        for tile in &self.view.tiles {
             for dx in 0..3 {
                 for dy in 0..3 {
                     positions.insert(tile.pos + vec2(dx, dy));
                 }
             }
         }
-        for tile in &view.tiles {
+        for tile in &self.view.tiles {
             positions.remove(&(tile.pos + vec2(1, 1)));
         }
         for &pos in &positions {
@@ -258,7 +256,7 @@ impl geng::State for App {
         for message in self.connection.new_messages() {
             got_message = true;
             match message {
-                ServerMessage::Model(model) => self.model = model,
+                ServerMessage::View(view) => self.view = view,
                 _ => unreachable!(),
             }
         }
@@ -266,13 +264,18 @@ impl geng::State for App {
             self.connection.send(ClientMessage::Ping);
         }
 
-        for entity in self.model.entities.values() {
+        for entity in &self.view.entities {
             if let Some(prev) = self.entity_positions.get_mut(&entity.id) {
                 prev.update(
                     entity,
-                    self.model.tiles[entity.pos.y][entity.pos.x].ground_type
+                    self.view
+                        .tiles
+                        .iter()
+                        .find(|tile| tile.pos == entity.pos)
+                        .unwrap()
+                        .ground_type
                         == model::GroundType::Water,
-                    delta_time * self.model.ticks_per_second,
+                    delta_time * self.view.ticks_per_second,
                 );
             } else {
                 self.entity_positions
@@ -280,8 +283,8 @@ impl geng::State for App {
             }
         }
         self.entity_positions.retain({
-            let model = &self.model;
-            move |id, _| model.entities.contains_key(id)
+            let view = &self.view;
+            move |&id, _| view.entities.iter().find(|e| e.id == id).is_some()
         });
 
         self.update_black_clouds(delta_time);
@@ -293,14 +296,17 @@ impl geng::State for App {
     }
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
         self.framebuffer_size = framebuffer.size();
-        self.light = light::Uniforms::new(&self.model);
+        self.light = light::Uniforms::new(&self.view);
 
         ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
         self.camera_controls.draw(&mut self.camera, framebuffer);
 
-        let view = self.model.get_view(self.player_id);
-
-        self.tile_mesh = TileMesh::new(&self.geng, &view.tiles, &view.height_map, &self.noise);
+        self.tile_mesh = TileMesh::new(
+            &self.geng,
+            &self.view.tiles,
+            &self.view.height_map,
+            &self.noise,
+        );
 
         let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 
@@ -313,8 +319,8 @@ impl geng::State for App {
                 .iter()
                 .map(|(&pos, cloud)| ez3d::Instance {
                     i_pos: pos.map(|x| x as f32 - 0.5).extend(
-                        self.model.height_map[pos.x.min(self.model.size.x - 1)]
-                            [pos.y.min(self.model.size.y - 1)],
+                        self.view.height_map[pos.y.min(self.view.height_map.len() - 1)]
+                            [pos.x.min(self.view.height_map[0].len() - 1)],
                     ),
                     i_rotation: cloud.rotation,
                     i_size: cloud.size,
@@ -353,7 +359,7 @@ impl geng::State for App {
         }
 
         let mut instances: HashMap<model::StructureType, Vec<ez3d::Instance>> = HashMap::new();
-        for structure in &view.structures {
+        for structure in &self.view.structures {
             let pos = structure.pos.map(|x| x as f32 + 0.5);
             let height = self.tile_mesh.get_height(pos).unwrap();
             let pos = pos.extend(height);
@@ -383,7 +389,7 @@ impl geng::State for App {
                 instances.into_iter(),
             );
         }
-        for entity in &view.entities {
+        for entity in &self.view.entities {
             let data = self
                 .entity_positions
                 .entry(entity.id)
@@ -494,7 +500,7 @@ impl geng::State for App {
             }),
         );
         if let Some(pos) = selected_pos {
-            if let Some(struc) = view.structures.iter().find(|s| s.pos == pos) {
+            if let Some(struc) = self.view.structures.iter().find(|s| s.pos == pos) {
                 let text = match struc.structure_type {
                     model::StructureType::Item { item } => format!("{:?}", item),
                     _ => format!("{:?}", struc.structure_type),
