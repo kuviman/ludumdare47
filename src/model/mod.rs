@@ -408,7 +408,7 @@ impl Model {
                         }
                         entity.move_to = None;
                     } else if let Some(StructureType::Raft) = ingredient2 {
-                        entity.pos = move_to.0;
+                        // entity.pos = move_to.0;
                         entity.controllable = false;
                         entity.move_to = Some((
                             vec2(
@@ -431,19 +431,18 @@ impl Model {
                             });
                         }
                         entity.move_to = None;
-                    } else {
-                        if let Some(structure_type) = ingredient2 {
-                            if let StructureType::Item { item } = structure_type {
-                                let index = structure.unwrap().0;
-                                self.structures.remove(index);
-                                *ingredient1 = Some(item);
-                            }
+                    } else if let Some(structure_type) = ingredient2 {
+                        if let StructureType::Item { item } = structure_type {
+                            let index = structure.unwrap().0;
+                            self.structures.remove(index);
+                            *ingredient1 = Some(item);
                         }
                         entity.move_to = None;
                     }
-                } else if entity.pos == move_to.0 {
+                }
+                if entity.pos == move_to.0 {
                     entity.move_to = None;
-                } else {
+                } else if entity.move_to != None {
                     let mut new_pos = vec2(
                         (entity.pos.x as i32 + dir_x) as usize,
                         (entity.pos.y as i32 + dir_y) as usize,
