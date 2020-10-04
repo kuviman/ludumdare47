@@ -35,6 +35,16 @@ pub struct Assets {
     planks: ez3d::Obj,
     raft: ez3d::Obj,
     torch: ez3d::Obj,
+    gold_nugget: ez3d::Obj,
+    gold_pickaxe: ez3d::Obj,
+    gold_rock: ez3d::Obj,
+    big_mushroom: ez3d::Obj,
+    pickaxe: ez3d::Obj,
+    rock: ez3d::Obj,
+    sharp_stone: ez3d::Obj,
+    shovel: ez3d::Obj,
+    magic_crystal: ez3d::Obj,
+    crystal_shard: ez3d::Obj,
 }
 
 impl Assets {
@@ -47,6 +57,25 @@ impl Assets {
             model::Item::Planks => &self.planks,
             model::Item::Stick => &self.stick,
             model::Item::Torch => &self.torch,
+            model::Item::GoldNugget => &self.gold_nugget,
+            model::Item::GoldPickaxe => &self.gold_pickaxe,
+            model::Item::SharpStone => &self.sharp_stone,
+            model::Item::Shovel => &self.shovel,
+            model::Item::CrystalShard => &self.crystal_shard,
+            model::Item::Pickaxe => &self.pickaxe,
+            _ => &self.black_cloud,
+        }
+    }
+    fn structure(&self, structure: model::StructureType) -> &ez3d::Obj {
+        match structure {
+            model::StructureType::Tree => &self.tree,
+            model::StructureType::Campfire => &self.campfire,
+            model::StructureType::Raft => &self.raft,
+            model::StructureType::Rock => &self.rock,
+            model::StructureType::GoldRock => &self.gold_rock,
+            model::StructureType::BigMushroom => &self.big_mushroom,
+            model::StructureType::MagicCrystal => &self.magic_crystal,
+            model::StructureType::Item { item } => self.item(item),
             _ => &self.black_cloud,
         }
     }
@@ -374,13 +403,7 @@ impl geng::State for App {
                 });
         }
         for (structure_type, instances) in instances {
-            let obj = match structure_type {
-                model::StructureType::Tree => &self.assets.tree,
-                model::StructureType::Campfire => &self.assets.campfire,
-                model::StructureType::Raft => &self.assets.raft,
-                model::StructureType::Item { item } => self.assets.item(item),
-                _ => &self.assets.black_cloud,
-            };
+            let obj = self.assets.structure(structure_type);
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
