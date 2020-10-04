@@ -215,7 +215,7 @@ impl Model {
         for y in 0..model.size.y {
             for x in 0..model.size.x {
                 let pos = vec2(x, y);
-                if model.is_spawnable_tile(pos) {
+                if model.is_empty_tile(pos) {
                     model.generate_tile(pos);
                 }
             }
@@ -327,9 +327,7 @@ impl Model {
                     let pos = vec2(x, y);
                     if !self.is_under_view(pos) {
                         self.remove_at(pos);
-                        if self.is_spawnable_tile(pos) {
-                            self.generate_tile(pos);
-                        }
+                        self.generate_tile(pos);
                     }
                 }
             }
@@ -551,7 +549,7 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.is_empty_tile(pos)
+        self.tiles[pos.x][pos.y].ground_type != GroundType::Water && self.is_empty_tile(pos)
     }
     fn remove_at(&mut self, pos: Vec2<usize>) {
         if let Some((index, _)) = self
