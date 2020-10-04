@@ -2,6 +2,7 @@ use super::*;
 
 impl Model {
     pub fn tick(&mut self) {
+        let mut timer = Timer::new();
         self.current_time += 1;
         if self.current_time >= self.day_length + self.night_length {
             self.current_time = 0;
@@ -117,6 +118,8 @@ impl Model {
             *self.entities.get_mut(&id).unwrap() = entity;
         }
 
+        println!("Moved in {:?}", timer.tick());
+
         let mut view = HashSet::new();
         for entity in self.entities.values() {
             Self::add_view_radius(&mut view, entity.pos, entity.view_range);
@@ -135,6 +138,8 @@ impl Model {
                 },
             );
         }
+
+        println!("Got view in {:?}", timer.tick());
 
         for y in 0..self.size.y {
             for x in 0..self.size.x {
@@ -159,5 +164,7 @@ impl Model {
                 }
             }
         }
+
+        println!("Regen in {:?}", timer.tick());
     }
 }
