@@ -1,14 +1,14 @@
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Trans, Hash, PartialEq, Eq)]
-pub enum GroundType {
+pub enum Biome {
     Water,
-    Sand,
-    Grass,
+    Beach,
+    Forest,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Tile {
     pub pos: Vec2<usize>,
-    pub ground_type: GroundType,
+    pub biome: Biome,
 }

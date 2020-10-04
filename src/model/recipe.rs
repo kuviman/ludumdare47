@@ -6,7 +6,7 @@ pub struct Recipe {
     pub ingredient2: Option<StructureType>,
     pub result1: Option<Item>,
     pub result2: Option<StructureType>,
-    pub conditions: Option<GroundType>,
+    pub conditions: Option<Biome>,
 }
 
 impl Recipe {
@@ -14,7 +14,7 @@ impl Recipe {
         &self,
         ingredient1: Option<Item>,
         ingredient2: Option<StructureType>,
-        conditions: GroundType,
+        conditions: Biome,
     ) -> bool {
         ingredient1 == self.ingredient1
             && ingredient2 == self.ingredient2

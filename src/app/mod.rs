@@ -273,8 +273,8 @@ impl geng::State for App {
                         .iter()
                         .find(|tile| tile.pos == entity.pos)
                         .unwrap()
-                        .ground_type
-                        == model::GroundType::Water,
+                        .biome
+                        == model::Biome::Water,
                     delta_time * self.view.ticks_per_second,
                 );
             } else {

@@ -73,10 +73,10 @@ impl TileMesh {
                 height_map[tile.pos.x + 1][tile.pos.y],
                 height_map[tile.pos.x + 1][tile.pos.y + 1],
                 height_map[tile.pos.x][tile.pos.y + 1],
-                match tile.ground_type {
-                    model::GroundType::Water => Color::rgb(0.8, 0.8, 0.0),
-                    model::GroundType::Grass => Color::rgb(0.0, 0.8, 0.0),
-                    model::GroundType::Sand => Color::YELLOW,
+                match tile.biome {
+                    model::Biome::Water => Color::rgb(0.8, 0.8, 0.0),
+                    model::Biome::Forest => Color::rgb(0.0, 0.8, 0.0),
+                    model::Biome::Beach => Color::YELLOW,
                 },
             );
         }

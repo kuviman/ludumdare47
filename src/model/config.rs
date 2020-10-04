@@ -86,7 +86,7 @@ impl Config {
                 ingredient2: Some(StructureType::Item { item: Item::Planks }),
                 result1: None,
                 result2: Some(StructureType::Raft),
-                conditions: Some(GroundType::Water),
+                conditions: Some(Biome::Water),
             },
             Recipe {
                 ingredient1: Some(Item::DoubleStick),
@@ -105,15 +105,15 @@ impl Config {
         ]
     }
 
-    pub fn default_generation_choices() -> HashMap<GroundType, Vec<(Option<Structure>, usize)>> {
+    pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<Structure>, usize)>> {
         let basic_structure = Structure {
             pos: vec2(0, 0),
             structure_type: StructureType::Tree,
         };
         let mut generation_choices = HashMap::new();
-        generation_choices.insert(GroundType::Water, vec![(None, 1)]);
+        generation_choices.insert(Biome::Water, vec![(None, 1)]);
         generation_choices.insert(
-            GroundType::Sand,
+            Biome::Beach,
             vec![
                 (None, 100),
                 (
@@ -126,7 +126,7 @@ impl Config {
             ],
         );
         generation_choices.insert(
-            GroundType::Grass,
+            Biome::Forest,
             vec![
                 (None, 300),
                 (Some(basic_structure.clone()), 30),

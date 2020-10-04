@@ -49,7 +49,7 @@ pub struct Model {
     pub day_length: usize,
     pub night_length: usize,
     pub recipes: Vec<Recipe>,
-    generation_choices: HashMap<GroundType, Vec<(Option<Structure>, usize)>>,
+    generation_choices: HashMap<Biome, Vec<(Option<Structure>, usize)>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

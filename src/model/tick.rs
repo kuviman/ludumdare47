@@ -19,7 +19,7 @@ impl Model {
                 {
                     let ingredient1 = &mut entity.item;
                     let mut structure = self.structures.remove(&move_to.0);
-                    let conditions = self.get_tile(move_to.0).unwrap().ground_type;
+                    let conditions = self.get_tile(move_to.0).unwrap().biome;
                     let ingredient2 = match &structure {
                         Some(structure) => Some(structure.structure_type),
                         None => None,
@@ -81,9 +81,7 @@ impl Model {
                         (entity.pos.y as i32 + dir_y) as usize,
                     );
                     if let Some(tile) = self.get_tile(new_pos) {
-                        if GroundType::Water != tile.ground_type
-                            && self.is_traversable_tile(new_pos)
-                        {
+                        if Biome::Water != tile.biome && self.is_traversable_tile(new_pos) {
                             entity.pos = new_pos;
                             entity.controllable = true;
                         } else if !entity.controllable {

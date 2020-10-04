@@ -38,7 +38,7 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos(GroundType::Sand) {
+        if let Some(pos) = self.get_spawnable_pos(Biome::Beach) {
             let entity = Entity {
                 id: Id::new(),
                 pos,
@@ -90,12 +90,12 @@ impl Model {
                     / 4.0;
                 tiles_row.push(Tile {
                     pos: vec2(x, y),
-                    ground_type: if water {
-                        GroundType::Water
+                    biome: if water {
+                        Biome::Water
                     } else if middle_height < 0.05 {
-                        GroundType::Sand
+                        Biome::Beach
                     } else {
-                        GroundType::Grass
+                        Biome::Forest
                     },
                 });
             }
@@ -105,7 +105,7 @@ impl Model {
     }
     pub fn generate_tile(&mut self, pos: Vec2<usize>) {
         let mut rng = global_rng();
-        let choice = &self.generation_choices[&self.tiles[pos.y][pos.x].ground_type]
+        let choice = &self.generation_choices[&self.tiles[pos.y][pos.x].biome]
             .choose_weighted(&mut rng, |item| item.1)
             .unwrap()
             .0;
@@ -115,15 +115,15 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.tiles[pos.y][pos.x].ground_type != GroundType::Water && self.is_empty_tile(pos)
+        self.tiles[pos.y][pos.x].biome != Biome::Water && self.is_empty_tile(pos)
     }
-    fn get_spawnable_pos(&self, ground_type: GroundType) -> Option<Vec2<usize>> {
+    fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<usize>> {
         let mut positions = vec![];
         for y in 0..self.size.y {
             for x in 0..self.size.x {
                 let pos = vec2(x, y);
                 if self.is_spawnable_tile(pos)
-                    && self.get_tile(vec2(x, y)).unwrap().ground_type == ground_type
+                    && self.get_tile(vec2(x, y)).unwrap().biome == ground_type
                 {
                     positions.push(pos);
                 }
