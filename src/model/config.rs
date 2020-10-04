@@ -138,6 +138,15 @@ impl Config {
                 result2: Some(StructureType::Campfire),
                 conditions: None,
             },
+            Recipe {
+                ingredient1: Some(Item::GoldPickaxe),
+                ingredient2: Some(StructureType::MagicCrystal),
+                result1: Some(Item::GoldPickaxe),
+                result2: Some(StructureType::Item {
+                    item: Item::CrystalShard,
+                }),
+                conditions: None,
+            },
         ]
     }
 

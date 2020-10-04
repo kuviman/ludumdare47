@@ -14,6 +14,7 @@ pub enum StructureType {
     Raft,
     Rock,
     GoldRock,
+    MagicCrystal,
 }
 
 impl StructureType {
@@ -39,4 +40,5 @@ pub enum Item {
     Pickaxe,
     GoldPickaxe,
     GoldNugget,
+    CrystalShard,
 }
