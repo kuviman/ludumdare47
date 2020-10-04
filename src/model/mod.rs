@@ -501,7 +501,7 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos() {
+        if let Some(pos) = self.get_spawnable_pos(GroundType::Sand) {
             let entity = Entity {
                 id: Id::new(),
                 pos,
@@ -728,12 +728,14 @@ impl Model {
             self.structures.remove(index);
         }
     }
-    fn get_spawnable_pos(&self) -> Option<Vec2<usize>> {
+    fn get_spawnable_pos(&self, ground_type: GroundType) -> Option<Vec2<usize>> {
         let mut positions = vec![];
         for y in 0..self.size.y {
             for x in 0..self.size.x {
                 let pos = vec2(x, y);
-                if self.is_spawnable_tile(pos) {
+                if self.is_spawnable_tile(pos)
+                    && self.get_tile(vec2(x, y)).unwrap().ground_type == ground_type
+                {
                     positions.push(pos);
                 }
             }
