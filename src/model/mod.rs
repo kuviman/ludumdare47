@@ -22,6 +22,7 @@ pub struct Config {
     pub player_night_view_distance: f32,
     pub day_length: usize,
     pub night_length: usize,
+    pub fire_extinguish_chance: f32,
 }
 
 impl Default for Config {
@@ -33,6 +34,7 @@ impl Default for Config {
             player_night_view_distance: 3.0,
             day_length: 100,
             night_length: 50,
+            fire_extinguish_chance: 0.001,
         }
     }
 }
@@ -43,6 +45,7 @@ pub struct Rules {
     pub entity_night_view_distance: f32,
     pub campfire_light: f32,
     pub torch_light: f32,
+    pub fire_extinguish_chance: f32,
     pub regeneration_percent: f32,
 }
 
@@ -330,6 +333,7 @@ impl Model {
             entity_night_view_distance: config.player_night_view_distance,
             campfire_light: 5.0,
             torch_light: 5.0,
+            fire_extinguish_chance: config.fire_extinguish_chance,
             regeneration_percent: 0.1,
         };
         let mut model = Self {
@@ -489,8 +493,20 @@ impl Model {
         }
         for y in 0..self.size.y {
             for x in 0..self.size.x {
+                let pos = vec2(x, y);
+                let structure = self.get_structure(pos);
+                if let Some(structure) = structure {
+                    match structure.1.structure_type {
+                        StructureType::Campfire | StructureType::Item { item: Item::Torch } => {
+                            if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance
+                            {
+                                self.remove_at(pos);
+                            }
+                        }
+                        _ => (),
+                    }
+                }
                 if global_rng().gen_range(0.0, 1.0) < self.rules.regeneration_percent {
-                    let pos = vec2(x, y);
                     if !self.is_under_view(pos) {
                         self.remove_at(pos);
                         self.generate_tile(pos);
