@@ -16,8 +16,8 @@ impl Default for Config {
         Self {
             ticks_per_second: 2.0,
             map_size: vec2(256, 256),
-            player_day_view_distance: 10.0,
-            player_night_view_distance: 3.0,
+            player_day_view_distance: 8.0,
+            player_night_view_distance: 8.0,
             day_length: 100,
             night_length: 50,
             fire_extinguish_chance: 0.001,
