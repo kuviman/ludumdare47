@@ -61,7 +61,7 @@ pub enum Message {
     Click { pos: Vec2<usize>, secondary: bool },
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans, Hash, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Trans, Hash, PartialEq, Eq)]
 pub enum GroundType {
     Water,
     Sand,
@@ -136,9 +136,9 @@ impl Recipe {
     ) -> bool {
         ingredient1 == self.ingredient1
             && ingredient2 == self.ingredient2
-            && match self.conditions {
+            && match &self.conditions {
                 None => true,
-                Some(cond) => cond == conditions,
+                Some(cond) => *cond == conditions,
             }
     }
 }
