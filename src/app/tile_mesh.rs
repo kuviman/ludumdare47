@@ -21,7 +21,7 @@ impl TileMesh {
                 let p = |p: Vec2<usize>, h: f32| {
                     let dv = vec2(
                         noise.get([p.x as f64, p.y as f64]) as f32,
-                        noise.get([p.y as f64, p.y as f64 + 100.0]) as f32,
+                        noise.get([p.x as f64, p.y as f64 + 100.0]) as f32,
                     );
                     (p.map(|x| x as f32) + dv).extend(h)
                 };
