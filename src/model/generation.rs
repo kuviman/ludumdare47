@@ -104,13 +104,14 @@ impl Model {
                     } else if middle_height < 0.05 {
                         Biome::Beach
                     } else {
-                        let xf = x as f64 / map_size.x as f64;
-                        let yf = y as f64 / map_size.y as f64;
-                        let value = noise2.get([xf * 10.0, yf * 10.0]) / 2.0 + 0.5;
-                        if value <= 0.7 {
-                            Biome::Forest
-                        } else {
+                        if noise2.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2 {
                             Biome::Hills
+                        } else if noise.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2
+                            && noise2.get([x as f64 / 20.0 + 100.0, y as f64 / 20.0]) > 0.2
+                        {
+                            Biome::MagicForest
+                        } else {
+                            Biome::Forest
                         }
                     },
                 });
