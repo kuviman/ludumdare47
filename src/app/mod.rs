@@ -446,6 +446,7 @@ impl geng::State for App {
                     }
                 }
             }
+            geng::Event::KeyDown { key: geng::Key::F } => self.geng.window().toggle_fullscreen(),
             _ => {}
         }
         self.camera_controls.handle_event(&mut self.camera, &event);
