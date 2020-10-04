@@ -101,10 +101,12 @@ impl Model {
                             y as f64 / map_size.y as f64 * 10.0,
                         ]) / 2.0
                             + 0.5;
-                        if value <= 0.5 {
+                        if value <= 0.7 {
                             Biome::Forest
-                        } else {
+                        } else if value <= 0.9 {
                             Biome::Hills
+                        } else {
+                            Biome::MagicForest
                         }
                     },
                 });

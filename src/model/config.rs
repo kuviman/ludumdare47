@@ -199,6 +199,26 @@ impl Config {
                 ),
             ],
         );
+        generation_choices.insert(
+            Biome::MagicForest,
+            vec![
+                (None, 300),
+                (
+                    (Some(Structure {
+                        structure_type: StructureType::BigMushroom,
+                        ..basic_structure
+                    })),
+                    10,
+                ),
+                (
+                    (Some(Structure {
+                        structure_type: StructureType::MagicCrystal,
+                        ..basic_structure
+                    })),
+                    1,
+                ),
+            ],
+        );
         generation_choices
     }
 }

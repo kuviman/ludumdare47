@@ -6,6 +6,7 @@ pub enum Biome {
     Beach,
     Forest,
     Hills,
+    MagicForest,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
