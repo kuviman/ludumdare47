@@ -116,6 +116,26 @@ impl Model {
                     });
             *self.entities.get_mut(&id).unwrap() = entity;
         }
+
+        let mut view = HashSet::new();
+        for entity in self.entities.values() {
+            Self::add_view_radius(&mut view, entity.pos, entity.view_range);
+        }
+        for light_source in self.structures.iter().filter(|structure| {
+            structure.structure_type == StructureType::Campfire
+                || structure.structure_type == StructureType::Item { item: Item::Torch }
+        }) {
+            Self::add_view_radius(
+                &mut view,
+                light_source.pos,
+                match light_source.structure_type {
+                    StructureType::Campfire => self.rules.campfire_light,
+                    StructureType::Item { item: Item::Torch } => self.rules.torch_light,
+                    _ => unreachable!(),
+                },
+            );
+        }
+
         for y in 0..self.size.y {
             for x in 0..self.size.x {
                 let pos = vec2(x, y);
@@ -132,7 +152,7 @@ impl Model {
                     }
                 }
                 if global_rng().gen_range(0.0, 1.0) < self.rules.regeneration_percent {
-                    if !self.is_under_view(pos) {
+                    if !view.contains(&pos) {
                         self.remove_at(pos);
                         self.generate_tile(pos);
                     }
