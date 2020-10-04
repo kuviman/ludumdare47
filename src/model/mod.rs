@@ -335,6 +335,20 @@ impl Model {
                             } else if let Some((structure_index, _)) = structure {
                                 self.structures.remove(structure_index);
                             }
+                        } else if let Some(StructureType::Raft) = ingredient2 {
+                            entity.pos = move_to.0;
+                            entity.controllable = false;
+                            entity.move_to = Some((
+                                vec2(
+                                    (entity.pos.x as i32 + dir_x) as usize,
+                                    (entity.pos.y as i32 + dir_y) as usize,
+                                ),
+                                false,
+                            ));
+                            let structure_index = structure.unwrap().0;
+                            self.structures.remove(structure_index);
+                            *self.entities.get_mut(&id).unwrap() = entity;
+                            continue;
                         } else if let Some(_) = ingredient1 {
                             if let None = ingredient2 {
                                 self.structures.push(Structure {
@@ -352,20 +366,6 @@ impl Model {
                                     let index = structure.unwrap().0;
                                     self.structures.remove(index);
                                     *ingredient1 = Some(item);
-                                } else if let StructureType::Raft = structure_type {
-                                    entity.pos = move_to.0;
-                                    entity.controllable = false;
-                                    entity.move_to = Some((
-                                        vec2(
-                                            (entity.pos.x as i32 + dir_x) as usize,
-                                            (entity.pos.y as i32 + dir_y) as usize,
-                                        ),
-                                        false,
-                                    ));
-                                    let structure_index = structure.unwrap().0;
-                                    self.structures.remove(structure_index);
-                                    *self.entities.get_mut(&id).unwrap() = entity;
-                                    continue;
                                 }
                             }
                         }
