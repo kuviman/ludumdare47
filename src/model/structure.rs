@@ -15,6 +15,7 @@ pub enum StructureType {
     Rock,
     GoldRock,
     MagicCrystal,
+    BigMushroom,
 }
 
 impl StructureType {
