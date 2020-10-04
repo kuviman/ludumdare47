@@ -13,21 +13,21 @@ impl Model {
             + t * (self.rules.entity_day_view_distance - self.rules.entity_night_view_distance)
                 as f32
     }
-    pub fn add_view_radius(view: &mut Vec<Vec2<usize>>, center_pos: Vec2<usize>, radius: f32) {
-        view.push(center_pos.clone());
+    pub fn add_view_radius(view: &mut HashSet<Vec2<usize>>, center_pos: Vec2<usize>, radius: f32) {
+        view.insert(center_pos.clone());
         for x0 in 1..(radius.round() as usize) {
-            view.push(vec2(x0, 0) + center_pos);
-            view.push(vec2(center_pos.x - x0, center_pos.y));
+            view.insert(vec2(x0, 0) + center_pos);
+            view.insert(vec2(center_pos.x - x0, center_pos.y));
         }
         for y in 1..(radius.round() as usize + 1) {
             let x = (radius * radius - y as f32 * y as f32).sqrt().round() as usize;
-            view.push(vec2(center_pos.x, center_pos.y + y));
-            view.push(vec2(center_pos.x, center_pos.y - y));
+            view.insert(vec2(center_pos.x, center_pos.y + y));
+            view.insert(vec2(center_pos.x, center_pos.y - y));
             for x0 in 1..x {
-                view.push(vec2(center_pos.x + x0, center_pos.y + y));
-                view.push(vec2(center_pos.x + x0, center_pos.y - y));
-                view.push(vec2(center_pos.x - x0, center_pos.y + y));
-                view.push(vec2(center_pos.x - x0, center_pos.y - y));
+                view.insert(vec2(center_pos.x + x0, center_pos.y + y));
+                view.insert(vec2(center_pos.x + x0, center_pos.y - y));
+                view.insert(vec2(center_pos.x - x0, center_pos.y + y));
+                view.insert(vec2(center_pos.x - x0, center_pos.y - y));
             }
         }
     }
