@@ -29,7 +29,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             ticks_per_second: 2.0,
-            map_size: vec2(50, 50),
+            map_size: vec2(500, 500),
             player_day_view_distance: 10.0,
             player_night_view_distance: 3.0,
             day_length: 100,
@@ -87,8 +87,6 @@ pub struct Tile {
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Structure {
     pub pos: Vec2<usize>,
-    pub size: Vec2<usize>,
-    pub traversable: bool,
     pub structure_type: StructureType,
 }
 
@@ -212,6 +210,15 @@ impl Recipe {
     }
 }
 
+impl StructureType {
+    fn traversable(&self) -> bool {
+        match self {
+            Self::Item { .. } => true,
+            _ => false,
+        }
+    }
+}
+
 impl Model {
     pub fn new(config: Config) -> Self {
         let recipes = vec![
@@ -292,8 +299,6 @@ impl Model {
         ];
         let basic_structure = Structure {
             pos: vec2(0, 0),
-            size: vec2(1, 1),
-            traversable: false,
             structure_type: StructureType::Tree,
         };
         let mut generation_choices = HashMap::new();
@@ -304,7 +309,6 @@ impl Model {
                 (None, 100),
                 (
                     Some(Structure {
-                        traversable: true,
                         structure_type: StructureType::Item { item: Item::Pebble },
                         ..basic_structure
                     }),
@@ -319,7 +323,6 @@ impl Model {
                 (Some(basic_structure.clone()), 30),
                 (
                     Some(Structure {
-                        traversable: true,
                         structure_type: StructureType::Item { item: Item::Stick },
                         ..basic_structure
                     }),
@@ -391,23 +394,9 @@ impl Model {
                             if let Some((structure_index, _)) = structure {
                                 let structure = self.structures.get_mut(structure_index).unwrap();
                                 structure.structure_type = structure_type;
-                                structure.traversable =
-                                    if let StructureType::Item { item: _ } = structure_type {
-                                        true
-                                    } else {
-                                        false
-                                    };
                             } else {
                                 self.structures.push(Structure {
                                     pos: move_to.0,
-                                    size: vec2(1, 1),
-                                    traversable: if let StructureType::Item { item: _ } =
-                                        structure_type
-                                    {
-                                        true
-                                    } else {
-                                        false
-                                    },
                                     structure_type: structure_type,
                                 })
                             }
@@ -431,8 +420,6 @@ impl Model {
                         if let None = ingredient2 {
                             self.structures.push(Structure {
                                 pos: move_to.0,
-                                size: vec2(1, 1),
-                                traversable: true,
                                 structure_type: StructureType::Item {
                                     item: ingredient1.take().unwrap(),
                                 },
@@ -641,38 +628,19 @@ impl Model {
         self.structures
             .iter()
             .enumerate()
-            .find(|(_, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
+            .find(|(_, structure)| pos == structure.pos)
     }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
-        !self
-            .structures
-            .iter()
-            .any(|structure| Self::is_pos_inside(pos, structure.pos, structure.size))
-            && !self
-                .entities
-                .values()
-                .any(|entity| Self::is_pos_inside(pos, entity.pos, entity.size))
+        !self.structures.iter().any(|structure| pos == structure.pos)
+            && !self.entities.values().any(|entity| pos == entity.pos)
     }
     fn is_traversable_tile(&self, pos: Vec2<usize>) -> bool {
         !self
             .structures
             .iter()
-            .filter(|structure| !structure.traversable)
-            .any(|structure| Self::is_pos_inside(pos, structure.pos, structure.size))
-            && !self
-                .entities
-                .values()
-                .any(|entity| Self::is_pos_inside(pos, entity.pos, entity.size))
-    }
-    fn is_pos_inside(
-        pos: Vec2<usize>,
-        structure_pos: Vec2<usize>,
-        structure_size: Vec2<usize>,
-    ) -> bool {
-        pos.x >= structure_pos.x
-            && pos.x <= structure_pos.x + structure_size.x - 1
-            && pos.y >= structure_pos.y
-            && pos.y <= structure_pos.y + structure_size.y - 1
+            .filter(|structure| !structure.structure_type.traversable())
+            .any(|structure| pos == structure.pos)
+            && !self.entities.values().any(|entity| pos == entity.pos)
     }
     fn is_under_view(&self, pos: Vec2<usize>) -> bool {
         self.entities.values().any(|entity| {
@@ -755,7 +723,7 @@ impl Model {
             .structures
             .iter()
             .enumerate()
-            .find(|(_, structure)| Self::is_pos_inside(pos, structure.pos, structure.size))
+            .find(|(_, structure)| pos == structure.pos)
         {
             self.structures.remove(index);
         }
