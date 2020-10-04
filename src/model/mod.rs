@@ -38,22 +38,27 @@ impl Default for Config {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub struct Model {
-    pub ticks_per_second: f32,
-    pub height_map: Vec<Vec<f32>>,
+pub struct Rules {
     pub entity_day_view_distance: f32,
     pub entity_night_view_distance: f32,
+    pub campfire_light: f32,
+    pub torch_light: f32,
+    pub regeneration_percent: f32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub struct Model {
+    pub rules: Rules,
+    pub ticks_per_second: f32,
+    pub height_map: Vec<Vec<f32>>,
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
     pub structures: Vec<Structure>,
     pub entities: HashMap<Id, Entity>,
-    pub recipes: Vec<Recipe>,
-    pub campfire_light: f32,
-    pub torch_light: f32,
     pub current_time: usize,
     pub day_length: usize,
     pub night_length: usize,
-    pub regeneration_percent: f32,
+    pub recipes: Vec<Recipe>,
     generation_choices: HashMap<GroundType, Vec<(Option<Structure>, usize)>>,
 }
 
@@ -316,22 +321,25 @@ impl Model {
             ],
         );
         let (tiles, height_map) = Self::generate_map(config.map_size);
-        let mut model = Self {
-            ticks_per_second: config.ticks_per_second,
+        let rules = Rules {
             entity_day_view_distance: config.player_day_view_distance,
             entity_night_view_distance: config.player_night_view_distance,
+            campfire_light: 5.0,
+            torch_light: 5.0,
+            regeneration_percent: 0.1,
+        };
+        let mut model = Self {
+            rules,
+            ticks_per_second: config.ticks_per_second,
             size: config.map_size,
             tiles,
             height_map,
             structures: vec![],
             entities: HashMap::new(),
-            recipes,
-            campfire_light: 5.0,
-            torch_light: 5.0,
             current_time: 0,
             day_length: config.day_length,
             night_length: config.night_length,
-            regeneration_percent: 0.1,
+            recipes,
             generation_choices,
         };
         for y in 0..model.size.y {
@@ -470,7 +478,7 @@ impl Model {
             entity.view_range =
                 self.calc_view_range()
                     .max(if let Some(Item::Torch) = entity.item {
-                        self.torch_light
+                        self.rules.torch_light
                     } else {
                         0.0
                     });
@@ -478,7 +486,7 @@ impl Model {
         }
         for y in 0..self.size.y {
             for x in 0..self.size.x {
-                if global_rng().gen_range(0.0, 1.0) < self.regeneration_percent {
+                if global_rng().gen_range(0.0, 1.0) < self.rules.regeneration_percent {
                     let pos = vec2(x, y);
                     if !self.is_under_view(pos) {
                         self.remove_at(pos);
@@ -496,8 +504,9 @@ impl Model {
         if t > 1.0 {
             t = 2.0 - t;
         }
-        self.entity_night_view_distance
-            + t * (self.entity_day_view_distance - self.entity_night_view_distance) as f32
+        self.rules.entity_night_view_distance
+            + t * (self.rules.entity_day_view_distance - self.rules.entity_night_view_distance)
+                as f32
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
@@ -547,8 +556,8 @@ impl Model {
                 &mut view,
                 light_source.pos,
                 match light_source.structure_type {
-                    StructureType::Campfire => self.campfire_light,
-                    StructureType::Item { item: Item::Torch } => self.torch_light,
+                    StructureType::Campfire => self.rules.campfire_light,
+                    StructureType::Item { item: Item::Torch } => self.rules.torch_light,
                     _ => unreachable!(),
                 },
             );
@@ -653,9 +662,9 @@ impl Model {
             let dy = pos.y as f32 - structure.pos.y as f32;
             let dist_sqr = dx * dx + dy * dy;
             structure.structure_type == StructureType::Campfire
-                && dist_sqr <= self.campfire_light * self.campfire_light + 0.5
+                && dist_sqr <= self.rules.campfire_light * self.rules.campfire_light + 0.5
                 || structure.structure_type == StructureType::Item { item: Item::Torch }
-                    && dist_sqr <= self.torch_light * self.torch_light + 0.5
+                    && dist_sqr <= self.rules.torch_light * self.rules.torch_light + 0.5
         })
     }
     fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
