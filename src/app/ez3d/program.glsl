@@ -16,8 +16,8 @@ uniform mat4 u_view_matrix;
 
 uniform vec3 u_light_direction;
 
-#define AMBIENT vec3(0.1, 0.1, 0.1)
-#define AMBIENT2 vec3(0.1, 0.1, 0.4)
+#define AMBIENT vec3(0.3, 0.3, 0.3)
+#define AMBIENT2 vec3(0.2, 0.2, 0.2)
 
 void main()
 {
