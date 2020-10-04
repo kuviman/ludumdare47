@@ -113,9 +113,10 @@ impl App {
         model: Model,
         mut connection: Connection,
     ) -> Self {
+        let noise = noise::OpenSimplex::new();
         let light = light::Uniforms::new(&model);
         let view = model.get_view(player_id);
-        let tile_mesh = TileMesh::new(geng, &view.tiles, &view.height_map);
+        let tile_mesh = TileMesh::new(geng, &view.tiles, &view.height_map, &noise);
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
@@ -146,7 +147,7 @@ impl App {
                     })
                     .collect()
             }),
-            noise: noise::OpenSimplex::new(),
+            noise,
             light,
             entity_positions: HashMap::new(),
             black_clouds: HashMap::new(),
@@ -252,7 +253,7 @@ impl geng::State for App {
 
         let view = self.model.get_view(self.player_id);
 
-        self.tile_mesh = TileMesh::new(&self.geng, &view.tiles, &view.height_map);
+        self.tile_mesh = TileMesh::new(&self.geng, &view.tiles, &view.height_map, &self.noise);
 
         let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 

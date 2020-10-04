@@ -7,45 +7,60 @@ pub struct TileMesh {
 }
 
 impl TileMesh {
-    pub fn new(geng: &Rc<Geng>, tiles: &[model::Tile], height_map: &Vec<Vec<f32>>) -> Self {
+    pub fn new(
+        geng: &Rc<Geng>,
+        tiles: &[model::Tile],
+        height_map: &Vec<Vec<f32>>,
+        noise: &dyn NoiseFn<[f64; 2]>,
+    ) -> Self {
         let mut mesh = Vec::new();
         let tiles: HashMap<Vec2<usize>, model::Tile> =
             tiles.iter().map(|tile| (tile.pos, tile.clone())).collect();
         let mut append_quad =
-            |p: Vec2<usize>, h00: f32, h10: f32, h11: f32, h01: f32, a_color: Color<f32>| {
-                let p = p.map(|x| x as f32);
+            |pos: Vec2<usize>, h00: f32, h10: f32, h11: f32, h01: f32, a_color: Color<f32>| {
+                let p = |p: Vec2<usize>, h: f32| {
+                    let dv = vec2(
+                        noise.get([p.x as f64, p.y as f64]) as f32,
+                        noise.get([p.y as f64, p.y as f64 + 100.0]) as f32,
+                    );
+                    (p.map(|x| x as f32) + dv).extend(h)
+                };
+                let p00 = p(pos, h00);
+                let p10 = p(pos + vec2(1, 0), h10);
+                let p11 = p(pos + vec2(1, 1), h11);
+                let p01 = p(pos + vec2(0, 1), h01);
                 mesh.push(ez3d::Vertex {
-                    a_pos: vec3(p.x, p.y, h00),
+                    a_pos: p00,
                     a_normal: vec3(0.0, 0.0, 0.0),
                     a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
-                    a_pos: vec3(p.x + 1.0, p.y, h10),
+                    a_pos: p10,
                     a_normal: vec3(0.0, 0.0, 0.0),
                     a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
-                    a_pos: vec3(p.x + 1.0, p.y + 1.0, h11),
+                    a_pos: p11,
                     a_normal: vec3(0.0, 0.0, 0.0),
                     a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
-                    a_pos: vec3(p.x, p.y, h00),
+                    a_pos: p00,
                     a_normal: vec3(0.0, 0.0, 0.0),
                     a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
-                    a_pos: vec3(p.x + 1.0, p.y + 1.0, h11),
+                    a_pos: p11,
                     a_normal: vec3(0.0, 0.0, 0.0),
                     a_emission: 0.0,
                     a_color,
                 });
                 mesh.push(ez3d::Vertex {
-                    a_pos: vec3(p.x, p.y + 1.0, h01),
+                    a_pos: p01,
                     a_normal: vec3(0.0, 0.0, 0.0),
                     a_emission: 0.0,
                     a_color,
