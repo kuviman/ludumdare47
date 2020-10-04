@@ -18,7 +18,7 @@ impl Model {
             size: config.map_size,
             tiles,
             height_map,
-            structures: vec![],
+            structures: HashMap::new(),
             entities: HashMap::new(),
             current_time: 0,
             day_length: config.day_length,
@@ -111,7 +111,7 @@ impl Model {
             .0;
         if let Some(structure) = choice {
             let structure = Structure { pos, ..*structure };
-            self.structures.push(structure);
+            self.structures.insert(structure.pos, structure);
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {

@@ -43,7 +43,7 @@ pub struct Model {
     pub height_map: Vec<Vec<f32>>,
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
-    pub structures: Vec<Structure>,
+    pub structures: HashMap<Vec2<usize>, Structure>,
     pub entities: HashMap<Id, Entity>,
     pub current_time: usize,
     pub day_length: usize,
@@ -77,32 +77,14 @@ impl Model {
     fn get_tile(&self, pos: Vec2<usize>) -> Option<&Tile> {
         self.tiles.get(pos.y)?.get(pos.x)
     }
-    fn get_structure(&self, pos: Vec2<usize>) -> Option<(usize, &Structure)> {
-        self.structures
-            .iter()
-            .enumerate()
-            .find(|(_, structure)| pos == structure.pos)
-    }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
-        !self.structures.iter().any(|structure| pos == structure.pos)
+        self.structures.get(&pos).is_none()
             && !self.entities.values().any(|entity| pos == entity.pos)
     }
     fn is_traversable_tile(&self, pos: Vec2<usize>) -> bool {
-        !self
-            .structures
-            .iter()
-            .filter(|structure| !structure.structure_type.traversable())
-            .any(|structure| pos == structure.pos)
+        self.structures
+            .get(&pos)
+            .map_or(true, |structure| structure.structure_type.traversable())
             && !self.entities.values().any(|entity| pos == entity.pos)
-    }
-    fn remove_at(&mut self, pos: Vec2<usize>) {
-        if let Some((index, _)) = self
-            .structures
-            .iter()
-            .enumerate()
-            .find(|(_, structure)| pos == structure.pos)
-        {
-            self.structures.remove(index);
-        }
     }
 }

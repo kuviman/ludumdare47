@@ -17,7 +17,7 @@ impl Model {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = HashSet::new();
         Self::add_view_radius(&mut view, entity.pos, entity.view_range);
-        for light_source in self.structures.iter().filter(|structure| {
+        for light_source in self.structures.values().filter(|structure| {
             structure.structure_type == StructureType::Campfire
                 || structure.structure_type == StructureType::Item { item: Item::Torch }
         }) {
@@ -59,7 +59,7 @@ impl Model {
                 .collect(),
             structures: self
                 .structures
-                .iter()
+                .values()
                 .filter(|structure| view.contains(&structure.pos))
                 .map(|structure| structure.clone())
                 .collect(),
