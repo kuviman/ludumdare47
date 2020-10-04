@@ -26,6 +26,7 @@ pub struct Assets {
     log: ez3d::Obj,
     planks: ez3d::Obj,
     raft: ez3d::Obj,
+    torch: ez3d::Obj,
 }
 
 impl Assets {
@@ -37,6 +38,7 @@ impl Assets {
             model::Item::Pebble => &self.pebble,
             model::Item::Planks => &self.planks,
             model::Item::Stick => &self.stick,
+            model::Item::Torch => &self.torch,
             _ => &self.black_cloud,
         }
     }
