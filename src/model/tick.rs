@@ -137,30 +137,34 @@ impl Model {
 
         println!("Got view in {:?}", timer.tick());
 
-        for y in 0..self.size.y {
-            for x in 0..self.size.x {
-                let pos = vec2(x, y);
-                let structure = self.structures.get(&pos);
-                if let Some(structure) = structure {
-                    match structure.structure_type {
-                        StructureType::Campfire | StructureType::Item { item: Item::Torch } => {
-                            if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance
-                            {
-                                self.structures.remove(&pos);
-                            }
-                        }
-                        _ => (),
+        let mut extinguished_positions = Vec::new();
+        for structure in self.structures.values() {
+            match structure.structure_type {
+                StructureType::Campfire | StructureType::Item { item: Item::Torch } => {
+                    if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance {
+                        extinguished_positions.push(structure.pos);
                     }
                 }
-                if global_rng().gen_range(0.0, 1.0) < self.rules.regeneration_percent {
-                    if !view.contains(&pos) {
-                        self.structures.remove(&pos);
-                        self.generate_tile(pos);
-                    }
-                }
+                _ => (),
             }
         }
+        for pos in extinguished_positions {
+            self.structures.remove(&pos);
+        }
+        println!("Extinguish in {:?}", timer.tick());
 
+        for _ in
+            0..(self.size.x as f32 * self.size.y as f32 * self.rules.regeneration_percent) as usize
+        {
+            let pos = vec2(
+                global_rng().gen_range(0, self.size.x),
+                global_rng().gen_range(0, self.size.y),
+            );
+            if !view.contains(&pos) {
+                self.structures.remove(&pos);
+                self.generate_tile(pos);
+            }
+        }
         println!("Regen in {:?}", timer.tick());
     }
 }

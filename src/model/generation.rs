@@ -10,7 +10,7 @@ impl Model {
             campfire_light: 5.0,
             torch_light: 5.0,
             fire_extinguish_chance: config.fire_extinguish_chance,
-            regeneration_percent: 0.1,
+            regeneration_percent: 0.01,
         };
         let mut model = Self {
             rules,
