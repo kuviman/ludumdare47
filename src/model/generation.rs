@@ -59,6 +59,7 @@ impl Model {
     }
     fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
+        let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
         let mut height_map = vec![];
         for y in 0..map_size.y + 1 {
             let mut row = vec![];
@@ -67,27 +68,34 @@ impl Model {
                 let normalized_pos = vec2(pos.x / map_size.x as f32, pos.y / map_size.y as f32)
                     * 2.0
                     - vec2(1.0, 1.0);
-                let height = 1.0 - normalized_pos.len() * 1.2
+                let height_original = 1.0 - normalized_pos.len() * 1.2
                     + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
                         as f32
                         / 10.0);
-                row.push(height);
+                let mut height = height_original.min(0.3);
+                if height > 0.2 {
+                    height += noise2.get([
+                        normalized_pos.x as f64 * 10.0,
+                        normalized_pos.y as f64 * 10.0,
+                    ]) as f32
+                        / 1.0;
+                }
+                row.push((height_original, height));
             }
             height_map.push(row);
         }
-        let noise = Perlin::new().set_seed(global_rng().gen());
         let mut tiles = vec![];
         for y in 0..map_size.y {
             let mut tiles_row = vec![];
             for x in 0..map_size.x {
-                let water = height_map[x][y] < 0.0
-                    || height_map[x + 1][y] < 0.0
-                    || height_map[x + 1][y + 1] < 0.0
-                    || height_map[x][y + 1] < 0.0;
-                let middle_height = (height_map[x][y]
-                    + height_map[x + 1][y]
-                    + height_map[x + 1][y + 1]
-                    + height_map[x][y + 1])
+                let water = height_map[x][y].1 < 0.0
+                    || height_map[x + 1][y].1 < 0.0
+                    || height_map[x + 1][y + 1].1 < 0.0
+                    || height_map[x][y + 1].1 < 0.0;
+                let middle_height = (height_map[x][y].0
+                    + height_map[x + 1][y].0
+                    + height_map[x + 1][y + 1].0
+                    + height_map[x][y + 1].0)
                     / 4.0;
                 tiles_row.push(Tile {
                     pos: vec2(x, y),
@@ -98,26 +106,24 @@ impl Model {
                     } else {
                         let xf = x as f64 / map_size.x as f64;
                         let yf = y as f64 / map_size.y as f64;
-                        let value = noise.get([xf * 10.0, yf * 10.0]) / 2.0 + 0.5;
-                        if value <= 0.15 {
-                            height_map[x][y] = value as f32 / 1.5 - 0.15;
-                            Biome::Water
-                        } else if value <= 0.3 {
-                            height_map[x][y] = value as f32 / 1.5 - 0.15;
-                            Biome::Beach
-                        } else if value <= 0.7 {
+                        let value = noise2.get([xf * 10.0, yf * 10.0]) / 2.0 + 0.5;
+                        if value <= 0.7 {
                             Biome::Forest
-                        } else if value <= 0.9 {
-                            Biome::Hills
                         } else {
-                            Biome::MagicForest
+                            Biome::Hills
                         }
                     },
                 });
             }
             tiles.push(tiles_row);
         }
-        (tiles, height_map)
+        (
+            tiles,
+            height_map
+                .into_iter()
+                .map(|row| row.into_iter().map(|(_, y)| y).collect())
+                .collect(),
+        )
     }
     pub fn generate_tile(&mut self, pos: Vec2<usize>) {
         let mut rng = global_rng();
