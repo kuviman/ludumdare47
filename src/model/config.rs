@@ -29,9 +29,45 @@ impl Config {
     pub fn default_recipes() -> Vec<Recipe> {
         vec![
             Recipe {
+                ingredient1: Some(Item::Pebble),
+                ingredient2: Some(StructureType::Item { item: Item::Pebble }),
+                result1: None,
+                result2: Some(StructureType::Item {
+                    item: Item::SharpStone,
+                }),
+                conditions: None,
+            },
+            Recipe {
                 ingredient1: Some(Item::Stick),
                 ingredient2: Some(StructureType::Item { item: Item::Pebble }),
+                result1: Some(Item::Shovel),
+                result2: None,
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Stick),
+                ingredient2: Some(StructureType::Item {
+                    item: Item::SharpStone,
+                }),
                 result1: Some(Item::Axe),
+                result2: None,
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Axe),
+                ingredient2: Some(StructureType::Item {
+                    item: Item::SharpStone,
+                }),
+                result1: Some(Item::Pickaxe),
+                result2: None,
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Stick),
+                ingredient2: Some(StructureType::Item {
+                    item: Item::GoldNugget,
+                }),
+                result1: Some(Item::GoldPickaxe),
                 result2: None,
                 conditions: None,
             },

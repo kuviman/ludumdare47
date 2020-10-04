@@ -26,10 +26,15 @@ impl StructureType {
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy, Hash)]
 pub enum Item {
     Pebble,
+    SharpStone,
     Stick,
     Axe,
     DoubleStick,
     Log,
     Planks,
     Torch,
+    Shovel,
+    Pickaxe,
+    GoldPickaxe,
+    GoldNugget,
 }
