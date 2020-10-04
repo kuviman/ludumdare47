@@ -124,6 +124,7 @@ pub struct Recipe {
     pub ingredient2: Option<StructureType>,
     pub result1: Option<Item>,
     pub result2: Option<StructureType>,
+    pub conditions: Option<GroundType>,
 }
 
 impl Recipe {
@@ -131,8 +132,14 @@ impl Recipe {
         &self,
         ingredient1: Option<Item>,
         ingredient2: Option<StructureType>,
+        conditions: GroundType,
     ) -> bool {
-        ingredient1 == self.ingredient1 && ingredient2 == self.ingredient2
+        ingredient1 == self.ingredient1
+            && ingredient2 == self.ingredient2
+            && match self.conditions {
+                None => true,
+                Some(cond) => cond == conditions,
+            }
     }
 }
 
@@ -144,12 +151,14 @@ impl Model {
                 ingredient2: Some(StructureType::Item { item: Item::Pebble }),
                 result1: Some(Item::Axe),
                 result2: None,
+                conditions: None,
             },
             Recipe {
                 ingredient1: Some(Item::Pebble),
                 ingredient2: Some(StructureType::Item { item: Item::Stick }),
                 result1: Some(Item::Axe),
                 result2: None,
+                conditions: None,
             },
             Recipe {
                 ingredient1: Some(Item::Stick),
@@ -158,18 +167,21 @@ impl Model {
                 result2: Some(StructureType::Item {
                     item: Item::DoubleStick,
                 }),
+                conditions: None,
             },
             Recipe {
                 ingredient1: Some(Item::Axe),
                 ingredient2: Some(StructureType::Tree),
                 result1: Some(Item::Axe),
                 result2: Some(StructureType::Item { item: Item::Log }),
+                conditions: None,
             },
             Recipe {
                 ingredient1: Some(Item::Axe),
                 ingredient2: Some(StructureType::Item { item: Item::Log }),
                 result1: Some(Item::Axe),
                 result2: Some(StructureType::Item { item: Item::Planks }),
+                conditions: None,
             },
             Recipe {
                 ingredient1: Some(Item::Log),
@@ -178,12 +190,21 @@ impl Model {
                 }),
                 result1: None,
                 result2: Some(StructureType::Campfire),
+                conditions: None,
             },
             Recipe {
                 ingredient1: Some(Item::DoubleStick),
                 ingredient2: Some(StructureType::Item { item: Item::Log }),
                 result1: None,
                 result2: Some(StructureType::Campfire),
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Planks),
+                ingredient2: Some(StructureType::Item { item: Item::Planks }),
+                result1: None,
+                result2: Some(StructureType::Raft),
+                conditions: Some(GroundType::Water),
             },
         ]
         .to_vec();
@@ -267,14 +288,14 @@ impl Model {
                     {
                         let ingredient1 = &mut entity.item;
                         let structure = self.get_structure(move_to.0);
+                        let conditions = self.get_tile(move_to.0).unwrap().ground_type;
                         let ingredient2 = match structure {
                             Some((_, structure)) => Some(structure.structure_type),
                             None => None,
                         };
-                        let recipe = self
-                            .recipes
-                            .iter()
-                            .find(|recipe| recipe.ingredients_equal(*ingredient1, ingredient2));
+                        let recipe = self.recipes.iter().find(|recipe| {
+                            recipe.ingredients_equal(*ingredient1, ingredient2, conditions)
+                        });
                         if let Some(recipe) = recipe {
                             *ingredient1 = recipe.result1;
                             if let Some(structure_type) = recipe.result2 {
