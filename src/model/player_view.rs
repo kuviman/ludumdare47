@@ -2,6 +2,7 @@ use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct PlayerView {
+    pub score: i32,
     pub current_time: usize,
     pub ticks_per_second: f32,
     pub day_length: usize,
@@ -36,6 +37,7 @@ impl Model {
         }
 
         let vision = PlayerView {
+            score: self.score,
             ticks_per_second: self.ticks_per_second,
             current_time: self.current_time,
             day_length: self.day_length,
