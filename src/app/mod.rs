@@ -303,50 +303,44 @@ impl geng::State for App {
             );
         }
 
-        for &(obj, structure_type, size) in &[
-            (&self.assets.tree, model::StructureType::Tree, 0.7),
-            (&self.assets.campfire, model::StructureType::Campfire, 0.5),
+        for &(obj, structure_type) in &[
+            (&self.assets.tree, model::StructureType::Tree),
+            (&self.assets.campfire, model::StructureType::Campfire),
             (
                 &self.assets.pebble,
                 model::StructureType::Item {
                     item: model::Item::Pebble,
                 },
-                0.2,
             ),
             (
                 &self.assets.stick,
                 model::StructureType::Item {
                     item: model::Item::Stick,
                 },
-                0.5,
             ),
             (
                 &self.assets.axe,
                 model::StructureType::Item {
                     item: model::Item::Axe,
                 },
-                0.2,
             ),
             (
                 &self.assets.double_stick,
                 model::StructureType::Item {
                     item: model::Item::DoubleStick,
                 },
-                0.2,
             ),
             (
                 &self.assets.log,
                 model::StructureType::Item {
                     item: model::Item::Log,
                 },
-                0.2,
             ),
             (
                 &self.assets.planks,
                 model::StructureType::Item {
                     item: model::Item::Planks,
                 },
-                0.2,
             ),
         ] {
             self.ez3d.draw(
@@ -361,7 +355,7 @@ impl geng::State for App {
                     if e.structure_type == structure_type {
                         Some(ez3d::Instance {
                             i_pos: pos,
-                            i_size: size,
+                            i_size: 0.5,
                             i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32
                                 * f32::PI,
                             i_color: Color::WHITE,
@@ -390,7 +384,7 @@ impl geng::State for App {
                 self.assets.player.vb(),
                 std::iter::once(ez3d::Instance {
                     i_pos: pos,
-                    i_size: 0.2,
+                    i_size: 0.5,
                     i_rotation: -rotation,
                     i_color: Color::WHITE,
                 }),
@@ -410,8 +404,8 @@ impl geng::State for App {
                     }
                     .vb(),
                     std::iter::once(ez3d::Instance {
-                        i_pos: pos + Vec2::rotated(vec2(0.5, 0.0), rotation).extend(0.6),
-                        i_size: 0.3,
+                        i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
+                        i_size: 0.5,
                         i_rotation: -rotation,
                         i_color: Color::WHITE,
                     }),
