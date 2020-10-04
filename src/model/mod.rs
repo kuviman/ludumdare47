@@ -48,6 +48,8 @@ pub struct Model {
     pub structures: Vec<Structure>,
     pub entities: HashMap<Id, Entity>,
     pub recipes: Vec<Recipe>,
+    pub campfire_light: f32,
+    pub torch_light: f32,
     pub current_time: usize,
     pub day_length: usize,
     pub night_length: usize,
@@ -98,6 +100,7 @@ pub enum Item {
     DoubleStick,
     Log,
     Planks,
+    Torch,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -214,6 +217,13 @@ impl Model {
                 result2: Some(StructureType::Item { item: Item::Stick }),
                 conditions: None,
             },
+            Recipe {
+                ingredient1: Some(Item::Stick),
+                ingredient2: Some(StructureType::Campfire),
+                result1: Some(Item::Torch),
+                result2: Some(StructureType::Campfire),
+                conditions: None,
+            },
         ];
         let basic_structure = Structure {
             pos: vec2(0, 0),
@@ -263,6 +273,8 @@ impl Model {
             structures: vec![],
             entities: HashMap::new(),
             recipes,
+            campfire_light: 5.0,
+            torch_light: 5.0,
             current_time: 0,
             day_length: config.day_length,
             night_length: config.night_length,
@@ -287,7 +299,13 @@ impl Model {
         let ids: Vec<Id> = self.entities.keys().copied().collect();
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
-            entity.view_range = self.calc_view_range();
+            entity.view_range =
+                self.calc_view_range()
+                    .max(if let Some(Item::Torch) = entity.item {
+                        self.torch_light
+                    } else {
+                        0.0
+                    });
             if let Some(move_to) = entity.move_to {
                 let dir_x = (move_to.0.x as i32 - entity.pos.x as i32).signum();
                 let dir_y = (move_to.0.y as i32 - entity.pos.y as i32).signum();
@@ -477,7 +495,7 @@ impl Model {
             .iter()
             .filter(|structure| structure.structure_type == StructureType::Campfire)
         {
-            Self::add_view_radius(&mut view, light_source.pos, 5.0);
+            Self::add_view_radius(&mut view, light_source.pos, self.campfire_light);
         }
 
         let vision = PlayerView {
@@ -578,7 +596,8 @@ impl Model {
             let dx = pos.x as f32 - structure.pos.x as f32;
             let dy = pos.y as f32 - structure.pos.y as f32;
             let dist_sqr = dx * dx + dy * dy;
-            dist_sqr <= 5.0 * 5.0 + 0.5 && structure.structure_type == StructureType::Campfire
+            dist_sqr <= self.campfire_light + 0.5
+                && structure.structure_type == StructureType::Campfire
         })
     }
     fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
