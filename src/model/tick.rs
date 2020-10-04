@@ -87,31 +87,29 @@ impl Model {
                 if entity.pos == move_to.0 {
                     entity.move_to = None;
                 } else if entity.move_to != None {
-                    let mut new_pos = vec2(
-                        (entity.pos.x as i32 + dir_x) as usize,
-                        (entity.pos.y as i32 + dir_y) as usize,
-                    );
-                    if let Some(tile) = self.get_tile(new_pos) {
-                        if Biome::Water != tile.biome && self.is_traversable_tile(new_pos) {
-                            entity.pos = new_pos;
-                            entity.controllable = true;
-                        } else if !entity.controllable {
-                            if new_pos.x <= 0
-                                || new_pos.x >= self.size.x - 1
-                                || new_pos.y <= 0
-                                || new_pos.y >= self.size.y - 1
-                            {
-                                new_pos.x = self.size.x - 1 - new_pos.x;
-                                new_pos.y = self.size.y - 1 - new_pos.y;
+                    if let Some(mut new_pos) = self.pathfind(entity.pos, move_to.0) {
+                        if let Some(tile) = self.get_tile(new_pos) {
+                            if Biome::Water != tile.biome && self.is_traversable_tile(new_pos) {
+                                entity.pos = new_pos;
+                                entity.controllable = true;
+                            } else if !entity.controllable {
+                                if new_pos.x <= 0
+                                    || new_pos.x >= self.size.x - 1
+                                    || new_pos.y <= 0
+                                    || new_pos.y >= self.size.y - 1
+                                {
+                                    new_pos.x = self.size.x - 1 - new_pos.x;
+                                    new_pos.y = self.size.y - 1 - new_pos.y;
+                                }
+                                entity.pos = new_pos;
+                                entity.move_to = Some((
+                                    vec2(
+                                        (entity.pos.x as i32 + dir_x) as usize,
+                                        (entity.pos.y as i32 + dir_y) as usize,
+                                    ),
+                                    false,
+                                ));
                             }
-                            entity.pos = new_pos;
-                            entity.move_to = Some((
-                                vec2(
-                                    (entity.pos.x as i32 + dir_x) as usize,
-                                    (entity.pos.y as i32 + dir_y) as usize,
-                                ),
-                                false,
-                            ));
                         }
                     }
                 }
