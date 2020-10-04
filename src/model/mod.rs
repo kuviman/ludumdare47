@@ -108,6 +108,7 @@ pub struct Entity {
     pub view_range: f32,
     pub move_to: Option<(Vec2<usize>, bool)>,
     pub item: Option<Item>,
+    pub controllable: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -145,7 +146,7 @@ impl Recipe {
 
 impl Model {
     pub fn new(config: Config) -> Self {
-        let recipes = [
+        let recipes = vec![
             Recipe {
                 ingredient1: Some(Item::Stick),
                 ingredient2: Some(StructureType::Item { item: Item::Pebble }),
@@ -213,8 +214,7 @@ impl Model {
                 result2: Some(StructureType::Item { item: Item::Stick }),
                 conditions: None,
             },
-        ]
-        .to_vec();
+        ];
         let basic_structure = Structure {
             pos: vec2(0, 0),
             size: vec2(1, 1),
@@ -289,6 +289,8 @@ impl Model {
             let mut entity = self.entities.get(&id).unwrap().clone();
             entity.view_range = self.calc_view_range();
             if let Some(move_to) = entity.move_to {
+                let dir_x = (move_to.0.x as i32 - entity.pos.x as i32).signum();
+                let dir_y = (move_to.0.y as i32 - entity.pos.y as i32).signum();
                 if move_to.1 {
                     if (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
                         && (entity.pos.y as i32 - move_to.0.y as i32).abs() <= 1
@@ -350,6 +352,20 @@ impl Model {
                                     let index = structure.unwrap().0;
                                     self.structures.remove(index);
                                     *ingredient1 = Some(item);
+                                } else if let StructureType::Raft = structure_type {
+                                    entity.pos = move_to.0;
+                                    entity.controllable = false;
+                                    entity.move_to = Some((
+                                        vec2(
+                                            (entity.pos.x as i32 + dir_x) as usize,
+                                            (entity.pos.y as i32 + dir_y) as usize,
+                                        ),
+                                        false,
+                                    ));
+                                    let structure_index = structure.unwrap().0;
+                                    self.structures.remove(structure_index);
+                                    *self.entities.get_mut(&id).unwrap() = entity;
+                                    continue;
                                 }
                             }
                         }
@@ -364,15 +380,31 @@ impl Model {
                         continue;
                     }
                 }
-                let dir_x = (move_to.0.x as i32 - entity.pos.x as i32).signum();
-                let dir_y = (move_to.0.y as i32 - entity.pos.y as i32).signum();
-                let new_pos = vec2(
+                let mut new_pos = vec2(
                     (entity.pos.x as i32 + dir_x) as usize,
                     (entity.pos.y as i32 + dir_y) as usize,
                 );
                 if let Some(tile) = self.get_tile(new_pos) {
                     if GroundType::Water != tile.ground_type && self.is_traversable_tile(new_pos) {
                         entity.pos = new_pos;
+                        entity.controllable = true;
+                    } else if !entity.controllable {
+                        if new_pos.x <= 0
+                            || new_pos.x >= self.size.x - 1
+                            || new_pos.y <= 0
+                            || new_pos.y >= self.size.y - 1
+                        {
+                            new_pos.x = self.size.x - 1 - new_pos.x;
+                            new_pos.y = self.size.y - 1 - new_pos.y;
+                        }
+                        entity.pos = new_pos;
+                        entity.move_to = Some((
+                            vec2(
+                                (entity.pos.x as i32 + dir_x) as usize,
+                                (entity.pos.y as i32 + dir_y) as usize,
+                            ),
+                            false,
+                        ));
                     }
                 }
             }
@@ -411,6 +443,7 @@ impl Model {
                 view_range: self.calc_view_range(),
                 move_to: None,
                 item: None,
+                controllable: true,
             };
             player_id = entity.id;
             self.entities.insert(entity.id, entity);
@@ -428,8 +461,8 @@ impl Model {
             Message::Ping => println!("Got ping message"),
             Message::Click { pos, secondary } => {
                 println!("Got click at {}:{}", pos, secondary);
-                if pos.x < self.size.x && pos.y < self.size.y {
-                    let mut entity = self.entities.get_mut(&player_id).unwrap();
+                let mut entity = self.entities.get_mut(&player_id).unwrap();
+                if entity.controllable && pos.x < self.size.x && pos.y < self.size.y {
                     entity.move_to = Some((pos, secondary));
                 }
             }
