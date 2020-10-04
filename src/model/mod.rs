@@ -183,7 +183,7 @@ impl Model {
         generation_choices.insert(
             GroundType::Grass,
             vec![
-                (None, 100),
+                (None, 300),
                 (Some(basic_structure.clone()), 30),
                 (
                     Some(Structure {
@@ -551,7 +551,7 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.get_tile(pos).unwrap().ground_type != GroundType::Water && self.is_empty_tile(pos)
+        self.is_empty_tile(pos)
     }
     fn remove_at(&mut self, pos: Vec2<usize>) {
         if let Some((index, _)) = self
