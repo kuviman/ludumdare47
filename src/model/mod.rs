@@ -1,5 +1,5 @@
 use super::*;
-use noise::{NoiseFn, OpenSimplex, Seedable};
+use noise::{NoiseFn, OpenSimplex, Perlin, Seedable};
 
 mod config;
 mod entity;

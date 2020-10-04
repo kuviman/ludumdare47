@@ -148,19 +148,7 @@ impl Config {
         };
         let mut generation_choices = HashMap::new();
         generation_choices.insert(Biome::Water, vec![(None, 1)]);
-        generation_choices.insert(
-            Biome::Beach,
-            vec![
-                (None, 100),
-                (
-                    Some(Structure {
-                        structure_type: StructureType::Item { item: Item::Pebble },
-                        ..basic_structure
-                    }),
-                    1,
-                ),
-            ],
-        );
+        generation_choices.insert(Biome::Beach, vec![(None, 1)]);
         generation_choices.insert(
             Biome::Forest,
             vec![
@@ -172,6 +160,33 @@ impl Config {
                         ..basic_structure
                     }),
                     10,
+                ),
+            ],
+        );
+        generation_choices.insert(
+            Biome::Hills,
+            vec![
+                (None, 300),
+                (
+                    (Some(Structure {
+                        structure_type: StructureType::Item { item: Item::Pebble },
+                        ..basic_structure
+                    })),
+                    20,
+                ),
+                (
+                    (Some(Structure {
+                        structure_type: StructureType::Rock,
+                        ..basic_structure
+                    })),
+                    10,
+                ),
+                (
+                    (Some(Structure {
+                        structure_type: StructureType::GoldRock,
+                        ..basic_structure
+                    })),
+                    1,
                 ),
             ],
         );

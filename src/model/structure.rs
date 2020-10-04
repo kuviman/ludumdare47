@@ -12,6 +12,8 @@ pub enum StructureType {
     Tree,
     Campfire,
     Raft,
+    Rock,
+    GoldRock,
 }
 
 impl StructureType {

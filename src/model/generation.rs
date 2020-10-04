@@ -75,6 +75,7 @@ impl Model {
             }
             height_map.push(row);
         }
+        let noise = Perlin::new().set_seed(global_rng().gen());
         let mut tiles = vec![];
         for y in 0..map_size.y {
             let mut tiles_row = vec![];
@@ -95,7 +96,16 @@ impl Model {
                     } else if middle_height < 0.05 {
                         Biome::Beach
                     } else {
-                        Biome::Forest
+                        let value = noise.get([
+                            x as f64 / map_size.x as f64 * 10.0,
+                            y as f64 / map_size.y as f64 * 10.0,
+                        ]) / 2.0
+                            + 0.5;
+                        if value <= 0.5 {
+                            Biome::Forest
+                        } else {
+                            Biome::Hills
+                        }
                     },
                 });
             }

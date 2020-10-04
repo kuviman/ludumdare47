@@ -5,7 +5,7 @@ pub enum Biome {
     Water,
     Beach,
     Forest,
-    // Hills,
+    Hills,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
