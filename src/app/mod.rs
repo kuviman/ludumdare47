@@ -29,6 +29,8 @@ struct EntityData {
     target_pos: Vec2<usize>,
     speed: f32,
     rotation: f32,
+    ampl: f32,
+    t: f32,
 }
 
 impl EntityData {
@@ -38,9 +40,15 @@ impl EntityData {
             speed: 0.0,
             rotation: 0.0,
             target_pos: entity.pos,
+            ampl: 0.0,
+            t: 0.0,
         }
     }
+    fn step(&self) -> f32 {
+        self.ampl * self.t.sin().abs() * 0.1
+    }
     fn update(&mut self, entity: &model::Entity, tick_time: f32) {
+        self.t += tick_time * 5.0;
         if entity.pos != self.target_pos {
             self.target_pos = entity.pos;
             self.speed = (entity.pos.map(|x| x as f32 + 0.5) - self.pos).len();
@@ -49,6 +57,11 @@ impl EntityData {
         self.pos += dpos.clamp(self.speed * tick_time);
         if dpos.len() > 0.5 {
             self.rotation = dpos.arg();
+        }
+        if dpos.len() > 0.01 {
+            self.ampl = (self.ampl + tick_time * 10.0).min(1.0);
+        } else {
+            self.ampl = (self.ampl - tick_time * 10.0).max(0.0);
         }
     }
 }
@@ -332,16 +345,16 @@ impl geng::State for App {
             );
         }
         for entity in &view.entities {
-            let (pos, rotation) = self
+            let (mut pos, rotation) = self
                 .entity_positions
                 .get(&entity.id)
-                .map(|data| (data.pos, data.rotation))
-                .unwrap_or((entity.pos.map(|x| x as f32 + 0.5), 0.0));
+                .map(|data| (data.pos.extend(data.step()), data.rotation))
+                .unwrap_or((entity.pos.map(|x| x as f32 + 0.5).extend(0.0), 0.0));
             let height = self
                 .tile_mesh
-                .get_height(pos)
+                .get_height(pos.xy())
                 .expect("Failed to get player's height");
-            let pos = pos.extend(height);
+            pos.z += height;
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
