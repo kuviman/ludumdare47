@@ -29,8 +29,8 @@ impl Model {
                     });
                     if let Some(recipe) = recipe {
                         *ingredient1 = recipe.result1;
+                        structure.take();
                         if let Some(structure_type) = recipe.result2 {
-                            structure.take();
                             let structure = Structure {
                                 pos: move_to.0,
                                 structure_type,
@@ -48,7 +48,6 @@ impl Model {
                             ),
                             false,
                         ));
-                        structure.take();
                         self.structures.remove(&structure.take().unwrap().pos);
                     } else if let Some(_) = ingredient1 {
                         if let None = ingredient2 {
