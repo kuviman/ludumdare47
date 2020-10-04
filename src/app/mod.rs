@@ -46,6 +46,8 @@ pub struct Assets {
     magic_crystal: ez3d::Obj,
     crystal_shard: ez3d::Obj,
     statue: ez3d::Obj,
+    treasure_mark: ez3d::Obj,
+    treasure_chest: ez3d::Obj,
 }
 
 impl Assets {
@@ -64,7 +66,8 @@ impl Assets {
             model::Item::Shovel => &self.shovel,
             model::Item::CrystalShard => &self.crystal_shard,
             model::Item::Pickaxe => &self.pickaxe,
-            _ => &self.black_cloud,
+            model::Item::TreasureMark => &self.treasure_mark,
+            model::Item::TreasureChest => &self.treasure_chest,
         }
     }
     fn structure(&self, structure: model::StructureType) -> &ez3d::Obj {
@@ -78,7 +81,6 @@ impl Assets {
             model::StructureType::MagicCrystal => &self.magic_crystal,
             model::StructureType::Statue => &self.statue,
             model::StructureType::Item { item } => self.item(item),
-            _ => &self.black_cloud,
         }
     }
 }
