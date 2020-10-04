@@ -285,13 +285,17 @@ impl geng::State for App {
         if let Some(data) = self.entity_positions.get(&self.player_id) {
             self.draw_pentagon(framebuffer, data.pos, Color::GREEN);
         }
-        if let Some(pos) = self.tile_mesh.intersect(self.camera.pixel_ray(
-            self.framebuffer_size,
-            self.geng.window().mouse_pos().map(|x| x as f32),
-        )) {
+        let selected_pos = self
+            .tile_mesh
+            .intersect(self.camera.pixel_ray(
+                self.framebuffer_size,
+                self.geng.window().mouse_pos().map(|x| x as f32),
+            ))
+            .map(|pos| pos.xy().map(|x| x as usize));
+        if let Some(pos) = selected_pos {
             self.draw_pentagon(
                 framebuffer,
-                pos.xy().map(|x| x as usize as f32 + 0.5),
+                pos.map(|x| x as f32 + 0.5),
                 Color::rgba(1.0, 1.0, 1.0, 0.5),
             );
         }
@@ -402,6 +406,24 @@ impl geng::State for App {
                 },
             }),
         );
+        if let Some(pos) = selected_pos {
+            if let Some(struc) = view.structures.iter().find(|s| s.pos == pos) {
+                let text = match struc.structure_type {
+                    model::StructureType::Item { item } => format!("{:?}", item),
+                    _ => format!("{:?}", struc.structure_type),
+                };
+                let pos = pos.map(|x| x as f32 + 0.5);
+                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+                self.geng.default_font().draw_aligned(
+                    framebuffer,
+                    &text,
+                    self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
+                    0.5,
+                    32.0,
+                    Color::WHITE,
+                );
+            }
+        }
     }
     fn handle_event(&mut self, event: geng::Event) {
         match event {
