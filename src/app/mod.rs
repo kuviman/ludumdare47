@@ -542,6 +542,26 @@ impl geng::State for App {
                     32.0,
                     Color::WHITE,
                 );
+            } else if let Some(entity) = self.view.entities.iter().find(|e| e.pos == pos) {
+                let mut text = if entity.id == self.player_id {
+                    "Me"
+                } else {
+                    "Player"
+                }
+                .to_owned();
+                if let Some(item) = entity.item {
+                    text = format!("{}, holding {:?}", text, item);
+                }
+                let pos = pos.map(|x| x as f32 + 0.5);
+                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+                self.geng.default_font().draw_aligned(
+                    framebuffer,
+                    &text,
+                    self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
+                    0.5,
+                    32.0,
+                    Color::WHITE,
+                );
             }
         }
         self.geng.default_font().draw_aligned(
