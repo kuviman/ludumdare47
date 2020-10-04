@@ -87,6 +87,7 @@ pub enum StructureType {
     Item { item: Item },
     Tree,
     Campfire,
+    Raft,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy)]
@@ -94,6 +95,9 @@ pub enum Item {
     Pebble,
     Stick,
     Axe,
+    DoubleStick,
+    Log,
+    Planks,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
@@ -134,30 +138,55 @@ impl Recipe {
 
 impl Model {
     pub fn new(config: Config) -> Self {
-        let recipe1 = Recipe {
-            ingredient1: Some(Item::Stick),
-            ingredient2: Some(StructureType::Item { item: Item::Pebble }),
-            result1: Some(Item::Axe),
-            result2: None,
-        };
-        let recipe2 = Recipe {
-            ingredient1: Some(Item::Pebble),
-            ingredient2: Some(StructureType::Item { item: Item::Stick }),
-            result1: Some(Item::Axe),
-            result2: None,
-        };
-        let recipe3 = Recipe {
-            ingredient1: Some(Item::Axe),
-            ingredient2: Some(StructureType::Tree),
-            result1: Some(Item::Axe),
-            result2: Some(StructureType::Item { item: Item::Stick }),
-        };
-        let recipe4 = Recipe {
-            ingredient1: Some(Item::Stick),
-            ingredient2: Some(StructureType::Item { item: Item::Stick }),
-            result1: None,
-            result2: Some(StructureType::Campfire),
-        };
+        let recipes = [
+            Recipe {
+                ingredient1: Some(Item::Stick),
+                ingredient2: Some(StructureType::Item { item: Item::Pebble }),
+                result1: Some(Item::Axe),
+                result2: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Pebble),
+                ingredient2: Some(StructureType::Item { item: Item::Stick }),
+                result1: Some(Item::Axe),
+                result2: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Stick),
+                ingredient2: Some(StructureType::Item { item: Item::Stick }),
+                result1: None,
+                result2: Some(StructureType::Item {
+                    item: Item::DoubleStick,
+                }),
+            },
+            Recipe {
+                ingredient1: Some(Item::Axe),
+                ingredient2: Some(StructureType::Tree),
+                result1: Some(Item::Axe),
+                result2: Some(StructureType::Item { item: Item::Log }),
+            },
+            Recipe {
+                ingredient1: Some(Item::Axe),
+                ingredient2: Some(StructureType::Item { item: Item::Log }),
+                result1: Some(Item::Axe),
+                result2: Some(StructureType::Item { item: Item::Planks }),
+            },
+            Recipe {
+                ingredient1: Some(Item::Log),
+                ingredient2: Some(StructureType::Item {
+                    item: Item::DoubleStick,
+                }),
+                result1: None,
+                result2: Some(StructureType::Campfire),
+            },
+            Recipe {
+                ingredient1: Some(Item::DoubleStick),
+                ingredient2: Some(StructureType::Item { item: Item::Log }),
+                result1: None,
+                result2: Some(StructureType::Campfire),
+            },
+        ]
+        .to_vec();
         let basic_structure = Structure {
             pos: vec2(0, 0),
             size: vec2(1, 1),
@@ -205,7 +234,7 @@ impl Model {
             height_map,
             structures: vec![],
             entities: HashMap::new(),
-            recipes: vec![recipe1, recipe2, recipe3, recipe4],
+            recipes,
             current_time: 0,
             day_length: config.day_length,
             night_length: config.night_length,
