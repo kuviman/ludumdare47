@@ -14,11 +14,19 @@ use ez3d::Ez3D;
 use tile_mesh::TileMesh;
 
 #[derive(geng::Assets)]
+pub struct PlayerAssets {
+    eyes: ez3d::Obj,
+    skin: ez3d::Obj,
+    shirt: ez3d::Obj,
+    pants: ez3d::Obj,
+}
+
+#[derive(geng::Assets)]
 pub struct Assets {
     tree: ez3d::Obj,
     pebble: ez3d::Obj,
     stick: ez3d::Obj,
-    player: ez3d::Obj,
+    player: PlayerAssets,
     axe: ez3d::Obj,
     campfire: ez3d::Obj,
     black_cloud: ez3d::Obj,
@@ -392,12 +400,48 @@ impl geng::State for App {
                 framebuffer,
                 &self.camera,
                 &self.light,
-                self.assets.player.vb(),
+                self.assets.player.eyes.vb(),
                 std::iter::once(ez3d::Instance {
                     i_pos: pos,
                     i_size: 0.5,
                     i_rotation: -rotation,
-                    i_color: Color::WHITE,
+                    i_color: Color::BLACK,
+                }),
+            );
+            self.ez3d.draw(
+                framebuffer,
+                &self.camera,
+                &self.light,
+                self.assets.player.skin.vb(),
+                std::iter::once(ez3d::Instance {
+                    i_pos: pos,
+                    i_size: 0.5,
+                    i_rotation: -rotation,
+                    i_color: entity.colors.skin,
+                }),
+            );
+            self.ez3d.draw(
+                framebuffer,
+                &self.camera,
+                &self.light,
+                self.assets.player.shirt.vb(),
+                std::iter::once(ez3d::Instance {
+                    i_pos: pos,
+                    i_size: 0.5,
+                    i_rotation: -rotation,
+                    i_color: entity.colors.shirt,
+                }),
+            );
+            self.ez3d.draw(
+                framebuffer,
+                &self.camera,
+                &self.light,
+                self.assets.player.pants.vb(),
+                std::iter::once(ez3d::Instance {
+                    i_pos: pos,
+                    i_size: 0.5,
+                    i_rotation: -rotation,
+                    i_color: entity.colors.pants,
                 }),
             );
             let raft_pos = match data.rafted {
