@@ -28,6 +28,13 @@ pub struct Assets {
     raft: ez3d::Obj,
 }
 
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+enum Rafted {
+    Not,
+    Jumping,
+    On,
+}
+
 struct EntityData {
     pos: Vec2<f32>,
     target_pos: Vec2<usize>,
@@ -35,6 +42,7 @@ struct EntityData {
     rotation: f32,
     ampl: f32,
     t: f32,
+    rafted: Rafted,
 }
 
 impl EntityData {
@@ -46,16 +54,26 @@ impl EntityData {
             target_pos: entity.pos,
             ampl: 0.0,
             t: 0.0,
+            rafted: Rafted::Not,
         }
     }
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(&mut self, entity: &model::Entity, tick_time: f32) {
+    fn update(&mut self, entity: &model::Entity, rafted: bool, tick_time: f32) {
         self.t += tick_time * 5.0;
         if entity.pos != self.target_pos {
             self.target_pos = entity.pos;
             self.speed = (entity.pos.map(|x| x as f32 + 0.5) - self.pos).len();
+            if rafted {
+                if self.rafted == Rafted::Not {
+                    self.rafted = Rafted::Jumping;
+                } else {
+                    self.rafted = Rafted::On;
+                }
+            } else {
+                self.rafted = Rafted::Not;
+            }
         }
         let dpos = entity.pos.map(|x| x as f32 + 0.5) - self.pos;
         self.pos += dpos.clamp(self.speed * tick_time);
@@ -226,7 +244,12 @@ impl geng::State for App {
 
         for entity in self.model.entities.values() {
             if let Some(prev) = self.entity_positions.get_mut(&entity.id) {
-                prev.update(entity, delta_time * self.model.ticks_per_second);
+                prev.update(
+                    entity,
+                    self.model.tiles[entity.pos.y][entity.pos.x].ground_type
+                        == model::GroundType::Water,
+                    delta_time * self.model.ticks_per_second,
+                );
             } else {
                 self.entity_positions
                     .insert(entity.id, EntityData::new(entity));
@@ -370,16 +393,18 @@ impl geng::State for App {
             );
         }
         for entity in &view.entities {
-            let (mut pos, rotation) = self
+            let data = self
                 .entity_positions
-                .get(&entity.id)
-                .map(|data| (data.pos.extend(data.step()), data.rotation))
-                .unwrap_or((entity.pos.map(|x| x as f32 + 0.5).extend(0.0), 0.0));
+                .entry(entity.id)
+                .or_insert(EntityData::new(entity));
+            let mut pos = data.pos.extend(data.step());
+            let rotation = data.rotation;
             let height = self
                 .tile_mesh
                 .get_height(pos.xy())
                 .expect("Failed to get player's height");
             pos.z += height;
+            pos.z = pos.z.max(0.0);
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
@@ -392,6 +417,25 @@ impl geng::State for App {
                     i_color: Color::WHITE,
                 }),
             );
+            let raft_pos = match data.rafted {
+                Rafted::Not => None,
+                Rafted::Jumping => Some(data.target_pos.map(|x| x as f32 + 0.5).extend(0.0)),
+                Rafted::On => Some(pos),
+            };
+            if let Some(raft_pos) = raft_pos {
+                self.ez3d.draw(
+                    framebuffer,
+                    &self.camera,
+                    &self.light,
+                    self.assets.raft.vb(),
+                    std::iter::once(ez3d::Instance {
+                        i_pos: raft_pos,
+                        i_size: 0.5,
+                        i_rotation: -rotation,
+                        i_color: Color::WHITE,
+                    }),
+                );
+            }
             if let Some(item) = &entity.item {
                 self.ez3d.draw(
                     framebuffer,
