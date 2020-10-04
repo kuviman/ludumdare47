@@ -7,10 +7,11 @@ impl Model {
         let rules = Rules {
             entity_day_view_distance: config.player_day_view_distance,
             entity_night_view_distance: config.player_night_view_distance,
-            campfire_light: 5.0,
-            torch_light: 5.0,
+            campfire_light: config.campfire_light,
+            torch_light: config.torch_light,
+            statue_light: config.statue_light,
             fire_extinguish_chance: config.fire_extinguish_chance,
-            regeneration_percent: 0.01,
+            regeneration_percent: config.regeneration_percent,
         };
         let mut model = Self {
             rules,

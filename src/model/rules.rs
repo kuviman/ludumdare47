@@ -8,4 +8,5 @@ pub struct Rules {
     pub torch_light: f32,
     pub fire_extinguish_chance: f32,
     pub regeneration_percent: f32,
+    pub statue_light: f32,
 }

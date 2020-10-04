@@ -9,6 +9,10 @@ pub struct Config {
     pub day_length: usize,
     pub night_length: usize,
     pub fire_extinguish_chance: f32,
+    pub regeneration_percent: f32,
+    pub campfire_light: f32,
+    pub torch_light: f32,
+    pub statue_light: f32,
 }
 
 impl Default for Config {
@@ -21,6 +25,10 @@ impl Default for Config {
             day_length: 100,
             night_length: 50,
             fire_extinguish_chance: 0.001,
+            regeneration_percent: 0.01,
+            campfire_light: 5.0,
+            torch_light: 5.0,
+            statue_light: 10.0,
         }
     }
 }
