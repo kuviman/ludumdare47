@@ -53,6 +53,10 @@ pub struct Assets {
     craft: geng::Sound,
     pickup: geng::Sound,
     walk: geng::Sound,
+    blessing: geng::Sound,
+    hi: geng::Sound,
+    hello: geng::Sound,
+    heyo: geng::Sound,
 }
 
 impl Assets {
@@ -372,7 +376,12 @@ impl geng::State for App {
                         let sound = match sound {
                             model::Sound::Craft => &self.assets.craft,
                             model::Sound::PickUp | model::Sound::PutDown => &self.assets.pickup,
-                            _ => &self.assets.craft,
+                            model::Sound::Hello => {
+                                [&self.assets.hello, &self.assets.hi, &self.assets.heyo]
+                                    .choose(&mut global_rng())
+                                    .unwrap()
+                            }
+                            model::Sound::StatueGift => &self.assets.blessing,
                         };
                         let mut sound = sound.effect();
                         sound.set_volume(self.ui_state.volume());
