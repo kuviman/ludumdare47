@@ -23,6 +23,8 @@ pub struct PlayerAssets {
 
 #[derive(geng::Assets)]
 pub struct Assets {
+    #[asset(path = "music.ogg")]
+    music: geng::Sound,
     tree: ez3d::Obj,
     pebble: ez3d::Obj,
     stick: ez3d::Obj,
@@ -161,6 +163,59 @@ impl Default for BlackCloud {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct Settings {
+    volume: f64,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self { volume: 0.5 }
+    }
+}
+
+struct UiState {
+    geng: Rc<Geng>,
+    settings: AutoSave<Settings>,
+    volume_slider: geng::ui::Slider,
+}
+
+impl UiState {
+    fn new(geng: &Rc<Geng>) -> Self {
+        let ui_theme = Rc::new(geng::ui::Theme::default(geng));
+        Self {
+            geng: geng.clone(),
+            settings: AutoSave::load(".settings"),
+            volume_slider: geng::ui::Slider::new(&ui_theme),
+        }
+    }
+    fn volume(&self) -> f64 {
+        return self.settings.volume * 0.2;
+    }
+    fn ui<'a>(&'a mut self) -> impl geng::ui::Widget + 'a {
+        use geng::ui;
+        use geng::ui::*;
+        let settings = &mut self.settings;
+        let current_volume = settings.volume;
+        ui::row![
+            geng::ui::Text::new("volume", self.geng.default_font(), 24.0, Color::WHITE)
+                .padding_right(24.0),
+            self.volume_slider
+                .ui(
+                    current_volume,
+                    0.0..=1.0,
+                    Box::new(move |new_value| {
+                        settings.volume = new_value;
+                    })
+                )
+                .fixed_size(vec2(100.0, 24.0)),
+        ]
+        .padding_bottom(24.0)
+        .padding_right(24.0)
+        .align(vec2(1.0, 0.0))
+    }
+}
+
 pub struct App {
     show_help: bool,
     geng: Rc<Geng>,
@@ -179,6 +234,9 @@ pub struct App {
     light: light::Uniforms,
     entity_positions: HashMap<Id, EntityData>,
     black_clouds: HashMap<Vec2<usize>, BlackCloud>,
+    music: Option<geng::SoundEffect>,
+    ui_state: UiState,
+    ui_controller: geng::ui::Controller,
 }
 
 impl App {
@@ -227,6 +285,9 @@ impl App {
             entity_positions: HashMap::new(),
             black_clouds: HashMap::new(),
             show_help: true,
+            music: None,
+            ui_state: UiState::new(geng),
+            ui_controller: geng::ui::Controller::new(),
         }
     }
 
@@ -285,6 +346,11 @@ impl App {
 
 impl geng::State for App {
     fn update(&mut self, delta_time: f64) {
+        self.ui_controller
+            .update(&mut self.ui_state.ui(), delta_time);
+        if let Some(music) = &mut self.music {
+            music.set_volume(self.ui_state.volume());
+        }
         let delta_time = delta_time as f32;
 
         let mut got_message = false;
@@ -609,10 +675,21 @@ impl geng::State for App {
             text("    Left Mouse Button to move");
             text("    H to toggle help");
         }
+        self.ui_controller
+            .draw(&mut self.ui_state.ui(), framebuffer);
     }
     fn handle_event(&mut self, event: geng::Event) {
+        self.ui_controller
+            .handle_event(&mut self.ui_state.ui(), event.clone());
         match event {
             geng::Event::MouseDown { position, button } => {
+                if self.music.is_none() {
+                    self.music = Some({
+                        let mut music = self.assets.music.play();
+                        music.set_volume(0.2);
+                        music
+                    })
+                }
                 if let Some(pos) = self.tile_mesh.intersect(
                     self.camera
                         .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
