@@ -372,6 +372,7 @@ impl geng::State for App {
                         let sound = match sound {
                             model::Sound::Craft => &self.assets.craft,
                             model::Sound::PickUp | model::Sound::PutDown => &self.assets.pickup,
+                            _ => &self.assets.craft,
                         };
                         let mut sound = sound.effect();
                         sound.set_volume(self.ui_state.volume());
