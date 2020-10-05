@@ -84,7 +84,7 @@ impl Model {
             Message::Click { pos, secondary } => {
                 println!("Got click at {}:{}", pos, secondary);
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
-                if pos == entity.pos {
+                if !secondary && pos == entity.pos {
                     self.play_sound(Sound::Hello, self.sound_distance, pos);
                 } else if entity.controllable && pos.x < self.size.x && pos.y < self.size.y {
                     entity.move_to = Some((pos, secondary));
