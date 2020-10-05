@@ -38,6 +38,12 @@ impl Model {
                 },
             );
         }
+        for entity_torch in self.entities.values().filter(|entity| match entity.item {
+            Some(item) => item == Item::Torch,
+            _ => false,
+        }) {
+            Self::add_view_radius(&mut view, entity_torch.pos, self.rules.torch_light);
+        }
 
         let vision = PlayerView {
             players_online: self.entities.len(),

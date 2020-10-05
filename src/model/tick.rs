@@ -132,6 +132,11 @@ impl Model {
 
         let mut view = HashSet::new();
         for entity in self.entities.values() {
+            let view_range = if let Some(Item::Torch) = entity.item {
+                self.rules.torch_light.max(entity.view_range)
+            } else {
+                entity.view_range
+            };
             Self::add_view_radius(&mut view, entity.pos, entity.view_range);
         }
         for light_source in self.structures.values().filter(|structure| {
