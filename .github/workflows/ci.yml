@@ -13,33 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Cache cargo registry
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index
-
-      - name: Cache cargo target dir
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target
-
       - name: Build Linux
         run: |
           cargo geng build --release
           mkdir -p artifacts && mv target/geng artifacts/linux
-
-      - name: Build Windows
-        run: |
-          cargo geng build --release --target x86_64-pc-windows-gnu
-          mkdir -p artifacts && mv target/geng artifacts/windows
 
       - name: Build Web
         run: |
