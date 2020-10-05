@@ -37,7 +37,7 @@ impl Model {
                             };
                             self.structures.insert(structure.pos, structure);
                         }
-                        self.play_sound(Sound::Craft, 5.0, move_to.0);
+                        self.play_sound(Sound::Craft, self.sound_distance, move_to.0);
                         entity.move_to = None;
                     } else if let Some(StructureType::Raft) = ingredient2 {
                         // entity.pos = move_to.0;
@@ -72,14 +72,14 @@ impl Model {
                                 },
                             };
                             self.structures.insert(structure.pos, structure);
-                            self.play_sound(Sound::PutDown, 5.0, move_to.0);
+                            self.play_sound(Sound::PutDown, self.sound_distance, move_to.0);
                         }
                         entity.move_to = None;
                     } else if let Some(structure_type) = ingredient2 {
                         if let StructureType::Item { item } = structure_type {
                             structure.take();
                             *ingredient1 = Some(item);
-                            self.play_sound(Sound::PickUp, 5.0, move_to.0);
+                            self.play_sound(Sound::PickUp, self.sound_distance, move_to.0);
                         }
                         entity.move_to = None;
                     }

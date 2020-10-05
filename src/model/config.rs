@@ -13,6 +13,7 @@ pub struct Config {
     pub campfire_light: f32,
     pub torch_light: f32,
     pub statue_light: f32,
+    pub sound_distance: f32,
 }
 
 impl Default for Config {
@@ -29,6 +30,7 @@ impl Default for Config {
             campfire_light: 5.0,
             torch_light: 5.0,
             statue_light: 10.0,
+            sound_distance: 5.0,
         }
     }
 }
