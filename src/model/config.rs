@@ -48,6 +48,13 @@ impl Config {
                 conditions: None,
             },
             Recipe {
+                ingredient1: Some(Item::Pebble),
+                ingredient2: Some(StructureType::Rock),
+                result1: Some(Item::SharpStone),
+                result2: Some(StructureType::Rock),
+                conditions: None,
+            },
+            Recipe {
                 ingredient1: Some(Item::Stick),
                 ingredient2: Some(StructureType::Item { item: Item::Pebble }),
                 result1: Some(Item::Shovel),
