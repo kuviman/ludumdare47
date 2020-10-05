@@ -28,6 +28,7 @@ impl Model {
             recipes,
             scores_map: Config::default_scores_map(),
             generation_choices: Config::default_generation_choices(),
+            sounds: HashMap::new(),
         };
         for y in 0..model.size.y {
             for x in 0..model.size.x {
@@ -62,6 +63,7 @@ impl Model {
                 colors: EntityColors::new(),
             };
             player_id = entity.id;
+            self.sounds.insert(entity.id, vec![]);
             self.entities.insert(entity.id, entity);
         } else {
             error!("Did not find spawnable position");

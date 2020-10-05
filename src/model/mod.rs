@@ -54,6 +54,7 @@ pub struct Model {
     pub recipes: Vec<Recipe>,
     pub scores_map: HashMap<Item, i32>,
     generation_choices: HashMap<Biome, Vec<(Option<Structure>, usize)>>,
+    sounds: HashMap<Id, Vec<Sound>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -62,9 +63,17 @@ pub enum Message {
     Click { pos: Vec2<usize>, secondary: bool },
 }
 
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+pub enum Sound {
+    Craft,
+    PickUp,
+    PutDown,
+}
+
 impl Model {
     pub fn drop_player(&mut self, player_id: Id) {
         self.entities.remove(&player_id);
+        self.sounds.remove(&player_id);
     }
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         match message {
@@ -90,5 +99,14 @@ impl Model {
             .get(&pos)
             .map_or(true, |structure| structure.structure_type.traversable())
             && !self.entities.values().any(|entity| pos == entity.pos)
+    }
+    fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<usize>) {
+        for (id, entity_pos) in self.entities.iter().map(|(id, entity)| (id, entity.pos)) {
+            let dx = pos.x as f32 - entity_pos.x as f32;
+            let dy = pos.y as f32 - entity_pos.y as f32;
+            if dx * dx + dy * dy <= range * range {
+                self.sounds.get_mut(id).unwrap().push(sound);
+            }
+        }
     }
 }
