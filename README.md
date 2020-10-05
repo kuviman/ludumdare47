@@ -1,8 +1,10 @@
 # LudumDare 47 - The Island
 
-[Play online](https://ld47.kuviman.com)
-
 ![Image](logo.png)
+
+# Play online
+
+At https://ld47.kuviman.com
 
 # About
 
@@ -14,12 +16,12 @@ The world regenerates where you dont see.
 
 Left mouse button to move, right to interact.
 
-Middle mouse button to rotate the camera.
+Middle mouse button to rotate the camera. Scroll to zoom in/out.
 
 F toggles fullscreen.
 
-# Hints
+H toggles help (turned on by default).
 
-To craft a raft, combine two stacks of planks on water.
+# Server score
 
 To contribute to the server score, offer items to the shrine statue located somewhere on the island.
