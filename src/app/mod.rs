@@ -716,6 +716,7 @@ impl geng::State for App {
             geng::Event::MouseDown { position, button } => {
                 if self.music.is_none() {
                     self.music = Some({
+                        self.assets.music.looped = true;
                         let mut music = self.assets.music.play();
                         music.set_volume(0.2);
                         music
