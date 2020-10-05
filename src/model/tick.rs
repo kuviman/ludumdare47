@@ -61,6 +61,7 @@ impl Model {
                                 Some(score) => *score,
                                 None => 0,
                             };
+                            self.play_sound(Sound::StatueGift, self.sound_distance, move_to.0);
                         }
                     } else if let Some(_) = ingredient1 {
                         if let None = ingredient2 {

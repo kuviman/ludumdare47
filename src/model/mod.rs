@@ -69,6 +69,7 @@ pub enum Sound {
     Craft,
     PickUp,
     PutDown,
+    StatueGift,
 }
 
 impl Model {
