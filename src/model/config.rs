@@ -167,6 +167,36 @@ impl Config {
                 conditions: None,
             },
             Recipe {
+                ingredient1: Some(Item::Log),
+                ingredient2: Some(StructureType::Item { item: Item::Planks }),
+                result1: None,
+                result2: Some(StructureType::Campfire),
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Torch),
+                ingredient2: Some(StructureType::Item { item: Item::Log }),
+                result1: None,
+                result2: Some(StructureType::Campfire),
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Torch),
+                ingredient2: Some(StructureType::Item { item: Item::Planks }),
+                result1: None,
+                result2: Some(StructureType::Campfire),
+                conditions: None,
+            },
+            Recipe {
+                ingredient1: Some(Item::Torch),
+                ingredient2: Some(StructureType::Item {
+                    item: Item::DoubleStick,
+                }),
+                result1: None,
+                result2: Some(StructureType::Campfire),
+                conditions: None,
+            },
+            Recipe {
                 ingredient1: Some(Item::DoubleStick),
                 ingredient2: Some(StructureType::Item { item: Item::Log }),
                 result1: None,
@@ -206,7 +236,7 @@ impl Config {
             Recipe {
                 ingredient1: Some(Item::GoldPickaxe),
                 ingredient2: Some(StructureType::Rock),
-                result1: Some(Item::Pickaxe),
+                result1: Some(Item::GoldPickaxe),
                 result2: Some(StructureType::Item {
                     item: Item::SharpStone,
                 }),
@@ -215,7 +245,7 @@ impl Config {
             Recipe {
                 ingredient1: Some(Item::GoldPickaxe),
                 ingredient2: Some(StructureType::GoldRock),
-                result1: Some(Item::Pickaxe),
+                result1: Some(Item::GoldPickaxe),
                 result2: Some(StructureType::Item {
                     item: Item::GoldNugget,
                 }),
