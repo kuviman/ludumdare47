@@ -238,6 +238,7 @@ pub struct App {
     entity_positions: HashMap<Id, EntityData>,
     black_clouds: HashMap<Vec2<usize>, BlackCloud>,
     music: Option<geng::SoundEffect>,
+    walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
     ui_controller: geng::ui::Controller,
 }
@@ -289,6 +290,7 @@ impl App {
             black_clouds: HashMap::new(),
             show_help: true,
             music: None,
+            walk_sound: None,
             ui_state: UiState::new(geng),
             ui_controller: geng::ui::Controller::new(),
         }
@@ -353,6 +355,11 @@ impl geng::State for App {
             .update(&mut self.ui_state.ui(), delta_time);
         if let Some(music) = &mut self.music {
             music.set_volume(self.ui_state.volume() * 0.3);
+        }
+        if let Some(sound) = &mut self.walk_sound {
+            sound.set_volume(
+                self.ui_state.volume() * self.entity_positions[&self.player_id].ampl as f64,
+            );
         }
         let delta_time = delta_time as f32;
 
@@ -702,7 +709,11 @@ impl geng::State for App {
                         let mut music = self.assets.music.play();
                         music.set_volume(0.2);
                         music
-                    })
+                    });
+                    self.walk_sound = Some({
+                        self.assets.walk.looped = true;
+                        self.assets.walk.play()
+                    });
                 }
                 if let Some(pos) = self.tile_mesh.intersect(
                     self.camera
