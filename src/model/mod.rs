@@ -53,6 +53,7 @@ pub struct Model {
     pub night_length: usize,
     pub recipes: Vec<Recipe>,
     pub scores_map: HashMap<Item, i32>,
+    pub sound_distance: f32,
     generation_choices: HashMap<Biome, Vec<(Option<Structure>, usize)>>,
     sounds: HashMap<Id, Vec<Sound>>,
 }

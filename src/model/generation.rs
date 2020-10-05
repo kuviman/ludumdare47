@@ -27,6 +27,7 @@ impl Model {
             night_length: config.night_length,
             recipes,
             scores_map: Config::default_scores_map(),
+            sound_distance: config.sound_distance,
             generation_choices: Config::default_generation_choices(),
             sounds: HashMap::new(),
         };
