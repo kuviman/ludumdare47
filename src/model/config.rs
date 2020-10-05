@@ -176,14 +176,14 @@ impl Config {
             Recipe {
                 ingredient1: Some(Item::Torch),
                 ingredient2: Some(StructureType::Item { item: Item::Log }),
-                result1: None,
+                result1: Some(Item::Torch),
                 result2: Some(StructureType::Campfire),
                 conditions: None,
             },
             Recipe {
                 ingredient1: Some(Item::Torch),
                 ingredient2: Some(StructureType::Item { item: Item::Planks }),
-                result1: None,
+                result1: Some(Item::Torch),
                 result2: Some(StructureType::Campfire),
                 conditions: None,
             },
@@ -192,7 +192,7 @@ impl Config {
                 ingredient2: Some(StructureType::Item {
                     item: Item::DoubleStick,
                 }),
-                result1: None,
+                result1: Some(Item::Torch),
                 result2: Some(StructureType::Campfire),
                 conditions: None,
             },
