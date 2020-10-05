@@ -50,6 +50,9 @@ pub struct Assets {
     statue: ez3d::Obj,
     treasure_mark: ez3d::Obj,
     treasure_chest: ez3d::Obj,
+    craft: geng::Sound,
+    pickup: geng::Sound,
+    walk: geng::Sound,
 }
 
 impl Assets {
@@ -349,7 +352,7 @@ impl geng::State for App {
         self.ui_controller
             .update(&mut self.ui_state.ui(), delta_time);
         if let Some(music) = &mut self.music {
-            music.set_volume(self.ui_state.volume());
+            music.set_volume(self.ui_state.volume() * 0.3);
         }
         let delta_time = delta_time as f32;
 
@@ -357,7 +360,18 @@ impl geng::State for App {
         for message in self.connection.new_messages() {
             got_message = true;
             match message {
-                ServerMessage::View(view) => self.view = view,
+                ServerMessage::View(view) => {
+                    for sound in &view.sounds {
+                        let sound = match sound {
+                            model::Sound::Craft => &self.assets.craft,
+                            model::Sound::PickUp | model::Sound::PutDown => &self.assets.pickup,
+                        };
+                        let mut sound = sound.effect();
+                        sound.set_volume(self.ui_state.volume());
+                        sound.play();
+                    }
+                    self.view = view;
+                }
                 _ => unreachable!(),
             }
         }
