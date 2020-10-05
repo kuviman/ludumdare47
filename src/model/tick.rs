@@ -37,6 +37,7 @@ impl Model {
                             };
                             self.structures.insert(structure.pos, structure);
                         }
+                        self.play_sound(Sound::Craft, 5.0, move_to.0);
                         entity.move_to = None;
                     } else if let Some(StructureType::Raft) = ingredient2 {
                         // entity.pos = move_to.0;

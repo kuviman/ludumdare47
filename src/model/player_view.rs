@@ -13,10 +13,11 @@ pub struct PlayerView {
     pub entities: Vec<Entity>,
     pub structures: Vec<Structure>,
     pub recipes: Vec<Recipe>,
+    pub sounds: Vec<Sound>,
 }
 
 impl Model {
-    pub fn get_view(&self, player_id: Id) -> PlayerView {
+    pub fn get_view(&mut self, player_id: Id) -> PlayerView {
         let mut timer = Timer::new();
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = HashSet::new();
@@ -72,6 +73,7 @@ impl Model {
                 .map(|structure| structure.clone())
                 .collect(),
             recipes: self.recipes.clone(),
+            sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),
         };
         println!("Got player view in {:?}", timer.tick());
         vision
