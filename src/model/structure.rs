@@ -26,6 +26,12 @@ impl StructureType {
             _ => false,
         }
     }
+    pub fn to_string(&self) -> String {
+        match self {
+            Self::Item { item } => item.to_string(),
+            _ => format!("{:?}", self),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy, Hash)]
@@ -45,4 +51,10 @@ pub enum Item {
     CrystalShard,
     TreasureMark,
     TreasureChest,
+}
+
+impl Item {
+    pub fn to_string(&self) -> String {
+        format!("{:?}", self)
+    }
 }

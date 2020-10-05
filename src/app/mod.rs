@@ -162,6 +162,7 @@ impl Default for BlackCloud {
 }
 
 pub struct App {
+    show_help: bool,
     geng: Rc<Geng>,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
@@ -225,6 +226,7 @@ impl App {
             light,
             entity_positions: HashMap::new(),
             black_clouds: HashMap::new(),
+            show_help: true,
         }
     }
 
@@ -528,10 +530,7 @@ impl geng::State for App {
         );
         if let Some(pos) = selected_pos {
             if let Some(struc) = self.view.structures.iter().find(|s| s.pos == pos) {
-                let text = match struc.structure_type {
-                    model::StructureType::Item { item } => format!("{:?}", item),
-                    _ => format!("{:?}", struc.structure_type),
-                };
+                let text = struc.structure_type.to_string();
                 let pos = pos.map(|x| x as f32 + 0.5);
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                 self.geng.default_font().draw_aligned(
@@ -586,6 +585,30 @@ impl geng::State for App {
             32.0,
             Color::WHITE,
         );
+        if self.show_help {
+            let mut y = 32.0;
+            let mut text = |text: &str| {
+                self.geng
+                    .default_font()
+                    .draw(framebuffer, text, vec2(32.0, y), 24.0, Color::WHITE);
+                y += 24.0;
+            };
+            let mut found = false;
+            for recipe in &self.view.recipes {
+                if recipe.is_relevant(self.player_id, &self.view) {
+                    found = true;
+                    text(&format!("    {}", recipe.to_string()));
+                }
+            }
+            if !found {
+                text("    No recipes available");
+            }
+            text("RECIPES:");
+            text("    F to toggle fullscreen");
+            text("    Right Mouse Button to interact");
+            text("    Left Mouse Button to move");
+            text("    H to toggle help");
+        }
     }
     fn handle_event(&mut self, event: geng::Event) {
         match event {
@@ -609,6 +632,7 @@ impl geng::State for App {
                 }
             }
             geng::Event::KeyDown { key: geng::Key::F } => self.geng.window().toggle_fullscreen(),
+            geng::Event::KeyDown { key: geng::Key::H } => self.show_help = !self.show_help,
             _ => {}
         }
         self.camera_controls.handle_event(&mut self.camera, &event);

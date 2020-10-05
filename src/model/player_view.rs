@@ -12,6 +12,7 @@ pub struct PlayerView {
     pub tiles: Vec<Tile>,
     pub entities: Vec<Entity>,
     pub structures: Vec<Structure>,
+    pub recipes: Vec<Recipe>,
 }
 
 impl Model {
@@ -70,6 +71,7 @@ impl Model {
                 .filter(|structure| view.contains(&structure.pos))
                 .map(|structure| structure.clone())
                 .collect(),
+            recipes: self.recipes.clone(),
         };
         println!("Got player view in {:?}", timer.tick());
         vision
