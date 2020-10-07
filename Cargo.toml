@@ -5,7 +5,7 @@ authors = ["kuviman <kuviman@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-geng = "0.6.0-alpha"
+geng = "0.6.0"
 serde = "1"
 noise = "0.6.0"
 structopt = "0.3"
