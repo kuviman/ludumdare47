@@ -1,11 +1,11 @@
 [package]
-name = "ludumdare47"
+name = "island"
 version = "0.1.0"
 authors = ["kuviman <kuviman@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-geng = "0.6.0"
+geng = "0.7.0-alpha"
 serde = "1"
 noise = "0.6.0"
 structopt = "0.3"
