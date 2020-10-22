@@ -18,10 +18,10 @@ impl Model {
                     && (entity.pos.y as i32 - move_to.0.y as i32).abs() <= 1
                 {
                     let ingredient1 = &mut entity.item;
-                    let mut structure = self.structures.remove(&move_to.0);
+                    let mut item = self.remove_item(move_to.0);
                     let conditions = self.get_tile(move_to.0).unwrap().biome;
-                    let ingredient2 = match &structure {
-                        Some(structure) => Some(structure.item_type),
+                    let ingredient2 = match &item {
+                        Some(item) => Some(item.item_type),
                         None => None,
                     };
                     let recipe = self.recipes.iter().find(|recipe| {
@@ -29,18 +29,13 @@ impl Model {
                     });
                     if let Some(recipe) = recipe {
                         *ingredient1 = recipe.result1;
-                        structure.take();
+                        item.take();
                         if let Some(item_type) = recipe.result2 {
-                            let structure = Item {
-                                pos: move_to.0,
-                                item_type,
-                            };
-                            self.structures.insert(structure.pos, structure);
+                            self.spawn_item(item_type, move_to.0);
                         }
                         self.play_sound(Sound::Craft, self.sound_distance, move_to.0);
                         entity.move_to = None;
                     } else if let Some(ItemType::Raft) = ingredient2 {
-                        // entity.pos = move_to.0;
                         entity.controllable = false;
                         entity.move_to = Some((
                             vec2(
@@ -49,7 +44,7 @@ impl Model {
                             ),
                             false,
                         ));
-                        self.structures.remove(&structure.take().unwrap().pos);
+                        self.remove_item(item.take().unwrap().pos).unwrap();
                     } else if let Some(ItemType::TreasureMark) = ingredient2 {
                         // Stop forward checks to prevent picking it up
                     } else if let Some(ItemType::Statue) = ingredient2 {
@@ -60,27 +55,22 @@ impl Model {
                             };
                             self.play_sound(Sound::StatueGift, self.sound_distance, move_to.0);
                         }
-                    } else if let Some(_) = ingredient1 {
+                    } else if let Some(item_type) = ingredient1.take() {
                         if let None = ingredient2 {
-                            structure.take();
-                            let structure = Item {
-                                pos: move_to.0,
-                                item_type: ingredient1.take().unwrap(),
-                            };
-                            self.structures.insert(structure.pos, structure);
+                            self.spawn_item(item_type, move_to.0);
                             self.play_sound(Sound::PutDown, self.sound_distance, move_to.0);
                         }
                         entity.move_to = None;
                     } else if let Some(item_type) = ingredient2 {
                         if item_type.is_pickable() {
-                            structure.take();
+                            item.take();
                             *ingredient1 = Some(item_type);
                             self.play_sound(Sound::PickUp, self.sound_distance, move_to.0);
                         }
                         entity.move_to = None;
                     }
-                    if let Some(structure) = structure {
-                        self.structures.insert(structure.pos, structure);
+                    if let Some(item) = item {
+                        self.spawn_item(item.item_type, item.pos);
                     }
                 }
                 if entity.pos == move_to.0 {
@@ -128,10 +118,10 @@ impl Model {
         for entity in self.entities.values() {
             Self::add_view_radius(&mut view, entity.pos, entity.view_range);
         }
-        for light_source in self.structures.values().filter(|structure| {
-            structure.item_type == ItemType::Campfire
-                || structure.item_type == ItemType::Statue
-                || structure.item_type == ItemType::Torch
+        for light_source in self.items.values().filter(|item| {
+            item.item_type == ItemType::Campfire
+                || item.item_type == ItemType::Statue
+                || item.item_type == ItemType::Torch
         }) {
             Self::add_view_radius(
                 &mut view,
@@ -148,18 +138,18 @@ impl Model {
         println!("Got view in {:?}", timer.tick());
 
         let mut extinguished_positions = Vec::new();
-        for structure in self.structures.values() {
-            match structure.item_type {
+        for item in self.items.values() {
+            match item.item_type {
                 ItemType::Campfire | ItemType::Torch => {
                     if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance {
-                        extinguished_positions.push(structure.pos);
+                        extinguished_positions.push(item.pos);
                     }
                 }
                 _ => (),
             }
         }
         for pos in extinguished_positions {
-            self.structures.remove(&pos);
+            self.remove_item(pos).unwrap();
         }
         println!("Extinguish in {:?}", timer.tick());
 
@@ -171,7 +161,7 @@ impl Model {
                 global_rng().gen_range(0, self.size.y),
             );
             if !view.contains(&pos) {
-                self.structures.remove(&pos);
+                self.remove_item(pos);
                 self.generate_tile(pos);
             }
         }

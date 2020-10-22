@@ -22,10 +22,10 @@ impl Model {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = HashSet::new();
         Self::add_view_radius(&mut view, entity.pos, entity.view_range);
-        for light_source in self.structures.values().filter(|structure| {
-            structure.item_type == ItemType::Campfire
-                || structure.item_type == ItemType::Statue
-                || structure.item_type == ItemType::Torch
+        for light_source in self.items.values().filter(|item| {
+            item.item_type == ItemType::Campfire
+                || item.item_type == ItemType::Statue
+                || item.item_type == ItemType::Torch
         }) {
             Self::add_view_radius(
                 &mut view,
@@ -73,10 +73,10 @@ impl Model {
                 .map(|(_, entity)| entity.clone())
                 .collect(),
             structures: self
-                .structures
+                .items
                 .values()
-                .filter(|structure| view.contains(&structure.pos))
-                .map(|structure| structure.clone())
+                .filter(|item| view.contains(&item.pos))
+                .map(|item| item.clone())
                 .collect(),
             recipes: self.recipes.clone(),
             sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),

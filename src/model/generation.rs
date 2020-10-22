@@ -20,7 +20,6 @@ impl Model {
             size: config.map_size,
             tiles,
             height_map,
-            structures: HashMap::new(),
             entities: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
@@ -41,11 +40,7 @@ impl Model {
             }
         }
         if let Some(pos) = model.get_spawnable_pos(Biome::Forest) {
-            let statue = Item {
-                pos,
-                item_type: ItemType::Statue,
-            };
-            model.structures.insert(pos, statue);
+            model.spawn_item(ItemType::Statue, pos);
         } else {
             error!("Did not find a position for a statue");
         }
@@ -72,6 +67,16 @@ impl Model {
             player_id = Id::new(); // TODO
         }
         player_id
+    }
+    pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<usize>) {
+        let item = Item { pos, item_type };
+        self.items.insert(Id::new(), item);
+    }
+    pub fn remove_item(&mut self, pos: Vec2<usize>) -> Option<Item> {
+        match self.items.iter().find(|(id, item)| item.pos == pos) {
+            Some((index, _)) => self.items.remove(&index.clone()),
+            None => None,
+        }
     }
     fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
@@ -144,13 +149,12 @@ impl Model {
     }
     pub fn generate_tile(&mut self, pos: Vec2<usize>) {
         let mut rng = global_rng();
-        let choice = &self.generation_choices[&self.tiles[pos.y][pos.x].biome]
+        let choice = self.generation_choices[&self.tiles[pos.y][pos.x].biome]
             .choose_weighted(&mut rng, |item| item.1)
             .unwrap()
             .0;
-        if let Some(structure) = choice {
-            let structure = Item { pos, ..*structure };
-            self.structures.insert(structure.pos, structure);
+        if let Some(item_type) = choice {
+            self.spawn_item(item_type, pos);
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {

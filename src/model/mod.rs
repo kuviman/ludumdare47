@@ -46,16 +46,15 @@ pub struct Model {
     pub height_map: Vec<Vec<f32>>,
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
-    pub structures: HashMap<Vec2<usize>, Item>,
     pub entities: HashMap<Id, Entity>,
-    pub items: HashMap<usize, Item>,
+    pub items: HashMap<Id, Item>,
     pub current_time: usize,
     pub day_length: usize,
     pub night_length: usize,
     pub recipes: Vec<Recipe>,
     pub scores_map: HashMap<ItemType, i32>,
     pub sound_distance: f32,
-    generation_choices: HashMap<Biome, Vec<(Option<Item>, usize)>>,
+    generation_choices: HashMap<Biome, Vec<(Option<ItemType>, usize)>>,
     sounds: HashMap<Id, Vec<Sound>>,
 }
 
@@ -97,13 +96,14 @@ impl Model {
         self.tiles.get(pos.y)?.get(pos.x)
     }
     fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
-        self.structures.get(&pos).is_none()
+        self.items.values().find(|item| item.pos == pos).is_none()
             && !self.entities.values().any(|entity| pos == entity.pos)
     }
     fn is_traversable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.structures
-            .get(&pos)
-            .map_or(true, |structure| structure.item_type.is_traversable())
+        self.items
+            .values()
+            .find(|item| item.pos == pos)
+            .map_or(true, |item| item.item_type.is_traversable())
             && !self.entities.values().any(|entity| pos == entity.pos)
     }
     fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<usize>) {

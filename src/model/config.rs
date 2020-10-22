@@ -238,85 +238,36 @@ impl Config {
         ]
     }
 
-    pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<Item>, usize)>> {
-        let basic_structure = Item {
-            pos: vec2(0, 0),
-            item_type: ItemType::Tree,
-        };
+    pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
         let mut generation_choices = HashMap::new();
         generation_choices.insert(Biome::Water, vec![(None, 1)]);
         generation_choices.insert(
             Biome::Beach,
-            vec![
-                (None, 200),
-                (
-                    Some(Item {
-                        item_type: ItemType::TreasureMark,
-                        ..basic_structure
-                    }),
-                    1,
-                ),
-            ],
+            vec![(None, 200), (Some(ItemType::TreasureMark), 1)],
         );
         generation_choices.insert(
             Biome::Forest,
             vec![
                 (None, 300),
-                (Some(basic_structure.clone()), 30),
-                (
-                    Some(Item {
-                        item_type: ItemType::Stick,
-                        ..basic_structure
-                    }),
-                    10,
-                ),
+                (Some(ItemType::Tree), 30),
+                (Some(ItemType::Stick), 10),
             ],
         );
         generation_choices.insert(
             Biome::Hills,
             vec![
                 (None, 300),
-                (
-                    (Some(Item {
-                        item_type: ItemType::Pebble,
-                        ..basic_structure
-                    })),
-                    20,
-                ),
-                (
-                    (Some(Item {
-                        item_type: ItemType::Rock,
-                        ..basic_structure
-                    })),
-                    10,
-                ),
-                (
-                    (Some(Item {
-                        item_type: ItemType::GoldRock,
-                        ..basic_structure
-                    })),
-                    1,
-                ),
+                ((Some(ItemType::Pebble)), 20),
+                ((Some(ItemType::Rock)), 10),
+                ((Some(ItemType::GoldRock)), 1),
             ],
         );
         generation_choices.insert(
             Biome::MagicForest,
             vec![
                 (None, 300),
-                (
-                    (Some(Item {
-                        item_type: ItemType::BigMushroom,
-                        ..basic_structure
-                    })),
-                    10,
-                ),
-                (
-                    (Some(Item {
-                        item_type: ItemType::MagicCrystal,
-                        ..basic_structure
-                    })),
-                    1,
-                ),
+                ((Some(ItemType::BigMushroom)), 10),
+                ((Some(ItemType::MagicCrystal)), 1),
             ],
         );
         generation_choices
