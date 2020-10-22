@@ -18,7 +18,6 @@ pub struct PlayerView {
 
 impl Model {
     pub fn get_view(&mut self, player_id: Id) -> PlayerView {
-        let mut timer = Timer::new();
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = HashSet::new();
         Self::add_view_radius(&mut view, entity.pos, entity.view_range);
@@ -81,7 +80,6 @@ impl Model {
             recipes: self.recipes.clone(),
             sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),
         };
-        println!("Got player view in {:?}", timer.tick());
         vision
     }
 }

@@ -2,7 +2,6 @@ use super::*;
 
 impl Model {
     pub fn tick(&mut self) {
-        let mut timer = Timer::new();
         self.current_time += 1;
         if self.current_time >= self.day_length + self.night_length {
             self.current_time = 0;
@@ -99,7 +98,6 @@ impl Model {
                     });
             *self.entities.get_mut(&id).unwrap() = entity;
         }
-        println!("Moved in {:?}", timer.tick());
 
         let mut view = HashSet::new();
         for entity in self.entities.values() {
@@ -122,8 +120,6 @@ impl Model {
             );
         }
 
-        println!("Got view in {:?}", timer.tick());
-
         let mut extinguished_positions = Vec::new();
         for item in self.items.values() {
             match item.item_type {
@@ -138,7 +134,6 @@ impl Model {
         for pos in extinguished_positions {
             self.remove_item(pos).unwrap();
         }
-        println!("Extinguish in {:?}", timer.tick());
 
         for _ in
             0..(self.size.x as f32 * self.size.y as f32 * self.rules.regeneration_percent) as usize
@@ -152,6 +147,5 @@ impl Model {
                 self.generate_tile(pos);
             }
         }
-        println!("Regen in {:?}", timer.tick());
     }
 }
