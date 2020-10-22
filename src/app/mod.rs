@@ -486,12 +486,12 @@ impl geng::State for App {
         }
 
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
-        for structure in &self.view.structures {
-            let pos = structure.pos.map(|x| x as f32 + 0.5);
+        for (_, item) in &self.view.items {
+            let pos = item.pos.map(|x| x as f32 + 0.5);
             let height = self.tile_mesh.get_height(pos).unwrap();
             let pos = pos.extend(height);
             instances
-                .entry(structure.item_type)
+                .entry(item.item_type)
                 .or_default()
                 .push(ez3d::Instance {
                     i_pos: pos,
@@ -621,8 +621,8 @@ impl geng::State for App {
             }),
         );
         if let Some(pos) = selected_pos {
-            if let Some(struc) = self.view.structures.iter().find(|s| s.pos == pos) {
-                let text = struc.item_type.to_string();
+            if let Some((_, item)) = self.view.items.iter().find(|(_, s)| s.pos == pos) {
+                let text = item.item_type.to_string();
                 let pos = pos.map(|x| x as f32 + 0.5);
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                 self.geng.default_font().draw_aligned(
@@ -727,17 +727,27 @@ impl geng::State for App {
                 ) {
                     let pos = pos.xy().map(|x| x as usize);
                     match button {
-                        geng::MouseButton::Left => self.connection.send(ClientMessage::Click {
-                            pos,
-                            secondary: false,
-                        }),
-                        geng::MouseButton::Right => self.connection.send(ClientMessage::Click {
-                            pos,
-                            secondary: true,
-                        }),
+                        geng::MouseButton::Left => {
+                            self.connection.send(ClientMessage::Goto { pos })
+                        }
+                        geng::MouseButton::Right => {
+                            if let Some((id, _)) =
+                                self.view.items.iter().find(|(_, item)| item.pos == pos)
+                            {
+                                self.connection
+                                    .send(ClientMessage::Interact { id: id.clone() })
+                            }
+                        }
                         _ => {}
                     }
                 }
+            }
+            geng::Event::KeyDown { key: geng::Key::Q } => self.connection.send(ClientMessage::Drop),
+            geng::Event::KeyDown { key: geng::Key::E } => {
+                self.connection.send(ClientMessage::PickUp)
+            }
+            geng::Event::KeyDown { key: geng::Key::R } => {
+                self.connection.send(ClientMessage::SayHi)
             }
             geng::Event::KeyDown { key: geng::Key::F } => self.geng.window().toggle_fullscreen(),
             geng::Event::KeyDown { key: geng::Key::H } => self.show_help = !self.show_help,

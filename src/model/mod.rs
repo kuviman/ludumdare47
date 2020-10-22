@@ -61,7 +61,11 @@ pub struct Model {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {
     Ping,
-    Click { pos: Vec2<usize>, secondary: bool },
+    Goto { pos: Vec2<usize> },
+    Interact { id: Id },
+    Drop,
+    PickUp,
+    SayHi,
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
@@ -81,14 +85,69 @@ impl Model {
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         match message {
             Message::Ping => println!("Got ping message"),
-            Message::Click { pos, secondary } => {
-                println!("Got click at {}:{}", pos, secondary);
+            Message::Goto { pos } => {
+                println!("Got Goto {}", pos);
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
-                if !secondary && pos == entity.pos {
-                    self.play_sound(Sound::Hello, self.sound_distance, pos);
-                } else if entity.controllable && pos.x < self.size.x && pos.y < self.size.y {
-                    entity.move_to = Some((pos, secondary));
+                if entity.controllable && pos.x < self.size.x && pos.y < self.size.y {
+                    entity.move_to = Some((pos, false));
                 }
+            }
+            Message::Interact { id } => {
+                println!("Got Interact with {:?}", id);
+                let mut entity = self.entities.get_mut(&player_id).unwrap();
+                if let Some(item) = self.items.get(&id) {
+                    if entity.controllable && item.pos.x < self.size.x && item.pos.y < self.size.y {
+                        entity.move_to = Some((item.pos, true));
+                    }
+                }
+            }
+            Message::Drop => {
+                println!("Got Drop");
+                let mut entity = self.entities.get(&player_id).unwrap().clone();
+                let hand_item = &mut entity.item;
+                let mut item = self.remove_item(entity.pos);
+                let ground_item = match &item {
+                    Some(item) => Some(item.item_type),
+                    None => None,
+                };
+                if let None = ground_item {
+                    if let Some(item_type) = hand_item.take() {
+                        self.spawn_item(item_type, entity.pos);
+                        self.play_sound(Sound::PutDown, self.sound_distance, entity.pos);
+                    }
+                }
+                if let Some(item) = item {
+                    self.spawn_item(item.item_type, item.pos);
+                }
+                *self.entities.get_mut(&player_id).unwrap() = entity;
+            }
+            Message::PickUp => {
+                println!("Got PickUp");
+                let mut entity = self.entities.get(&player_id).unwrap().clone();
+                let hand_item = &mut entity.item;
+                let mut item = self.remove_item(entity.pos);
+                let ground_item = match &item {
+                    Some(item) => Some(item.item_type),
+                    None => None,
+                };
+                if let None = hand_item {
+                    if let Some(item_type) = ground_item {
+                        if item_type.is_pickable() {
+                            item.take();
+                            *hand_item = Some(item_type);
+                            self.play_sound(Sound::PickUp, self.sound_distance, entity.pos);
+                        }
+                    }
+                }
+                if let Some(item) = item {
+                    self.spawn_item(item.item_type, item.pos);
+                }
+                *self.entities.get_mut(&player_id).unwrap() = entity;
+            }
+            Message::SayHi => {
+                println!("Got SayHi");
+                let entity = self.entities.get(&player_id).unwrap();
+                self.play_sound(Sound::Hello, self.sound_distance, entity.pos);
             }
         }
     }

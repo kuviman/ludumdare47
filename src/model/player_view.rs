@@ -11,7 +11,7 @@ pub struct PlayerView {
     pub height_map: Vec<Vec<f32>>,
     pub tiles: Vec<Tile>,
     pub entities: Vec<Entity>,
-    pub structures: Vec<Item>,
+    pub items: HashMap<Id, Item>,
     pub recipes: Vec<Recipe>,
     pub sounds: Vec<Sound>,
 }
@@ -72,11 +72,11 @@ impl Model {
                 .filter(|(_, entity)| view.contains(&entity.pos))
                 .map(|(_, entity)| entity.clone())
                 .collect(),
-            structures: self
+            items: self
                 .items
-                .values()
-                .filter(|item| view.contains(&item.pos))
-                .map(|item| item.clone())
+                .iter()
+                .filter(|(_, item)| view.contains(&item.pos))
+                .map(|(id, item)| (id.clone(), item.clone()))
                 .collect(),
             recipes: self.recipes.clone(),
             sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),

@@ -55,19 +55,6 @@ impl Model {
                             };
                             self.play_sound(Sound::StatueGift, self.sound_distance, move_to.0);
                         }
-                    } else if let Some(item_type) = ingredient1.take() {
-                        if let None = ingredient2 {
-                            self.spawn_item(item_type, move_to.0);
-                            self.play_sound(Sound::PutDown, self.sound_distance, move_to.0);
-                        }
-                        entity.move_to = None;
-                    } else if let Some(item_type) = ingredient2 {
-                        if item_type.is_pickable() {
-                            item.take();
-                            *ingredient1 = Some(item_type);
-                            self.play_sound(Sound::PickUp, self.sound_distance, move_to.0);
-                        }
-                        entity.move_to = None;
                     }
                     if let Some(item) = item {
                         self.spawn_item(item.item_type, item.pos);
