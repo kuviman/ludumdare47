@@ -4,11 +4,11 @@ use noise::{NoiseFn, OpenSimplex, Seedable};
 mod config;
 mod entity;
 mod generation;
+mod item;
 mod pathfind;
 mod player_view;
 mod recipe;
 mod rules;
-mod structure;
 mod tick;
 mod tile;
 mod vision;
@@ -16,11 +16,11 @@ mod vision;
 pub use config::*;
 pub use entity::*;
 pub use generation::*;
+pub use item::*;
 pub use pathfind::*;
 pub use player_view::*;
 pub use recipe::*;
 pub use rules::*;
-pub use structure::*;
 pub use tick::*;
 pub use tile::*;
 pub use vision::*;
@@ -46,15 +46,16 @@ pub struct Model {
     pub height_map: Vec<Vec<f32>>,
     pub size: Vec2<usize>,
     pub tiles: Vec<Vec<Tile>>,
-    pub structures: HashMap<Vec2<usize>, Structure>,
+    pub structures: HashMap<Vec2<usize>, Item>,
     pub entities: HashMap<Id, Entity>,
+    pub items: HashMap<usize, Item>,
     pub current_time: usize,
     pub day_length: usize,
     pub night_length: usize,
     pub recipes: Vec<Recipe>,
-    pub scores_map: HashMap<Item, i32>,
+    pub scores_map: HashMap<ItemType, i32>,
     pub sound_distance: f32,
-    generation_choices: HashMap<Biome, Vec<(Option<Structure>, usize)>>,
+    generation_choices: HashMap<Biome, Vec<(Option<Item>, usize)>>,
     sounds: HashMap<Id, Vec<Sound>>,
 }
 
@@ -102,7 +103,7 @@ impl Model {
     fn is_traversable_tile(&self, pos: Vec2<usize>) -> bool {
         self.structures
             .get(&pos)
-            .map_or(true, |structure| structure.structure_type.traversable())
+            .map_or(true, |structure| structure.item_type.is_traversable())
             && !self.entities.values().any(|entity| pos == entity.pos)
     }
     fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<usize>) {

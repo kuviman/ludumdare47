@@ -11,7 +11,7 @@ pub struct PlayerView {
     pub height_map: Vec<Vec<f32>>,
     pub tiles: Vec<Tile>,
     pub entities: Vec<Entity>,
-    pub structures: Vec<Structure>,
+    pub structures: Vec<Item>,
     pub recipes: Vec<Recipe>,
     pub sounds: Vec<Sound>,
 }
@@ -23,23 +23,23 @@ impl Model {
         let mut view = HashSet::new();
         Self::add_view_radius(&mut view, entity.pos, entity.view_range);
         for light_source in self.structures.values().filter(|structure| {
-            structure.structure_type == StructureType::Campfire
-                || structure.structure_type == StructureType::Statue
-                || structure.structure_type == StructureType::Item { item: Item::Torch }
+            structure.item_type == ItemType::Campfire
+                || structure.item_type == ItemType::Statue
+                || structure.item_type == ItemType::Torch
         }) {
             Self::add_view_radius(
                 &mut view,
                 light_source.pos,
-                match light_source.structure_type {
-                    StructureType::Campfire => self.rules.campfire_light,
-                    StructureType::Statue => self.rules.statue_light,
-                    StructureType::Item { item: Item::Torch } => self.rules.torch_light,
+                match light_source.item_type {
+                    ItemType::Campfire => self.rules.campfire_light,
+                    ItemType::Statue => self.rules.statue_light,
+                    ItemType::Torch => self.rules.torch_light,
                     _ => unreachable!(),
                 },
             );
         }
         for entity_torch in self.entities.values().filter(|entity| match entity.item {
-            Some(item) => item == Item::Torch,
+            Some(item) => item == ItemType::Torch,
             _ => false,
         }) {
             Self::add_view_radius(&mut view, entity_torch.pos, self.rules.torch_light);

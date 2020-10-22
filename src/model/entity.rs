@@ -59,7 +59,7 @@ pub struct Entity {
     pub size: Vec2<usize>,
     pub view_range: f32,
     pub move_to: Option<(Vec2<usize>, bool)>,
-    pub item: Option<Item>,
+    pub item: Option<ItemType>,
     pub controllable: bool,
     pub colors: EntityColors,
 }

@@ -37,238 +37,211 @@ impl Default for Config {
 
 impl Config {
     pub fn default_recipes() -> Vec<Recipe> {
+        use ItemType::*;
         vec![
             Recipe {
-                ingredient1: Some(Item::Pebble),
-                ingredient2: Some(StructureType::Item { item: Item::Pebble }),
+                ingredient1: Some(Pebble),
+                ingredient2: Some(Pebble),
                 result1: None,
-                result2: Some(StructureType::Item {
-                    item: Item::SharpStone,
-                }),
+                result2: Some(SharpStone),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Pebble),
-                ingredient2: Some(StructureType::Rock),
-                result1: Some(Item::SharpStone),
-                result2: Some(StructureType::Rock),
+                ingredient1: Some(Pebble),
+                ingredient2: Some(Rock),
+                result1: Some(SharpStone),
+                result2: Some(Rock),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Stick),
-                ingredient2: Some(StructureType::Item { item: Item::Pebble }),
-                result1: Some(Item::Shovel),
+                ingredient1: Some(Stick),
+                ingredient2: Some(Pebble),
+                result1: Some(Shovel),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Pebble),
-                ingredient2: Some(StructureType::Item { item: Item::Stick }),
-                result1: Some(Item::Shovel),
+                ingredient1: Some(Pebble),
+                ingredient2: Some(Stick),
+                result1: Some(Shovel),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Stick),
-                ingredient2: Some(StructureType::Item {
-                    item: Item::SharpStone,
-                }),
-                result1: Some(Item::Axe),
+                ingredient1: Some(Stick),
+                ingredient2: Some(SharpStone),
+                result1: Some(Axe),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::SharpStone),
-                ingredient2: Some(StructureType::Item { item: Item::Stick }),
-                result1: Some(Item::Axe),
+                ingredient1: Some(SharpStone),
+                ingredient2: Some(Stick),
+                result1: Some(Axe),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Axe),
-                ingredient2: Some(StructureType::Item {
-                    item: Item::SharpStone,
-                }),
-                result1: Some(Item::Pickaxe),
+                ingredient1: Some(Axe),
+                ingredient2: Some(SharpStone),
+                result1: Some(Pickaxe),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::SharpStone),
-                ingredient2: Some(StructureType::Item { item: Item::Axe }),
-                result1: Some(Item::Pickaxe),
+                ingredient1: Some(SharpStone),
+                ingredient2: Some(Axe),
+                result1: Some(Pickaxe),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Pickaxe),
-                ingredient2: Some(StructureType::Rock),
-                result1: Some(Item::Pickaxe),
-                result2: Some(StructureType::Item {
-                    item: Item::SharpStone,
-                }),
+                ingredient1: Some(Pickaxe),
+                ingredient2: Some(Rock),
+                result1: Some(Pickaxe),
+                result2: Some(SharpStone),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Pickaxe),
-                ingredient2: Some(StructureType::GoldRock),
-                result1: Some(Item::Pickaxe),
-                result2: Some(StructureType::Item {
-                    item: Item::GoldNugget,
-                }),
+                ingredient1: Some(Pickaxe),
+                ingredient2: Some(GoldRock),
+                result1: Some(Pickaxe),
+                result2: Some(GoldNugget),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Stick),
-                ingredient2: Some(StructureType::Item {
-                    item: Item::GoldNugget,
-                }),
-                result1: Some(Item::GoldPickaxe),
+                ingredient1: Some(Stick),
+                ingredient2: Some(GoldNugget),
+                result1: Some(GoldPickaxe),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::GoldNugget),
-                ingredient2: Some(StructureType::Item { item: Item::Stick }),
-                result1: Some(Item::GoldPickaxe),
+                ingredient1: Some(GoldNugget),
+                ingredient2: Some(Stick),
+                result1: Some(GoldPickaxe),
                 result2: None,
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Stick),
-                ingredient2: Some(StructureType::Item { item: Item::Stick }),
+                ingredient1: Some(Stick),
+                ingredient2: Some(Stick),
                 result1: None,
-                result2: Some(StructureType::Item {
-                    item: Item::DoubleStick,
-                }),
+                result2: Some(DoubleStick),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Axe),
-                ingredient2: Some(StructureType::Tree),
-                result1: Some(Item::Axe),
-                result2: Some(StructureType::Item { item: Item::Log }),
+                ingredient1: Some(Axe),
+                ingredient2: Some(Tree),
+                result1: Some(Axe),
+                result2: Some(Log),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Axe),
-                ingredient2: Some(StructureType::Item { item: Item::Log }),
-                result1: Some(Item::Axe),
-                result2: Some(StructureType::Item { item: Item::Planks }),
+                ingredient1: Some(Axe),
+                ingredient2: Some(Log),
+                result1: Some(Axe),
+                result2: Some(Planks),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Log),
-                ingredient2: Some(StructureType::Item {
-                    item: Item::DoubleStick,
-                }),
+                ingredient1: Some(Log),
+                ingredient2: Some(DoubleStick),
                 result1: None,
-                result2: Some(StructureType::Campfire),
+                result2: Some(Campfire),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Log),
-                ingredient2: Some(StructureType::Item { item: Item::Planks }),
+                ingredient1: Some(Log),
+                ingredient2: Some(Planks),
                 result1: None,
-                result2: Some(StructureType::Campfire),
+                result2: Some(Campfire),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Torch),
-                ingredient2: Some(StructureType::Item { item: Item::Log }),
-                result1: Some(Item::Torch),
-                result2: Some(StructureType::Campfire),
+                ingredient1: Some(Torch),
+                ingredient2: Some(Log),
+                result1: Some(Torch),
+                result2: Some(Campfire),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Torch),
-                ingredient2: Some(StructureType::Item { item: Item::Planks }),
-                result1: Some(Item::Torch),
-                result2: Some(StructureType::Campfire),
+                ingredient1: Some(Torch),
+                ingredient2: Some(Planks),
+                result1: Some(Torch),
+                result2: Some(Campfire),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Torch),
-                ingredient2: Some(StructureType::Item {
-                    item: Item::DoubleStick,
-                }),
-                result1: Some(Item::Torch),
-                result2: Some(StructureType::Campfire),
+                ingredient1: Some(Torch),
+                ingredient2: Some(DoubleStick),
+                result1: Some(Torch),
+                result2: Some(Campfire),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::DoubleStick),
-                ingredient2: Some(StructureType::Item { item: Item::Log }),
+                ingredient1: Some(DoubleStick),
+                ingredient2: Some(Log),
                 result1: None,
-                result2: Some(StructureType::Campfire),
+                result2: Some(Campfire),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Planks),
-                ingredient2: Some(StructureType::Item { item: Item::Planks }),
+                ingredient1: Some(Planks),
+                ingredient2: Some(Planks),
                 result1: None,
-                result2: Some(StructureType::Raft),
+                result2: Some(Raft),
                 conditions: Some(Biome::Water),
             },
             Recipe {
-                ingredient1: Some(Item::DoubleStick),
+                ingredient1: Some(DoubleStick),
                 ingredient2: None,
-                result1: Some(Item::Stick),
-                result2: Some(StructureType::Item { item: Item::Stick }),
+                result1: Some(Stick),
+                result2: Some(Stick),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Stick),
-                ingredient2: Some(StructureType::Campfire),
-                result1: Some(Item::Torch),
-                result2: Some(StructureType::Campfire),
+                ingredient1: Some(Stick),
+                ingredient2: Some(Campfire),
+                result1: Some(Torch),
+                result2: Some(Campfire),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::GoldPickaxe),
-                ingredient2: Some(StructureType::MagicCrystal),
-                result1: Some(Item::GoldPickaxe),
-                result2: Some(StructureType::Item {
-                    item: Item::CrystalShard,
-                }),
+                ingredient1: Some(GoldPickaxe),
+                ingredient2: Some(MagicCrystal),
+                result1: Some(GoldPickaxe),
+                result2: Some(CrystalShard),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::GoldPickaxe),
-                ingredient2: Some(StructureType::Rock),
-                result1: Some(Item::GoldPickaxe),
-                result2: Some(StructureType::Item {
-                    item: Item::SharpStone,
-                }),
+                ingredient1: Some(GoldPickaxe),
+                ingredient2: Some(Rock),
+                result1: Some(GoldPickaxe),
+                result2: Some(SharpStone),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::GoldPickaxe),
-                ingredient2: Some(StructureType::GoldRock),
-                result1: Some(Item::GoldPickaxe),
-                result2: Some(StructureType::Item {
-                    item: Item::GoldNugget,
-                }),
+                ingredient1: Some(GoldPickaxe),
+                ingredient2: Some(GoldRock),
+                result1: Some(GoldPickaxe),
+                result2: Some(GoldNugget),
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Item::Shovel),
-                ingredient2: Some(StructureType::Item {
-                    item: Item::TreasureMark,
-                }),
-                result1: Some(Item::Shovel),
-                result2: Some(StructureType::Item {
-                    item: Item::TreasureChest,
-                }),
+                ingredient1: Some(Shovel),
+                ingredient2: Some(TreasureMark),
+                result1: Some(Shovel),
+                result2: Some(TreasureChest),
                 conditions: None,
             },
         ]
     }
 
-    pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<Structure>, usize)>> {
-        let basic_structure = Structure {
+    pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<Item>, usize)>> {
+        let basic_structure = Item {
             pos: vec2(0, 0),
-            structure_type: StructureType::Tree,
+            item_type: ItemType::Tree,
         };
         let mut generation_choices = HashMap::new();
         generation_choices.insert(Biome::Water, vec![(None, 1)]);
@@ -277,10 +250,8 @@ impl Config {
             vec![
                 (None, 200),
                 (
-                    Some(Structure {
-                        structure_type: StructureType::Item {
-                            item: Item::TreasureMark,
-                        },
+                    Some(Item {
+                        item_type: ItemType::TreasureMark,
                         ..basic_structure
                     }),
                     1,
@@ -293,8 +264,8 @@ impl Config {
                 (None, 300),
                 (Some(basic_structure.clone()), 30),
                 (
-                    Some(Structure {
-                        structure_type: StructureType::Item { item: Item::Stick },
+                    Some(Item {
+                        item_type: ItemType::Stick,
                         ..basic_structure
                     }),
                     10,
@@ -306,22 +277,22 @@ impl Config {
             vec![
                 (None, 300),
                 (
-                    (Some(Structure {
-                        structure_type: StructureType::Item { item: Item::Pebble },
+                    (Some(Item {
+                        item_type: ItemType::Pebble,
                         ..basic_structure
                     })),
                     20,
                 ),
                 (
-                    (Some(Structure {
-                        structure_type: StructureType::Rock,
+                    (Some(Item {
+                        item_type: ItemType::Rock,
                         ..basic_structure
                     })),
                     10,
                 ),
                 (
-                    (Some(Structure {
-                        structure_type: StructureType::GoldRock,
+                    (Some(Item {
+                        item_type: ItemType::GoldRock,
                         ..basic_structure
                     })),
                     1,
@@ -333,15 +304,15 @@ impl Config {
             vec![
                 (None, 300),
                 (
-                    (Some(Structure {
-                        structure_type: StructureType::BigMushroom,
+                    (Some(Item {
+                        item_type: ItemType::BigMushroom,
                         ..basic_structure
                     })),
                     10,
                 ),
                 (
-                    (Some(Structure {
-                        structure_type: StructureType::MagicCrystal,
+                    (Some(Item {
+                        item_type: ItemType::MagicCrystal,
                         ..basic_structure
                     })),
                     1,
@@ -350,13 +321,13 @@ impl Config {
         );
         generation_choices
     }
-    pub fn default_scores_map() -> HashMap<Item, i32> {
+    pub fn default_scores_map() -> HashMap<ItemType, i32> {
         let mut scores_map = HashMap::new();
-        scores_map.insert(Item::TreasureChest, 5);
-        scores_map.insert(Item::CrystalShard, 10);
-        scores_map.insert(Item::GoldNugget, 5);
-        scores_map.insert(Item::Stick, -1);
-        scores_map.insert(Item::Pebble, -1);
+        scores_map.insert(ItemType::TreasureChest, 5);
+        scores_map.insert(ItemType::CrystalShard, 10);
+        scores_map.insert(ItemType::GoldNugget, 5);
+        scores_map.insert(ItemType::Stick, -1);
+        scores_map.insert(ItemType::Pebble, -1);
         scores_map
     }
 }

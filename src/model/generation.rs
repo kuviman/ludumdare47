@@ -22,6 +22,7 @@ impl Model {
             height_map,
             structures: HashMap::new(),
             entities: HashMap::new(),
+            items: HashMap::new(),
             current_time: 0,
             day_length: config.day_length,
             night_length: config.night_length,
@@ -40,9 +41,9 @@ impl Model {
             }
         }
         if let Some(pos) = model.get_spawnable_pos(Biome::Forest) {
-            let statue = Structure {
+            let statue = Item {
                 pos,
-                structure_type: StructureType::Statue,
+                item_type: ItemType::Statue,
             };
             model.structures.insert(pos, statue);
         } else {
@@ -148,7 +149,7 @@ impl Model {
             .unwrap()
             .0;
         if let Some(structure) = choice {
-            let structure = Structure { pos, ..*structure };
+            let structure = Item { pos, ..*structure };
             self.structures.insert(structure.pos, structure);
         }
     }

@@ -21,7 +21,7 @@ impl Model {
                     let mut structure = self.structures.remove(&move_to.0);
                     let conditions = self.get_tile(move_to.0).unwrap().biome;
                     let ingredient2 = match &structure {
-                        Some(structure) => Some(structure.structure_type),
+                        Some(structure) => Some(structure.item_type),
                         None => None,
                     };
                     let recipe = self.recipes.iter().find(|recipe| {
@@ -30,16 +30,16 @@ impl Model {
                     if let Some(recipe) = recipe {
                         *ingredient1 = recipe.result1;
                         structure.take();
-                        if let Some(structure_type) = recipe.result2 {
-                            let structure = Structure {
+                        if let Some(item_type) = recipe.result2 {
+                            let structure = Item {
                                 pos: move_to.0,
-                                structure_type,
+                                item_type,
                             };
                             self.structures.insert(structure.pos, structure);
                         }
                         self.play_sound(Sound::Craft, self.sound_distance, move_to.0);
                         entity.move_to = None;
-                    } else if let Some(StructureType::Raft) = ingredient2 {
+                    } else if let Some(ItemType::Raft) = ingredient2 {
                         // entity.pos = move_to.0;
                         entity.controllable = false;
                         entity.move_to = Some((
@@ -50,12 +50,9 @@ impl Model {
                             false,
                         ));
                         self.structures.remove(&structure.take().unwrap().pos);
-                    } else if let Some(StructureType::Item {
-                        item: Item::TreasureMark,
-                    }) = ingredient2
-                    {
+                    } else if let Some(ItemType::TreasureMark) = ingredient2 {
                         // Stop forward checks to prevent picking it up
-                    } else if let Some(StructureType::Statue) = ingredient2 {
+                    } else if let Some(ItemType::Statue) = ingredient2 {
                         if let Some(item) = ingredient1.take() {
                             self.score += match self.scores_map.get(&item) {
                                 Some(score) => *score,
@@ -66,20 +63,18 @@ impl Model {
                     } else if let Some(_) = ingredient1 {
                         if let None = ingredient2 {
                             structure.take();
-                            let structure = Structure {
+                            let structure = Item {
                                 pos: move_to.0,
-                                structure_type: StructureType::Item {
-                                    item: ingredient1.take().unwrap(),
-                                },
+                                item_type: ingredient1.take().unwrap(),
                             };
                             self.structures.insert(structure.pos, structure);
                             self.play_sound(Sound::PutDown, self.sound_distance, move_to.0);
                         }
                         entity.move_to = None;
-                    } else if let Some(structure_type) = ingredient2 {
-                        if let StructureType::Item { item } = structure_type {
+                    } else if let Some(item_type) = ingredient2 {
+                        if item_type.is_pickable() {
                             structure.take();
-                            *ingredient1 = Some(item);
+                            *ingredient1 = Some(item_type);
                             self.play_sound(Sound::PickUp, self.sound_distance, move_to.0);
                         }
                         entity.move_to = None;
@@ -120,37 +115,31 @@ impl Model {
             }
             entity.view_range =
                 self.calc_view_range()
-                    .max(if let Some(Item::Torch) = entity.item {
+                    .max(if let Some(ItemType::Torch) = entity.item {
                         self.rules.torch_light
                     } else {
                         0.0
                     });
             *self.entities.get_mut(&id).unwrap() = entity;
         }
-
         println!("Moved in {:?}", timer.tick());
 
         let mut view = HashSet::new();
         for entity in self.entities.values() {
-            let view_range = if let Some(Item::Torch) = entity.item {
-                self.rules.torch_light.max(entity.view_range)
-            } else {
-                entity.view_range
-            };
             Self::add_view_radius(&mut view, entity.pos, entity.view_range);
         }
         for light_source in self.structures.values().filter(|structure| {
-            structure.structure_type == StructureType::Campfire
-                || structure.structure_type == StructureType::Statue
-                || structure.structure_type == StructureType::Item { item: Item::Torch }
+            structure.item_type == ItemType::Campfire
+                || structure.item_type == ItemType::Statue
+                || structure.item_type == ItemType::Torch
         }) {
             Self::add_view_radius(
                 &mut view,
                 light_source.pos,
-                match light_source.structure_type {
-                    StructureType::Campfire => self.rules.campfire_light,
-                    StructureType::Statue => self.rules.statue_light,
-                    StructureType::Item { item: Item::Torch } => self.rules.torch_light,
+                match light_source.item_type {
+                    ItemType::Campfire => self.rules.campfire_light,
+                    ItemType::Statue => self.rules.statue_light,
+                    ItemType::Torch => self.rules.torch_light,
                     _ => unreachable!(),
                 },
             );
@@ -160,8 +149,8 @@ impl Model {
 
         let mut extinguished_positions = Vec::new();
         for structure in self.structures.values() {
-            match structure.structure_type {
-                StructureType::Campfire | StructureType::Item { item: Item::Torch } => {
+            match structure.item_type {
+                ItemType::Campfire | ItemType::Torch => {
                     if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance {
                         extinguished_positions.push(structure.pos);
                     }

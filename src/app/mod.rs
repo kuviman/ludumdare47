@@ -60,36 +60,31 @@ pub struct Assets {
 }
 
 impl Assets {
-    fn item(&self, item: model::Item) -> &ez3d::Obj {
+    fn item(&self, item: model::ItemType) -> &ez3d::Obj {
         match item {
-            model::Item::Axe => &self.axe,
-            model::Item::DoubleStick => &self.double_stick,
-            model::Item::Log => &self.log,
-            model::Item::Pebble => &self.pebble,
-            model::Item::Planks => &self.planks,
-            model::Item::Stick => &self.stick,
-            model::Item::Torch => &self.torch,
-            model::Item::GoldNugget => &self.gold_nugget,
-            model::Item::GoldPickaxe => &self.gold_pickaxe,
-            model::Item::SharpStone => &self.sharp_stone,
-            model::Item::Shovel => &self.shovel,
-            model::Item::CrystalShard => &self.crystal_shard,
-            model::Item::Pickaxe => &self.pickaxe,
-            model::Item::TreasureMark => &self.treasure_mark,
-            model::Item::TreasureChest => &self.treasure_chest,
-        }
-    }
-    fn structure(&self, structure: model::StructureType) -> &ez3d::Obj {
-        match structure {
-            model::StructureType::Tree => &self.tree,
-            model::StructureType::Campfire => &self.campfire,
-            model::StructureType::Raft => &self.raft,
-            model::StructureType::Rock => &self.rock,
-            model::StructureType::GoldRock => &self.gold_rock,
-            model::StructureType::BigMushroom => &self.big_mushroom,
-            model::StructureType::MagicCrystal => &self.magic_crystal,
-            model::StructureType::Statue => &self.statue,
-            model::StructureType::Item { item } => self.item(item),
+            model::ItemType::Axe => &self.axe,
+            model::ItemType::DoubleStick => &self.double_stick,
+            model::ItemType::Log => &self.log,
+            model::ItemType::Pebble => &self.pebble,
+            model::ItemType::Planks => &self.planks,
+            model::ItemType::Stick => &self.stick,
+            model::ItemType::Torch => &self.torch,
+            model::ItemType::GoldNugget => &self.gold_nugget,
+            model::ItemType::GoldPickaxe => &self.gold_pickaxe,
+            model::ItemType::SharpStone => &self.sharp_stone,
+            model::ItemType::Shovel => &self.shovel,
+            model::ItemType::CrystalShard => &self.crystal_shard,
+            model::ItemType::Pickaxe => &self.pickaxe,
+            model::ItemType::TreasureMark => &self.treasure_mark,
+            model::ItemType::TreasureChest => &self.treasure_chest,
+            model::ItemType::Tree => &self.tree,
+            model::ItemType::Campfire => &self.campfire,
+            model::ItemType::Raft => &self.raft,
+            model::ItemType::Rock => &self.rock,
+            model::ItemType::GoldRock => &self.gold_rock,
+            model::ItemType::MagicCrystal => &self.magic_crystal,
+            model::ItemType::BigMushroom => &self.big_mushroom,
+            model::ItemType::Statue => &self.statue,
         }
     }
 }
@@ -490,13 +485,13 @@ impl geng::State for App {
             );
         }
 
-        let mut instances: HashMap<model::StructureType, Vec<ez3d::Instance>> = HashMap::new();
+        let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
         for structure in &self.view.structures {
             let pos = structure.pos.map(|x| x as f32 + 0.5);
             let height = self.tile_mesh.get_height(pos).unwrap();
             let pos = pos.extend(height);
             instances
-                .entry(structure.structure_type)
+                .entry(structure.item_type)
                 .or_default()
                 .push(ez3d::Instance {
                     i_pos: pos,
@@ -505,8 +500,8 @@ impl geng::State for App {
                     i_color: Color::WHITE,
                 });
         }
-        for (structure_type, instances) in instances {
-            let obj = self.assets.structure(structure_type);
+        for (item_type, instances) in instances {
+            let obj = self.assets.item(item_type);
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
@@ -627,7 +622,7 @@ impl geng::State for App {
         );
         if let Some(pos) = selected_pos {
             if let Some(struc) = self.view.structures.iter().find(|s| s.pos == pos) {
-                let text = struc.structure_type.to_string();
+                let text = struc.item_type.to_string();
                 let pos = pos.map(|x| x as f32 + 0.5);
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                 self.geng.default_font().draw_aligned(
