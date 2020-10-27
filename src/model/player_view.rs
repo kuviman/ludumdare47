@@ -28,7 +28,7 @@ impl Model {
         }) {
             Self::add_view_radius(
                 &mut view,
-                light_source.pos,
+                light_source.pos.map(|x| x as f32),
                 match light_source.item_type {
                     ItemType::Campfire => self.rules.campfire_light,
                     ItemType::Statue => self.rules.statue_light,
@@ -68,7 +68,7 @@ impl Model {
             entities: self
                 .entities
                 .iter()
-                .filter(|(_, entity)| view.contains(&entity.pos))
+                .filter(|(_, entity)| view.contains(&entity.pos.map(|x| x as usize)))
                 .map(|(_, entity)| entity.clone())
                 .collect(),
             items: self

@@ -4,6 +4,7 @@ use super::*;
 pub struct Config {
     pub ticks_per_second: f32,
     pub map_size: Vec2<usize>,
+    pub player_movement_speed: f32,
     pub player_day_view_distance: f32,
     pub player_night_view_distance: f32,
     pub day_length: usize,
@@ -19,8 +20,9 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            ticks_per_second: 2.0,
+            ticks_per_second: 20.0,
             map_size: vec2(256, 256),
+            player_movement_speed: 2.0,
             player_day_view_distance: 10.0,
             player_night_view_distance: 3.0,
             day_length: 100,

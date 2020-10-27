@@ -98,7 +98,7 @@ enum Rafted {
 
 struct EntityData {
     pos: Vec2<f32>,
-    target_pos: Vec2<usize>,
+    target_pos: Vec2<f32>,
     speed: f32,
     rotation: f32,
     ampl: f32,
@@ -398,7 +398,7 @@ impl geng::State for App {
                     self.view
                         .tiles
                         .iter()
-                        .find(|tile| tile.pos == entity.pos)
+                        .find(|tile| tile.pos == entity.pos.map(|x| x as usize))
                         .unwrap()
                         .biome
                         == model::Biome::Water,
@@ -476,7 +476,7 @@ impl geng::State for App {
                 self.framebuffer_size,
                 self.geng.window().mouse_pos().map(|x| x as f32),
             ))
-            .map(|pos| pos.xy().map(|x| x as usize));
+            .map(|pos| pos.xy());
         if let Some(pos) = selected_pos {
             self.draw_pentagon(
                 framebuffer,
@@ -621,7 +621,12 @@ impl geng::State for App {
             }),
         );
         if let Some(pos) = selected_pos {
-            if let Some((_, item)) = self.view.items.iter().find(|(_, s)| s.pos == pos) {
+            if let Some((_, item)) = self
+                .view
+                .items
+                .iter()
+                .find(|(_, s)| s.pos == pos.map(|x| x as usize))
+            {
                 let text = item.item_type.to_string();
                 let pos = pos.map(|x| x as f32 + 0.5);
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
@@ -725,14 +730,17 @@ impl geng::State for App {
                     self.camera
                         .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
                 ) {
-                    let pos = pos.xy().map(|x| x as usize);
+                    let pos = pos.xy();
                     match button {
                         geng::MouseButton::Left => {
                             self.connection.send(ClientMessage::Goto { pos })
                         }
                         geng::MouseButton::Right => {
-                            if let Some((id, _)) =
-                                self.view.items.iter().find(|(_, item)| item.pos == pos)
+                            if let Some((id, _)) = self
+                                .view
+                                .items
+                                .iter()
+                                .find(|(_, item)| item.pos == pos.map(|x| x as usize))
                             {
                                 self.connection
                                     .send(ClientMessage::Interact { id: id.clone() })

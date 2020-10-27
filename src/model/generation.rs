@@ -5,6 +5,7 @@ impl Model {
         let recipes = Config::default_recipes();
         let (tiles, height_map) = Self::generate_map(config.map_size);
         let rules = Rules {
+            entity_movement_speed: config.player_movement_speed,
             entity_day_view_distance: config.player_day_view_distance,
             entity_night_view_distance: config.player_night_view_distance,
             campfire_light: config.campfire_light,
@@ -51,8 +52,8 @@ impl Model {
         if let Some(pos) = self.get_spawnable_pos(Biome::Beach) {
             let entity = Entity {
                 id: Id::new(),
-                pos,
-                size: vec2(1, 1),
+                pos: pos.map(|x| x as f32),
+                size: 0.5,
                 view_range: self.calc_view_range(),
                 move_to: None,
                 item: None,
@@ -69,7 +70,11 @@ impl Model {
         player_id
     }
     pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<usize>) {
-        let item = Item { pos, item_type };
+        let item = Item {
+            pos,
+            size: 0.2,
+            item_type,
+        };
         self.items.insert(Id::new(), item);
     }
     pub fn remove_item(&mut self, pos: Vec2<usize>) -> Option<Item> {
