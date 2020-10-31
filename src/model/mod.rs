@@ -43,7 +43,7 @@ pub struct Model {
     pub ticks_per_second: f32,
     pub height_map: Vec<Vec<f32>>,
     pub size: Vec2<usize>,
-    pub tiles: Vec<Vec<Tile>>,
+    pub tiles: HashMap<Vec2<i64>, Tile>,
     pub entities: HashMap<Id, Entity>,
     pub items: HashMap<Id, Item>,
     pub current_time: usize,
@@ -92,7 +92,10 @@ impl Model {
             Message::Interact { id } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
-                    if entity.controllable && item.pos.x < self.size.x && item.pos.y < self.size.y {
+                    if entity.controllable
+                        && item.pos.x < self.size.x as f32
+                        && item.pos.y < self.size.y as f32
+                    {
                         entity.move_to = Some((item.pos.map(|x| x as f32), true));
                     }
                 }
@@ -100,14 +103,14 @@ impl Model {
             Message::Drop => {
                 let mut entity = self.entities.get(&player_id).unwrap().clone();
                 let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos.map(|x| x as usize));
+                let mut item = self.remove_item(entity.pos.map(|x| x as i64));
                 let ground_item = match &item {
                     Some(item) => Some(item.item_type),
                     None => None,
                 };
                 if let None = ground_item {
                     if let Some(item_type) = hand_item.take() {
-                        self.spawn_item(item_type, entity.pos.map(|x| x as usize));
+                        self.spawn_item(item_type, entity.pos);
                         self.play_sound(Sound::PutDown, self.sound_distance, entity.pos);
                     }
                 }
@@ -119,7 +122,7 @@ impl Model {
             Message::PickUp => {
                 let mut entity = self.entities.get(&player_id).unwrap().clone();
                 let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos.map(|x| x as usize));
+                let mut item = self.remove_item(entity.pos.map(|x| x as i64));
                 let ground_item = match &item {
                     Some(item) => Some(item.item_type),
                     None => None,
@@ -144,15 +147,15 @@ impl Model {
             }
         }
     }
-    fn get_tile(&self, pos: Vec2<usize>) -> Option<&Tile> {
-        self.tiles.get(pos.y)?.get(pos.x)
-    }
-    fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
-        self.items.values().find(|item| item.pos == pos).is_none()
+    fn is_empty_tile(&self, pos: Vec2<i64>) -> bool {
+        !self
+            .items
+            .values()
+            .any(|item| pos == item.pos.map(|x| x as i64))
             && !self
                 .entities
                 .values()
-                .any(|entity| pos == entity.pos.map(|x| x as usize))
+                .any(|entity| pos == entity.pos.map(|x| x as i64))
     }
     fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<f32>) {
         for (id, entity_pos) in self.entities.iter().map(|(id, entity)| (id, entity.pos)) {

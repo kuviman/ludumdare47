@@ -17,8 +17,8 @@ impl Model {
                     && (entity.pos.y as i32 - move_to.0.y as i32).abs() <= 1
                 {
                     let ingredient1 = &mut entity.item;
-                    let mut item = self.remove_item(move_to.0.map(|x| x as usize));
-                    let conditions = self.get_tile(move_to.0.map(|x| x as usize)).unwrap().biome;
+                    let mut item = self.remove_item(move_to.0.map(|x| x as i64));
+                    let conditions = self.tiles.get(&move_to.0.map(|x| x as i64)).unwrap().biome;
                     let ingredient2 = match &item {
                         Some(item) => Some(item.item_type),
                         None => None,
@@ -30,7 +30,7 @@ impl Model {
                         *ingredient1 = recipe.result1;
                         item.take();
                         if let Some(item_type) = recipe.result2 {
-                            self.spawn_item(item_type, move_to.0.map(|x| x as usize));
+                            self.spawn_item(item_type, move_to.0);
                         }
                         self.play_sound(Sound::Craft, self.sound_distance, move_to.0);
                         entity.move_to = None;
@@ -38,7 +38,8 @@ impl Model {
                         entity.controllable = false;
                         entity.move_to =
                             Some((vec2(entity.pos.x + dir.x, entity.pos.y + dir.y), false));
-                        self.remove_item(item.take().unwrap().pos).unwrap();
+                        self.remove_item(item.take().unwrap().pos.map(|x| x as i64))
+                            .unwrap();
                     } else if let Some(ItemType::TreasureMark) = ingredient2 {
                         // Stop forward checks to prevent picking it up
                     } else if let Some(ItemType::Statue) = ingredient2 {
@@ -59,8 +60,8 @@ impl Model {
                 } else if entity.move_to != None {
                     let new_pos =
                         entity.pos + dir * self.rules.entity_movement_speed / self.ticks_per_second;
-                    let new_pos_int = new_pos.map(|x| x as usize);
-                    if let Some(tile) = self.get_tile(new_pos_int) {
+                    let new_pos_int = new_pos.map(|x| x as i64);
+                    if let Some(tile) = self.tiles.get(&new_pos_int) {
                         if Biome::Water != tile.biome {
                             entity.pos = new_pos;
                             entity.controllable = true;
@@ -154,7 +155,7 @@ impl Model {
             match item.item_type {
                 ItemType::Campfire | ItemType::Torch => {
                     if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance {
-                        extinguished_positions.push(item.pos);
+                        extinguished_positions.push(item.pos.map(|x| x as i64));
                     }
                 }
                 _ => (),
@@ -168,8 +169,8 @@ impl Model {
             0..(self.size.x as f32 * self.size.y as f32 * self.rules.regeneration_percent) as usize
         {
             let pos = vec2(
-                global_rng().gen_range(0, self.size.x),
-                global_rng().gen_range(0, self.size.y),
+                global_rng().gen_range(0, self.size.x as i64),
+                global_rng().gen_range(0, self.size.y as i64),
             );
             if !view.contains(&pos) {
                 self.remove_item(pos);

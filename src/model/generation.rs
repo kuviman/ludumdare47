@@ -34,7 +34,7 @@ impl Model {
         };
         for y in 0..model.size.y {
             for x in 0..model.size.x {
-                let pos = vec2(x, y);
+                let pos = vec2(x as i64, y as i64);
                 if model.is_empty_tile(pos) {
                     model.generate_tile(pos);
                 }
@@ -69,7 +69,7 @@ impl Model {
         }
         player_id
     }
-    pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<usize>) {
+    pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<f32>) {
         let item = Item {
             pos,
             size: 0.2,
@@ -77,8 +77,12 @@ impl Model {
         };
         self.items.insert(Id::new(), item);
     }
-    pub fn remove_item(&mut self, pos: Vec2<usize>) -> Option<Item> {
-        match self.items.iter_mut().find(|(_, item)| item.pos == pos) {
+    pub fn remove_item(&mut self, pos: Vec2<i64>) -> Option<Item> {
+        match self
+            .items
+            .iter_mut()
+            .find(|(_, item)| item.pos.map(|x| x as i64) == pos)
+        {
             Some((index, _)) => {
                 let index = index.clone();
                 self.items.remove(&index)
@@ -86,7 +90,7 @@ impl Model {
             None => None,
         }
     }
-    fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
+    fn generate_map(map_size: Vec2<usize>) -> (HashMap<Vec2<i64>, Tile>, Vec<Vec<f32>>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
         let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
         let mut height_map = vec![];
@@ -113,9 +117,8 @@ impl Model {
             }
             height_map.push(row);
         }
-        let mut tiles = vec![];
+        let mut tiles = HashMap::new();
         for y in 0..map_size.y {
-            let mut tiles_row = vec![];
             for x in 0..map_size.x {
                 let water = height_map[x][y].1 < 0.0
                     || height_map[x + 1][y].1 < 0.0
@@ -126,26 +129,28 @@ impl Model {
                     + height_map[x + 1][y + 1].0
                     + height_map[x][y + 1].0)
                     / 4.0;
-                tiles_row.push(Tile {
-                    pos: vec2(x, y),
-                    biome: if water {
-                        Biome::Water
-                    } else if middle_height < 0.05 {
-                        Biome::Beach
-                    } else {
-                        if noise2.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2 {
-                            Biome::Hills
-                        } else if noise.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2
-                            && noise2.get([x as f64 / 20.0 + 100.0, y as f64 / 20.0]) > 0.2
-                        {
-                            Biome::MagicForest
+                tiles.insert(
+                    vec2(x as i64, y as i64),
+                    Tile {
+                        pos: vec2(x, y),
+                        biome: if water {
+                            Biome::Water
+                        } else if middle_height < 0.05 {
+                            Biome::Beach
                         } else {
-                            Biome::Forest
-                        }
+                            if noise2.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2 {
+                                Biome::Hills
+                            } else if noise.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2
+                                && noise2.get([x as f64 / 20.0 + 100.0, y as f64 / 20.0]) > 0.2
+                            {
+                                Biome::MagicForest
+                            } else {
+                                Biome::Forest
+                            }
+                        },
                     },
-                });
+                );
             }
-            tiles.push(tiles_row);
         }
         (
             tiles,
@@ -155,28 +160,27 @@ impl Model {
                 .collect(),
         )
     }
-    pub fn generate_tile(&mut self, pos: Vec2<usize>) {
+    pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
-        let choice = self.generation_choices[&self.tiles[pos.y][pos.x].biome]
+        let choice = self.generation_choices[&self.tiles.get(&pos).unwrap().biome]
             .choose_weighted(&mut rng, |item| item.1)
             .unwrap()
             .0;
         if let Some(item_type) = choice {
-            self.spawn_item(item_type, pos);
+            self.spawn_item(item_type, pos.map(|x| x as f32));
         }
     }
-    fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.tiles[pos.y][pos.x].biome != Biome::Water && self.is_empty_tile(pos)
+    fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
+        self.tiles.get(&pos).unwrap().biome != Biome::Water && self.is_empty_tile(pos)
     }
-    fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<usize>> {
+    fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<f32>> {
         let mut positions = vec![];
-        for y in 0..self.size.y {
-            for x in 0..self.size.x {
+        for y in 0..self.size.y as i64 {
+            for x in 0..self.size.x as i64 {
                 let pos = vec2(x, y);
-                if self.is_spawnable_tile(pos)
-                    && self.get_tile(vec2(x, y)).unwrap().biome == ground_type
+                if self.is_spawnable_tile(pos) && self.tiles.get(&pos).unwrap().biome == ground_type
                 {
-                    positions.push(pos);
+                    positions.push(vec2(x as f32, y as f32));
                 }
             }
         }

@@ -52,13 +52,12 @@ impl Model {
             day_length: self.day_length,
             night_length: self.night_length,
             tiles: {
-                let mut tiles = vec![];
+                let mut tiles = Vec::with_capacity(self.size.x * self.size.y);
                 for y in 0..self.size.y {
-                    let tile_row = self.tiles.get(y).unwrap();
                     for x in 0..self.size.x {
-                        let pos = vec2(x, y);
+                        let pos = vec2(x as i64, y as i64);
                         if view.contains(&pos) {
-                            tiles.push(tile_row.get(x).unwrap().clone());
+                            tiles.push(self.tiles.get(&pos).unwrap().clone());
                         }
                     }
                 }
@@ -68,13 +67,13 @@ impl Model {
             entities: self
                 .entities
                 .iter()
-                .filter(|(_, entity)| view.contains(&entity.pos.map(|x| x as usize)))
+                .filter(|(_, entity)| view.contains(&entity.pos.map(|x| x as i64)))
                 .map(|(_, entity)| entity.clone())
                 .collect(),
             items: self
                 .items
                 .iter()
-                .filter(|(_, item)| view.contains(&item.pos))
+                .filter(|(_, item)| view.contains(&item.pos.map(|x| x as i64)))
                 .map(|(id, item)| (id.clone(), item.clone()))
                 .collect(),
             recipes: self.recipes.clone(),

@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Item {
-    pub pos: Vec2<usize>,
+    pub pos: Vec2<f32>,
     pub size: f32,
     pub item_type: ItemType,
 }

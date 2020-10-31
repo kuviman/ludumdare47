@@ -625,7 +625,7 @@ impl geng::State for App {
                 .view
                 .items
                 .iter()
-                .find(|(_, s)| s.pos == pos.map(|x| x as usize))
+                .find(|(_, s)| s.pos.map(|x| x as isize) == pos.map(|x| x as isize))
             {
                 let text = item.item_type.to_string();
                 let pos = pos.map(|x| x as f32 + 0.5);
@@ -736,12 +736,9 @@ impl geng::State for App {
                             self.connection.send(ClientMessage::Goto { pos })
                         }
                         geng::MouseButton::Right => {
-                            if let Some((id, _)) = self
-                                .view
-                                .items
-                                .iter()
-                                .find(|(_, item)| item.pos == pos.map(|x| x as usize))
-                            {
+                            if let Some((id, _)) = self.view.items.iter().find(|(_, item)| {
+                                item.pos.map(|x| x as isize) == pos.map(|x| x as isize)
+                            }) {
                                 self.connection
                                     .send(ClientMessage::Interact { id: id.clone() })
                             }
