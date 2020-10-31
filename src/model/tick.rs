@@ -57,48 +57,67 @@ impl Model {
                 if (entity.pos - move_to.0).len() <= 0.05 {
                     entity.move_to = None;
                 } else if entity.move_to != None {
-                    let mut new_pos =
+                    let new_pos =
                         entity.pos + dir * self.rules.entity_movement_speed / self.ticks_per_second;
                     let new_pos_int = new_pos.map(|x| x as usize);
                     if let Some(tile) = self.get_tile(new_pos_int) {
-                        if Biome::Water != tile.biome
-                            && self
-                                .items
-                                .values()
-                                .find(|item| {
-                                    let dx = (new_pos.x - item.pos.x as f32).abs();
-                                    let dy = (new_pos.y - item.pos.y as f32).abs();
-                                    let r = entity.size;
-                                    dx * dx + dy * dy <= r * r
-                                })
-                                .map_or(true, |item| item.item_type.is_traversable())
-                            && !self.entities.values().any(|e| {
-                                if e.id != entity.id {
-                                    let dx = (new_pos.x - e.pos.x).abs();
-                                    let dy = (new_pos.y - e.pos.y).abs();
-                                    let r = e.size + entity.size;
-                                    dx * dx + dy * dy <= r * r
-                                } else {
-                                    false
-                                }
-                            })
-                        {
+                        if Biome::Water != tile.biome {
                             entity.pos = new_pos;
                             entity.controllable = true;
                         } else if !entity.controllable {
-                            if new_pos.x <= 0.0
-                                || new_pos.x >= self.size.x as f32 - 1.0
-                                || new_pos.y <= 0.0
-                                || new_pos.y >= self.size.y as f32 - 1.0
-                            {
-                                new_pos.x = self.size.x as f32 - 1.0 - new_pos.x;
-                                new_pos.y = self.size.y as f32 - 1.0 - new_pos.y;
-                            }
                             entity.pos = new_pos;
                         }
                     }
                 }
             }
+
+            // Collide
+            let mut normal = None;
+            let mut penetration = None;
+            if let Some(item) = self.items.values().find(|item| {
+                let dx = (entity.pos.x - item.pos.x as f32).abs();
+                let dy = (entity.pos.y - item.pos.y as f32).abs();
+                let r = entity.size;
+                dx * dx + dy * dy <= r * r
+            }) {
+                if !item.item_type.is_traversable() {
+                    let dir = entity.pos - item.pos.map(|x| x as f32);
+                    penetration = Some(entity.size + item.size - dir.len());
+                    normal = Some(dir / dir.len());
+                }
+            }
+            if let Some(e) = self.entities.values().find(|e| {
+                if e.id != entity.id {
+                    let dx = (entity.pos.x - e.pos.x).abs();
+                    let dy = (entity.pos.y - e.pos.y).abs();
+                    let r = e.size + entity.size;
+                    dx * dx + dy * dy >= r * r
+                } else {
+                    false
+                }
+            }) {
+                let dir = entity.pos - e.pos;
+                penetration = Some(entity.size + e.size - dir.len());
+                normal = Some(dir / dir.len());
+            }
+
+            if let Some(normal) = normal {
+                let penetration = penetration.unwrap();
+                entity.pos += normal * penetration;
+            }
+
+            // Round map
+            if !entity.controllable {
+                if entity.pos.x <= 0.0
+                    || entity.pos.x >= self.size.x as f32 - 1.0
+                    || entity.pos.y <= 0.0
+                    || entity.pos.y >= self.size.y as f32 - 1.0
+                {
+                    entity.pos.x = self.size.x as f32 - 1.0 - entity.pos.x;
+                    entity.pos.y = self.size.y as f32 - 1.0 - entity.pos.y;
+                }
+            }
+
             entity.view_range =
                 self.calc_view_range()
                     .max(if let Some(ItemType::Torch) = entity.item {

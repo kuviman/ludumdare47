@@ -78,8 +78,11 @@ impl Model {
         self.items.insert(Id::new(), item);
     }
     pub fn remove_item(&mut self, pos: Vec2<usize>) -> Option<Item> {
-        match self.items.iter().find(|(id, item)| item.pos == pos) {
-            Some((index, _)) => self.items.remove(&index.clone()),
+        match self.items.iter_mut().find(|(_, item)| item.pos == pos) {
+            Some((index, _)) => {
+                let index = index.clone();
+                self.items.remove(&index)
+            }
             None => None,
         }
     }

@@ -139,8 +139,8 @@ impl Model {
                 *self.entities.get_mut(&player_id).unwrap() = entity;
             }
             Message::SayHi => {
-                let entity = self.entities.get(&player_id).unwrap();
-                self.play_sound(Sound::Hello, self.sound_distance, entity.pos);
+                let pos = self.entities.get(&player_id).unwrap().pos;
+                self.play_sound(Sound::Hello, self.sound_distance, pos);
             }
         }
     }
