@@ -63,3 +63,9 @@ pub struct Entity {
     pub controllable: bool,
     pub colors: EntityColors,
 }
+
+impl Entity {
+    pub fn center(&self) -> Vec2<f32> {
+        self.pos + vec2(self.size / 2.0, self.size / 2.0)
+    }
+}

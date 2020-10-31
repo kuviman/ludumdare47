@@ -12,10 +12,7 @@ impl Model {
             if let Some(move_to) = entity.move_to {
                 let dir = move_to.0 - entity.pos;
                 let dir = dir / dir.len();
-                if move_to.1
-                    && (entity.pos.x as i32 - move_to.0.x as i32).abs() <= 1
-                    && (entity.pos.y as i32 - move_to.0.y as i32).abs() <= 1
-                {
+                if move_to.1 && (entity.center() - move_to.0).len() <= entity.size / 2.0 {
                     let ingredient1 = &mut entity.item;
                     let mut item = self.remove_item(move_to.0.map(|x| x as i64));
                     let conditions = self.tiles.get(&move_to.0.map(|x| x as i64)).unwrap().biome;
@@ -73,37 +70,37 @@ impl Model {
             }
 
             // Collide
-            let mut normal = None;
-            let mut penetration = None;
-            if let Some(item) = self.items.values().find(|item| {
-                let dx = (entity.pos.x - item.pos.x as f32).abs();
-                let dy = (entity.pos.y - item.pos.y as f32).abs();
-                let r = entity.size;
-                dx * dx + dy * dy <= r * r
-            }) {
+            if let Some((normal, penetration)) = self.items.values().find_map(|item| {
                 if !item.item_type.is_traversable() {
-                    let dir = entity.pos - item.pos.map(|x| x as f32);
-                    penetration = Some(entity.size + item.size - dir.len());
-                    normal = Some(dir / dir.len());
+                    let dir = entity.center() - item.center();
+                    let distance = dir.len();
+                    return if distance <= entity.size / 2.0 {
+                        let penetration = entity.size / 2.0 + item.size / 2.0 - distance;
+                        let normal = dir / distance;
+                        Some((normal, penetration))
+                    } else {
+                        None
+                    };
                 }
+                None
+            }) {
+                entity.pos += normal * penetration;
             }
-            if let Some(e) = self.entities.values().find(|e| {
-                if e.id != entity.id {
-                    let dx = (entity.pos.x - e.pos.x).abs();
-                    let dy = (entity.pos.y - e.pos.y).abs();
-                    let r = e.size + entity.size;
-                    dx * dx + dy * dy >= r * r
+            if let Some((normal, penetration)) = self.entities.values().find_map(|e| {
+                if e.id == entity.id {
+                    return None;
+                }
+
+                let dir = entity.center() - e.center();
+                let distance = dir.len();
+                if distance <= entity.size / 2.0 {
+                    let penetration = entity.size / 2.0 + e.size / 2.0 - distance;
+                    let normal = dir / distance;
+                    Some((normal, penetration))
                 } else {
-                    false
+                    None
                 }
             }) {
-                let dir = entity.pos - e.pos;
-                penetration = Some(entity.size + e.size - dir.len());
-                normal = Some(dir / dir.len());
-            }
-
-            if let Some(normal) = normal {
-                let penetration = penetration.unwrap();
                 entity.pos += normal * penetration;
             }
 

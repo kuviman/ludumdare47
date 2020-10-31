@@ -7,6 +7,12 @@ pub struct Item {
     pub item_type: ItemType,
 }
 
+impl Item {
+    pub fn center(&self) -> Vec2<f32> {
+        self.pos.map(|x| x as f32) + vec2(self.size / 2.0, self.size / 2.0)
+    }
+}
+
 impl ItemType {
     pub fn to_string(&self) -> String {
         format!("{:?}", self)
