@@ -230,7 +230,7 @@ pub struct App {
     camera_controls: camera::Controls,
     ez: Ez,
     ez3d: Ez3D,
-    pentagon: ugli::VertexBuffer<ez3d::Vertex>,
+    circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
     view: model::PlayerView,
@@ -269,8 +269,8 @@ impl App {
             player_id,
             view,
             tile_mesh,
-            pentagon: ugli::VertexBuffer::new_static(geng.ugli(), {
-                const N: usize = 5;
+            circle: ugli::VertexBuffer::new_static(geng.ugli(), {
+                const N: usize = 25;
                 (0..=N)
                     .flat_map(|i| {
                         (0..2).map(move |j| ez3d::Vertex {
@@ -298,22 +298,17 @@ impl App {
         }
     }
 
-    fn draw_pentagon(
-        &self,
-        framebuffer: &mut ugli::Framebuffer,
-        pos: Vec2<f32>,
-        color: Color<f32>,
-    ) {
+    fn draw_circle(&self, framebuffer: &mut ugli::Framebuffer, pos: Vec2<f32>, color: Color<f32>) {
         let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
         self.ez3d.draw_with(
             framebuffer,
             &self.camera,
             &self.light,
-            &self.pentagon,
+            &self.circle,
             std::iter::once(ez3d::Instance {
                 i_pos: pos,
                 i_size: 0.5,
-                i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32,
+                i_rotation: 0.0,
                 i_color: color,
             }),
             ugli::DrawMode::TriangleStrip,
@@ -472,7 +467,7 @@ impl geng::State for App {
         );
 
         if let Some(data) = self.entity_positions.get(&self.player_id) {
-            self.draw_pentagon(framebuffer, data.pos, Color::GREEN);
+            self.draw_circle(framebuffer, data.pos, Color::GREEN);
         }
         let selected_pos = self
             .tile_mesh
@@ -482,7 +477,7 @@ impl geng::State for App {
             ))
             .map(|pos| pos.xy());
         if let Some(pos) = selected_pos {
-            self.draw_pentagon(framebuffer, pos, Color::rgba(1.0, 1.0, 1.0, 0.5));
+            self.draw_circle(framebuffer, pos, Color::rgba(1.0, 1.0, 1.0, 0.5));
         }
 
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
