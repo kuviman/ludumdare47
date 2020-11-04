@@ -35,7 +35,7 @@ impl ItemType {
         match self {
             Pebble | SharpStone | Stick | Axe | DoubleStick | Log | Planks | Torch | Shovel
             | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureMark | TreasureChest => {
-                0.2
+                0.5
             }
             Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => 0.5,
         }
