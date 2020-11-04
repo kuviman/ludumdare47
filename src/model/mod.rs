@@ -61,9 +61,16 @@ pub enum Message {
     Ping,
     Goto { pos: Vec2<f32> },
     Interact { id: Id },
-    Drop,
+    Drop { pos: Vec2<f32> },
     PickUp,
     SayHi,
+}
+
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+pub enum Action {
+    Interact { id: Id },
+    Drop { pos: Vec2<f32> },
+    PickUp,
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
@@ -86,7 +93,8 @@ impl Model {
             Message::Goto { pos } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if entity.controllable && pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
-                    entity.move_to = Some((pos, false));
+                    entity.move_to = Some(pos);
+                    entity.action = None;
                 }
             }
             Message::Interact { id } => {
@@ -96,28 +104,17 @@ impl Model {
                         && item.pos.x < self.size.x as f32
                         && item.pos.y < self.size.y as f32
                     {
-                        entity.move_to = Some((item.pos.map(|x| x as f32), true));
+                        entity.move_to = Some(item.pos);
+                        entity.action = Some(Action::Interact { id });
                     }
                 }
             }
-            Message::Drop => {
-                let mut entity = self.entities.get(&player_id).unwrap().clone();
-                let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos, entity.radius);
-                let ground_item = match &item {
-                    Some(item) => Some(item.item_type),
-                    None => None,
-                };
-                if let None = ground_item {
-                    if let Some(item_type) = hand_item.take() {
-                        self.spawn_item(item_type, entity.pos);
-                        self.play_sound(Sound::PutDown, self.sound_distance, entity.pos);
-                    }
+            Message::Drop { pos } => {
+                let mut entity = self.entities.get_mut(&player_id).unwrap();
+                if entity.controllable && pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
+                    entity.move_to = Some(pos);
+                    entity.action = Some(Action::Drop { pos });
                 }
-                if let Some(item) = item {
-                    self.spawn_item(item.item_type, item.pos);
-                }
-                *self.entities.get_mut(&player_id).unwrap() = entity;
             }
             Message::PickUp => {
                 let mut entity = self.entities.get(&player_id).unwrap().clone();

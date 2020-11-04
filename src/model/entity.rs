@@ -58,8 +58,9 @@ pub struct Entity {
     pub pos: Vec2<f32>,
     pub radius: f32,
     pub view_range: f32,
-    pub move_to: Option<(Vec2<f32>, bool)>,
     pub item: Option<ItemType>,
     pub controllable: bool,
     pub colors: EntityColors,
+    pub move_to: Option<Vec2<f32>>,
+    pub action: Option<Action>,
 }

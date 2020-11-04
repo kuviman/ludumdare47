@@ -10,46 +10,12 @@ impl Model {
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
             if let Some(move_to) = entity.move_to {
-                let dir = move_to.0 - entity.pos;
+                let dir = move_to - entity.pos;
                 let dir = dir / dir.len();
-                if move_to.1 && (entity.pos - move_to.0).len() <= entity.radius {
-                    let ingredient1 = &mut entity.item;
-                    let mut item = self.remove_item(move_to.0, entity.radius);
-                    let conditions = self.tiles.get(&move_to.0.map(|x| x as i64)).unwrap().biome;
-                    let ingredient2 = match &item {
-                        Some(item) => Some(item.item_type),
-                        None => None,
-                    };
-                    let recipe = self.recipes.iter().find(|recipe| {
-                        recipe.ingredients_equal(*ingredient1, ingredient2, conditions)
-                    });
-                    if let Some(recipe) = recipe {
-                        *ingredient1 = recipe.result1;
-                        item.take();
-                        if let Some(item_type) = recipe.result2 {
-                            self.spawn_item(item_type, move_to.0);
-                        }
-                        self.play_sound(Sound::Craft, self.sound_distance, move_to.0);
-                        entity.move_to = None;
-                    } else if let Some(ItemType::Raft) = ingredient2 {
-                        entity.controllable = false;
-                        entity.move_to =
-                            Some((vec2(entity.pos.x + dir.x, entity.pos.y + dir.y), false));
-                        self.remove_item(item.take().unwrap().pos, 0.001).unwrap();
-                    } else if let Some(ItemType::Statue) = ingredient2 {
-                        if let Some(item) = ingredient1.take() {
-                            self.score += match self.scores_map.get(&item) {
-                                Some(score) => *score,
-                                None => 0,
-                            };
-                            self.play_sound(Sound::StatueGift, self.sound_distance, move_to.0);
-                        }
-                    }
-                    if let Some(item) = item {
-                        self.spawn_item(item.item_type, item.pos);
-                    }
+                if (entity.pos - move_to).len() <= entity.radius {
+                    self.entity_action(&mut entity);
                 }
-                if (entity.pos - move_to.0).len()
+                if (entity.pos - move_to).len()
                     <= self.rules.entity_movement_speed / self.ticks_per_second
                 {
                     entity.move_to = None;
@@ -249,6 +215,66 @@ impl Model {
             Some((normal, circle_radius - distance))
         } else {
             None
+        }
+    }
+    fn entity_action(&mut self, entity: &mut Entity) {
+        if let Some(action) = entity.action.take() {
+            match action {
+                Action::Interact { id } => {
+                    let ingredient1 = &mut entity.item;
+                    let mut item = self.items.remove(&id);
+                    let conditions;
+                    let ingredient2 = match &item {
+                        Some(item) => {
+                            conditions =
+                                Some(self.tiles.get(&item.pos.map(|x| x as i64)).unwrap().biome);
+                            Some(item.item_type)
+                        }
+                        None => {
+                            conditions = None;
+                            None
+                        }
+                    };
+                    let recipe = self.recipes.iter().find(|recipe| {
+                        recipe.ingredients_equal(*ingredient1, ingredient2, conditions)
+                    });
+                    if let Some(recipe) = recipe {
+                        *ingredient1 = recipe.result1;
+                        if let Some(item) = item.take() {
+                            if let Some(item_type) = recipe.result2 {
+                                self.spawn_item(item_type, item.pos);
+                            }
+                        }
+                        self.play_sound(Sound::Craft, self.sound_distance, entity.pos);
+                        entity.move_to = None;
+                    } else if let Some(ItemType::Raft) = ingredient2 {
+                        let item = item.take().unwrap();
+                        entity.controllable = false;
+                        entity.move_to = Some(item.pos);
+                        entity.action = None;
+                        self.remove_item(item.pos, 0.001).unwrap();
+                    } else if let Some(ItemType::Statue) = ingredient2 {
+                        if let Some(item) = ingredient1.take() {
+                            self.score += match self.scores_map.get(&item) {
+                                Some(score) => *score,
+                                None => 0,
+                            };
+                            self.play_sound(Sound::StatueGift, self.sound_distance, entity.pos);
+                        }
+                    }
+                    if let Some(item) = item {
+                        self.spawn_item(item.item_type, item.pos);
+                    }
+                }
+                Action::Drop { pos } => {
+                    let hand_item = &mut entity.item;
+                    if let Some(item_type) = hand_item.take() {
+                        self.spawn_item(item_type, pos);
+                        self.play_sound(Sound::PutDown, self.sound_distance, pos);
+                    }
+                }
+                Action::PickUp => {}
+            }
         }
     }
 }

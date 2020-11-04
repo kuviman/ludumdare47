@@ -55,10 +55,11 @@ impl Model {
                 pos: pos.map(|x| x as f32),
                 radius: 0.5,
                 view_range: self.calc_view_range(),
-                move_to: None,
                 item: None,
                 controllable: true,
                 colors: EntityColors::new(),
+                move_to: None,
+                action: None,
             };
             player_id = entity.id;
             self.sounds.insert(entity.id, vec![]);

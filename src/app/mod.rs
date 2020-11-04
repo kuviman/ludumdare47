@@ -748,7 +748,16 @@ impl geng::State for App {
                     }
                 }
             }
-            geng::Event::KeyDown { key: geng::Key::Q } => self.connection.send(ClientMessage::Drop),
+            geng::Event::KeyDown { key: geng::Key::Q } => {
+                let position = self.geng.window().mouse_pos();
+                if let Some(pos) = self.tile_mesh.intersect(
+                    self.camera
+                        .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
+                ) {
+                    let pos = pos.xy();
+                    self.connection.send(ClientMessage::Drop { pos })
+                }
+            }
             geng::Event::KeyDown { key: geng::Key::E } => {
                 self.connection.send(ClientMessage::PickUp)
             }
