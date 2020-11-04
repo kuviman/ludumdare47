@@ -49,7 +49,9 @@ impl Model {
                         self.spawn_item(item.item_type, item.pos);
                     }
                 }
-                if (entity.pos - move_to.0).len() <= entity.radius {
+                if (entity.pos - move_to.0).len()
+                    <= self.rules.entity_movement_speed / self.ticks_per_second
+                {
                     entity.move_to = None;
                 } else {
                     let new_pos =
