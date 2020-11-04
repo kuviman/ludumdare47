@@ -13,6 +13,7 @@ impl Model {
             statue_light: config.statue_light,
             fire_extinguish_chance: config.fire_extinguish_chance,
             regeneration_percent: config.regeneration_percent,
+            entity_interaction_range: config.entity_interaction_range,
         };
         let mut model = Self {
             rules,
@@ -55,6 +56,7 @@ impl Model {
                 pos: pos.map(|x| x as f32),
                 radius: 0.5,
                 view_range: self.calc_view_range(),
+                interaction_range: self.rules.entity_interaction_range,
                 item: None,
                 controllable: true,
                 colors: EntityColors::new(),

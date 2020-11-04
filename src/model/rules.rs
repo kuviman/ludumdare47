@@ -10,4 +10,5 @@ pub struct Rules {
     pub fire_extinguish_chance: f32,
     pub regeneration_percent: f32,
     pub statue_light: f32,
+    pub entity_interaction_range: f32,
 }

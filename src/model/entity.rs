@@ -58,6 +58,7 @@ pub struct Entity {
     pub pos: Vec2<f32>,
     pub radius: f32,
     pub view_range: f32,
+    pub interaction_range: f32,
     pub item: Option<ItemType>,
     pub controllable: bool,
     pub colors: EntityColors,

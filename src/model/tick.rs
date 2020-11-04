@@ -10,7 +10,8 @@ impl Model {
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
             if let Some(move_to) = entity.move_to {
-                if (entity.pos - move_to).len() <= entity.radius && self.entity_action(&mut entity)
+                if (entity.pos - move_to).len() <= entity.interaction_range
+                    && self.entity_action(&mut entity)
                     || (entity.pos - move_to).len()
                         <= self.rules.entity_movement_speed / self.ticks_per_second
                 {
