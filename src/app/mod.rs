@@ -97,6 +97,7 @@ enum Rafted {
 
 struct EntityData {
     pos: Vec2<f32>,
+    size: f32,
     target_pos: Vec2<f32>,
     speed: f32,
     rotation: f32,
@@ -109,6 +110,7 @@ impl EntityData {
     fn new(entity: &model::Entity) -> Self {
         Self {
             pos: entity.pos,
+            size: entity.radius,
             speed: 0.0,
             rotation: 0.0,
             target_pos: entity.pos,
@@ -127,6 +129,7 @@ impl EntityData {
         delta_time: f32,
         view: &model::PlayerView,
     ) {
+        self.size = entity.radius;
         self.t += delta_time * 10.0;
         if entity.pos != self.target_pos {
             self.target_pos = entity.pos;
@@ -298,7 +301,13 @@ impl App {
         }
     }
 
-    fn draw_circle(&self, framebuffer: &mut ugli::Framebuffer, pos: Vec2<f32>, color: Color<f32>) {
+    fn draw_circle(
+        &self,
+        framebuffer: &mut ugli::Framebuffer,
+        pos: Vec2<f32>,
+        radius: f32,
+        color: Color<f32>,
+    ) {
         let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
         self.ez3d.draw_with(
             framebuffer,
@@ -307,7 +316,7 @@ impl App {
             &self.circle,
             std::iter::once(ez3d::Instance {
                 i_pos: pos,
-                i_size: 0.5,
+                i_size: radius,
                 i_rotation: 0.0,
                 i_color: color,
             }),
@@ -466,9 +475,6 @@ impl geng::State for App {
             }),
         );
 
-        if let Some(data) = self.entity_positions.get(&self.player_id) {
-            self.draw_circle(framebuffer, data.pos, Color::GREEN);
-        }
         let selected_pos = self
             .tile_mesh
             .intersect(self.camera.pixel_ray(
@@ -476,8 +482,43 @@ impl geng::State for App {
                 self.geng.window().mouse_pos().map(|x| x as f32),
             ))
             .map(|pos| pos.xy());
+        let mut selected_item = None;
+        let mut selected_entity = None;
+        if let Some(data) = self.entity_positions.get(&self.player_id) {
+            self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
+        }
         if let Some(pos) = selected_pos {
-            self.draw_circle(framebuffer, pos, Color::rgba(1.0, 1.0, 1.0, 0.5));
+            if let Some((_, item)) = self
+                .view
+                .items
+                .iter()
+                .find(|(_, s)| (s.pos - pos).len() <= s.size)
+            {
+                self.draw_circle(
+                    framebuffer,
+                    item.pos,
+                    item.size,
+                    Color::rgba(1.0, 1.0, 1.0, 0.5),
+                );
+                selected_item = Some(item);
+            } else if let Some(entity) = self
+                .view
+                .entities
+                .iter()
+                .find(|e| (e.pos - pos).len() <= e.radius)
+            {
+                if let Some(data) = self.entity_positions.get(&entity.id) {
+                    if entity.id != self.player_id {
+                        self.draw_circle(
+                            framebuffer,
+                            data.pos,
+                            entity.radius,
+                            Color::rgba(1.0, 1.0, 1.0, 0.5),
+                        );
+                    }
+                }
+                selected_entity = Some(entity);
+            }
         }
 
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
@@ -615,30 +656,20 @@ impl geng::State for App {
                 },
             }),
         );
-        if let Some(pos) = selected_pos {
-            if let Some((_, item)) = self
-                .view
-                .items
-                .iter()
-                .find(|(_, s)| (s.pos - pos).len() <= s.size)
-            {
-                let text = item.item_type.to_string();
-                let pos = pos;
-                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
-                self.geng.default_font().draw_aligned(
-                    framebuffer,
-                    &text,
-                    self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
-                    0.5,
-                    32.0,
-                    Color::WHITE,
-                );
-            } else if let Some(entity) = self
-                .view
-                .entities
-                .iter()
-                .find(|e| (e.pos - pos).len() <= e.radius)
-            {
+        if let Some(item) = selected_item {
+            let text = item.item_type.to_string();
+            let pos = item.pos;
+            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+            self.geng.default_font().draw_aligned(
+                framebuffer,
+                &text,
+                self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
+                0.5,
+                32.0,
+                Color::WHITE,
+            );
+        } else if let Some(entity) = selected_entity {
+            if let Some(data) = self.entity_positions.get(&entity.id) {
                 let mut text = if entity.id == self.player_id {
                     "Me"
                 } else {
@@ -648,7 +679,7 @@ impl geng::State for App {
                 if let Some(item) = entity.item {
                     text = format!("{}, holding {:?}", text, item);
                 }
-                let pos = pos;
+                let pos = data.pos;
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                 self.geng.default_font().draw_aligned(
                     framebuffer,
