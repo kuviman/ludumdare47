@@ -621,7 +621,7 @@ impl geng::State for App {
                 .view
                 .items
                 .iter()
-                .find(|(_, s)| s.pos.map(|x| x as isize) == pos.map(|x| x as isize))
+                .find(|(_, s)| (s.pos - pos).len() <= 0.2)
             {
                 let text = item.item_type.to_string();
                 let pos = pos;
@@ -634,7 +634,12 @@ impl geng::State for App {
                     32.0,
                     Color::WHITE,
                 );
-            } else if let Some(entity) = self.view.entities.iter().find(|e| e.pos == pos) {
+            } else if let Some(entity) = self
+                .view
+                .entities
+                .iter()
+                .find(|e| (e.pos - pos).len() <= 0.2)
+            {
                 let mut text = if entity.id == self.player_id {
                     "Me"
                 } else {
