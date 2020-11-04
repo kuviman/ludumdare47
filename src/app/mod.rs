@@ -142,8 +142,7 @@ impl EntityData {
             }
         }
         let dpos = entity.pos - self.pos;
-        let tick_time = delta_time * view.ticks_per_second;
-        self.pos += dpos.clamp(self.speed * tick_time);
+        self.pos += dpos.clamp(self.speed);
         if dpos.len() > 1e-9 {
             self.rotation = dpos.arg();
             self.ampl = (self.ampl + delta_time * 20.0).min(1.0);
