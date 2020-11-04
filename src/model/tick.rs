@@ -10,16 +10,14 @@ impl Model {
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
             if let Some(move_to) = entity.move_to {
-                let dir = move_to - entity.pos;
-                let dir = dir / dir.len();
-                if (entity.pos - move_to).len() <= entity.radius {
-                    self.entity_action(&mut entity);
-                }
-                if (entity.pos - move_to).len()
-                    <= self.rules.entity_movement_speed / self.ticks_per_second
+                if (entity.pos - move_to).len() <= entity.radius && self.entity_action(&mut entity)
+                    || (entity.pos - move_to).len()
+                        <= self.rules.entity_movement_speed / self.ticks_per_second
                 {
                     entity.move_to = None;
                 } else {
+                    let dir = move_to - entity.pos;
+                    let dir = dir / dir.len();
                     let new_pos =
                         entity.pos + dir * self.rules.entity_movement_speed / self.ticks_per_second;
                     let new_pos_int = new_pos.map(|x| x as i64);
@@ -217,7 +215,7 @@ impl Model {
             None
         }
     }
-    fn entity_action(&mut self, entity: &mut Entity) {
+    fn entity_action(&mut self, entity: &mut Entity) -> bool {
         if let Some(action) = entity.action.take() {
             match action {
                 Action::Interact { id } => {
@@ -275,6 +273,9 @@ impl Model {
                 }
                 Action::PickUp => {}
             }
+            true
+        } else {
+            false
         }
     }
 }
