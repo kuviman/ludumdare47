@@ -41,7 +41,7 @@ pub struct Model {
     pub rules: Rules,
     pub score: i32,
     pub ticks_per_second: f32,
-    pub height_map: Vec<Vec<f32>>,
+    pub height_map: HashMap<Vec2<i64>, f32>,
     pub size: Vec2<usize>,
     pub tiles: HashMap<Vec2<i64>, Tile>,
     pub entities: HashMap<Id, Entity>,

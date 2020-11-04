@@ -235,7 +235,7 @@ pub struct App {
     noise: noise::OpenSimplex,
     light: light::Uniforms,
     entity_positions: HashMap<Id, EntityData>,
-    black_clouds: HashMap<Vec2<usize>, BlackCloud>,
+    black_clouds: HashMap<Vec2<i64>, BlackCloud>,
     music: Option<geng::SoundEffect>,
     walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
@@ -323,15 +323,15 @@ impl App {
 
     fn update_black_clouds(&mut self, delta_time: f32) {
         let mut positions = HashSet::new();
-        for tile in &self.view.tiles {
+        for (pos, _) in &self.view.tiles {
             for dx in 0..3 {
                 for dy in 0..3 {
-                    positions.insert(tile.pos + vec2(dx, dy));
+                    positions.insert(*pos + vec2(dx, dy));
                 }
             }
         }
-        for tile in &self.view.tiles {
-            positions.remove(&(tile.pos + vec2(1, 1)));
+        for (pos, _) in &self.view.tiles {
+            positions.remove(&(*pos + vec2(1, 1)));
         }
         for &pos in &positions {
             self.black_clouds.entry(pos).or_default();
@@ -398,8 +398,9 @@ impl geng::State for App {
                     self.view
                         .tiles
                         .iter()
-                        .find(|tile| tile.pos == entity.pos.map(|x| x as usize))
+                        .find(|&(pos, _)| *pos == entity.pos.map(|x| x as i64))
                         .unwrap()
+                        .1
                         .biome
                         == model::Biome::Water,
                     delta_time * self.view.ticks_per_second,
@@ -445,10 +446,9 @@ impl geng::State for App {
             self.black_clouds
                 .iter()
                 .map(|(&pos, cloud)| ez3d::Instance {
-                    i_pos: pos.map(|x| x as f32 - 0.5).extend(
-                        self.view.height_map[pos.y.min(self.view.height_map.len() - 1)]
-                            [pos.x.min(self.view.height_map[0].len() - 1)],
-                    ),
+                    i_pos: pos
+                        .map(|x| x as f32 - 0.5)
+                        .extend(self.view.height_map.get(&pos).unwrap_or(&0.0).clone()),
                     i_rotation: cloud.rotation,
                     i_size: cloud.size,
                     i_color: Color::BLACK,

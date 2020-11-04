@@ -12,7 +12,7 @@ impl Model {
             if let Some(move_to) = entity.move_to {
                 let dir = move_to.0 - entity.pos;
                 let dir = dir / dir.len();
-                if move_to.1 && (entity.center() - move_to.0).len() <= entity.size / 2.0 {
+                if move_to.1 && (entity.pos - move_to.0).len() <= entity.radius {
                     let ingredient1 = &mut entity.item;
                     let mut item = self.remove_item(move_to.0.map(|x| x as i64));
                     let conditions = self.tiles.get(&move_to.0.map(|x| x as i64)).unwrap().biome;
@@ -69,13 +69,13 @@ impl Model {
                 }
             }
 
-            // Collide
+            // Collide with items
             if let Some((normal, penetration)) = self.items.values().find_map(|item| {
                 if !item.item_type.is_traversable() {
-                    let dir = entity.center() - item.center();
+                    let dir = entity.pos - item.center();
                     let distance = dir.len();
-                    return if distance <= entity.size / 2.0 {
-                        let penetration = entity.size / 2.0 + item.size / 2.0 - distance;
+                    return if distance <= entity.radius / 2.0 {
+                        let penetration = entity.radius / 2.0 + item.size / 2.0 - distance;
                         let normal = dir / distance;
                         Some((normal, penetration))
                     } else {
@@ -86,15 +86,17 @@ impl Model {
             }) {
                 entity.pos += normal * penetration;
             }
+
+            // Collide with entities
             if let Some((normal, penetration)) = self.entities.values().find_map(|e| {
                 if e.id == entity.id {
                     return None;
                 }
 
-                let dir = entity.center() - e.center();
+                let dir = entity.pos - e.pos;
                 let distance = dir.len();
-                if distance <= entity.size / 2.0 {
-                    let penetration = entity.size / 2.0 + e.size / 2.0 - distance;
+                if distance <= entity.radius {
+                    let penetration = entity.radius + e.radius - distance;
                     let normal = dir / distance;
                     Some((normal, penetration))
                 } else {
@@ -102,6 +104,30 @@ impl Model {
                 }
             }) {
                 entity.pos += normal * penetration;
+            }
+
+            // Collide with tiles
+            for x in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
+                for y in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
+                    let pos = vec2(x, y) + entity.pos.map(|x| x.round() as i64);
+                    if let Some((normal, penetration)) = match self.tiles.get(&pos) {
+                        Some(tile) => {
+                            if tile.biome == Biome::Water {
+                                Self::collide(
+                                    entity.pos,
+                                    entity.radius,
+                                    tile.pos.map(|x| x as f32),
+                                    1.0,
+                                )
+                            } else {
+                                None
+                            }
+                        }
+                        None => None,
+                    } {
+                        entity.pos += normal * penetration;
+                    }
+                }
             }
 
             // Round map
@@ -173,6 +199,57 @@ impl Model {
                 self.remove_item(pos);
                 self.generate_tile(pos);
             }
+        }
+    }
+    fn collide(
+        circle_pos: Vec2<f32>,
+        circle_radius: f32,
+        tile_pos: Vec2<f32>,
+        tile_size: f32,
+    ) -> Option<(Vec2<f32>, f32)> {
+        let up = circle_pos.y - tile_pos.y - tile_size;
+        let down = tile_pos.y - circle_pos.y;
+        let right = circle_pos.x - tile_pos.x - tile_size;
+        let left = tile_pos.x - circle_pos.x;
+
+        let (dy, ny) = if up.abs() < down.abs() {
+            (up, 1.0)
+        } else {
+            (down, -1.0)
+        };
+        let (dx, nx) = if right.abs() < left.abs() {
+            (right, 1.0)
+        } else {
+            (left, -1.0)
+        };
+
+        // Find direction and distance from the tile to the center point
+        let (normal, distance) = if dx <= 0.0 && dy <= 0.0 {
+            // Inside
+            if dx > dy {
+                // Closer to vertical edge
+                (vec2(nx, 0.0), dx)
+            } else {
+                // Closer to horizontal edge
+                (vec2(0.0, ny), dy)
+            }
+        } else if dx <= 0.0 {
+            // Outside but closer to horizontal edge
+            (vec2(0.0, ny), dy)
+        } else if dy <= 0.0 {
+            // Outside but closer to vertical edge
+            (vec2(nx, 0.0), dx)
+        } else {
+            // Outside but closer to vertex
+            let normal = vec2(nx, ny);
+            let normal = normal / normal.len();
+            (normal, (dx * dx + dy * dy).sqrt())
+        };
+
+        if distance < circle_radius {
+            Some((normal, circle_radius - distance))
+        } else {
+            None
         }
     }
 }

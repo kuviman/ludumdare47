@@ -1,5 +1,6 @@
 use super::*;
 
+#[serde_with::serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct PlayerView {
     pub players_online: usize,
@@ -8,8 +9,10 @@ pub struct PlayerView {
     pub ticks_per_second: f32,
     pub day_length: usize,
     pub night_length: usize,
-    pub height_map: Vec<Vec<f32>>,
-    pub tiles: Vec<Tile>,
+    #[serde_as(as = "HashMap<serde_with::json::JsonString, _>")]
+    pub height_map: HashMap<Vec2<i64>, f32>,
+    #[serde_as(as = "HashMap<serde_with::json::JsonString, _>")]
+    pub tiles: HashMap<Vec2<i64>, Tile>,
     pub entities: Vec<Entity>,
     pub items: HashMap<Id, Item>,
     pub recipes: Vec<Recipe>,
@@ -52,12 +55,12 @@ impl Model {
             day_length: self.day_length,
             night_length: self.night_length,
             tiles: {
-                let mut tiles = Vec::with_capacity(self.size.x * self.size.y);
+                let mut tiles = HashMap::with_capacity(self.size.x * self.size.y);
                 for y in 0..self.size.y {
                     for x in 0..self.size.x {
                         let pos = vec2(x as i64, y as i64);
                         if view.contains(&pos) {
-                            tiles.push(self.tiles.get(&pos).unwrap().clone());
+                            tiles.insert(pos, self.tiles.get(&pos).unwrap().clone());
                         }
                     }
                 }

@@ -56,16 +56,10 @@ impl EntityColors {
 pub struct Entity {
     pub id: Id,
     pub pos: Vec2<f32>,
-    pub size: f32,
+    pub radius: f32,
     pub view_range: f32,
     pub move_to: Option<(Vec2<f32>, bool)>,
     pub item: Option<ItemType>,
     pub controllable: bool,
     pub colors: EntityColors,
-}
-
-impl Entity {
-    pub fn center(&self) -> Vec2<f32> {
-        self.pos + vec2(self.size / 2.0, self.size / 2.0)
-    }
 }

@@ -53,7 +53,7 @@ impl Model {
             let entity = Entity {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
-                size: 0.5,
+                radius: 0.5,
                 view_range: self.calc_view_range(),
                 move_to: None,
                 item: None,
@@ -90,13 +90,12 @@ impl Model {
             None => None,
         }
     }
-    fn generate_map(map_size: Vec2<usize>) -> (HashMap<Vec2<i64>, Tile>, Vec<Vec<f32>>) {
+    fn generate_map(map_size: Vec2<usize>) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
         let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
-        let mut height_map = vec![];
-        for y in 0..map_size.y + 1 {
-            let mut row = vec![];
-            for x in 0..map_size.x + 1 {
+        let mut height_map = HashMap::new();
+        for y in 0..map_size.y as i64 + 1 {
+            for x in 0..map_size.x as i64 + 1 {
                 let pos = vec2(x, y).map(|x| x as f32);
                 let normalized_pos = vec2(pos.x / map_size.x as f32, pos.y / map_size.y as f32)
                     * 2.0
@@ -113,24 +112,23 @@ impl Model {
                     ]) as f32
                         / 1.0;
                 }
-                row.push((height_original, height));
+                height_map.insert(vec2(x, y), (height_original, height));
             }
-            height_map.push(row);
         }
         let mut tiles = HashMap::new();
-        for y in 0..map_size.y {
-            for x in 0..map_size.x {
-                let water = height_map[x][y].1 < 0.0
-                    || height_map[x + 1][y].1 < 0.0
-                    || height_map[x + 1][y + 1].1 < 0.0
-                    || height_map[x][y + 1].1 < 0.0;
-                let middle_height = (height_map[x][y].0
-                    + height_map[x + 1][y].0
-                    + height_map[x + 1][y + 1].0
-                    + height_map[x][y + 1].0)
+        for y in 0..map_size.y as i64 {
+            for x in 0..map_size.x as i64 {
+                let water = height_map[&vec2(x, y)].1 < 0.0
+                    || height_map[&vec2(x + 1, y)].1 < 0.0
+                    || height_map[&vec2(x + 1, y + 1)].1 < 0.0
+                    || height_map[&vec2(x, y + 1)].1 < 0.0;
+                let middle_height = (height_map[&vec2(x, y)].0
+                    + height_map[&vec2(x + 1, y)].0
+                    + height_map[&vec2(x + 1, y + 1)].0
+                    + height_map[&vec2(x, y + 1)].0)
                     / 4.0;
                 tiles.insert(
-                    vec2(x as i64, y as i64),
+                    vec2(x, y),
                     Tile {
                         pos: vec2(x, y),
                         biome: if water {
@@ -152,13 +150,11 @@ impl Model {
                 );
             }
         }
-        (
-            tiles,
-            height_map
-                .into_iter()
-                .map(|row| row.into_iter().map(|(_, y)| y).collect())
-                .collect(),
-        )
+        let mut heights = HashMap::with_capacity(height_map.len());
+        for (pos, (_, y)) in height_map {
+            heights.insert(pos, y);
+        }
+        (tiles, heights)
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
