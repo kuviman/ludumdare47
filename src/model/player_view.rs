@@ -4,6 +4,7 @@ use super::*;
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct PlayerView {
     pub players_online: usize,
+    pub entity_movement_speed: f32,
     pub score: i32,
     pub current_time: usize,
     pub ticks_per_second: f32,
@@ -49,6 +50,7 @@ impl Model {
 
         let vision = PlayerView {
             players_online: self.entities.len(),
+            entity_movement_speed: self.rules.entity_movement_speed,
             score: self.score,
             ticks_per_second: self.ticks_per_second,
             current_time: self.current_time,

@@ -121,11 +121,17 @@ impl EntityData {
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(&mut self, entity: &model::Entity, rafted: bool, tick_time: f32) {
-        self.t += tick_time * 5.0;
+    fn update(
+        &mut self,
+        entity: &model::Entity,
+        rafted: bool,
+        delta_time: f32,
+        view: &model::PlayerView,
+    ) {
+        self.t += delta_time * 10.0;
         if entity.pos != self.target_pos {
             self.target_pos = entity.pos;
-            self.speed = (entity.pos - self.pos).len();
+            self.speed = (entity.pos - self.pos).len() / view.ticks_per_second;
             if rafted {
                 if self.rafted == Rafted::Not {
                     self.rafted = Rafted::Jumping;
@@ -137,14 +143,13 @@ impl EntityData {
             }
         }
         let dpos = entity.pos - self.pos;
+        let tick_time = delta_time * view.ticks_per_second;
         self.pos += dpos.clamp(self.speed * tick_time);
-        if dpos.len() > 0.5 {
+        if dpos.len() > 1e-9 {
             self.rotation = dpos.arg();
-        }
-        if dpos.len() > 0.01 {
-            self.ampl = (self.ampl + tick_time * 10.0).min(1.0);
+            self.ampl = (self.ampl + delta_time * 20.0).min(1.0);
         } else {
-            self.ampl = (self.ampl - tick_time * 10.0).max(0.0);
+            self.ampl = (self.ampl - delta_time * 20.0).max(0.0);
         }
     }
 }
@@ -403,7 +408,8 @@ impl geng::State for App {
                         .1
                         .biome
                         == model::Biome::Water,
-                    delta_time * self.view.ticks_per_second,
+                    delta_time,
+                    &self.view,
                 );
             } else {
                 self.entity_positions
