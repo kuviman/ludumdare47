@@ -18,7 +18,10 @@ impl Recipe {
     ) -> bool {
         ingredient1 == self.ingredient1
             && ingredient2 == self.ingredient2
-            && conditions == self.conditions
+            && match self.conditions {
+                None => true,
+                _ => conditions == self.conditions,
+            }
     }
     pub fn is_relevant(&self, player_id: Id, view: &PlayerView) -> bool {
         self.ingredient1

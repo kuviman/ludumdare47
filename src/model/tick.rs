@@ -221,17 +221,12 @@ impl Model {
                 Action::Interact { id } => {
                     let ingredient1 = &mut entity.item;
                     let mut item = self.items.remove(&id);
-                    let conditions;
-                    let ingredient2 = match &item {
-                        Some(item) => {
-                            conditions =
-                                Some(self.tiles.get(&item.pos.map(|x| x as i64)).unwrap().biome);
-                            Some(item.item_type)
-                        }
-                        None => {
-                            conditions = None;
-                            None
-                        }
+                    let (conditions, ingredient2) = match &item {
+                        Some(item) => (
+                            Some(self.tiles.get(&item.pos.map(|x| x as i64)).unwrap().biome),
+                            Some(item.item_type),
+                        ),
+                        None => (None, None),
                     };
                     let recipe = self.recipes.iter().find(|recipe| {
                         recipe.ingredients_equal(*ingredient1, ingredient2, conditions)
