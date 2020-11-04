@@ -37,8 +37,6 @@ impl Model {
                             Some((vec2(entity.pos.x + dir.x, entity.pos.y + dir.y), false));
                         self.remove_item(item.take().unwrap().pos.map(|x| x as i64))
                             .unwrap();
-                    } else if let Some(ItemType::TreasureMark) = ingredient2 {
-                        // Stop forward checks to prevent picking it up
                     } else if let Some(ItemType::Statue) = ingredient2 {
                         if let Some(item) = ingredient1.take() {
                             self.score += match self.scores_map.get(&item) {
