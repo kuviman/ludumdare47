@@ -24,7 +24,7 @@ impl ItemType {
             | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureMark | TreasureChest => {
                 true
             }
-            Tree | Campfire | Raft | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => false,
+            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => false,
         }
     }
     pub fn is_pickable(&self) -> bool {
@@ -32,7 +32,7 @@ impl ItemType {
         match self {
             Pebble | SharpStone | Stick | Axe | DoubleStick | Log | Planks | Torch | Shovel
             | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureChest => true,
-            Tree | Campfire | Raft | Rock | GoldRock | MagicCrystal | BigMushroom | Statue
+            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue
             | TreasureMark => false,
         }
     }
@@ -57,7 +57,6 @@ pub enum ItemType {
     TreasureChest,
     Tree,
     Campfire,
-    Raft,
     Rock,
     GoldRock,
     MagicCrystal,

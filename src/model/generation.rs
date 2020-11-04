@@ -58,7 +58,6 @@ impl Model {
                 view_range: self.calc_view_range(),
                 interaction_range: self.rules.entity_interaction_range,
                 item: None,
-                controllable: true,
                 colors: EntityColors::new(),
                 move_to: None,
                 action: None,

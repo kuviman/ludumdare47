@@ -79,7 +79,6 @@ impl Assets {
             model::ItemType::TreasureChest => &self.treasure_chest,
             model::ItemType::Tree => &self.tree,
             model::ItemType::Campfire => &self.campfire,
-            model::ItemType::Raft => &self.raft,
             model::ItemType::Rock => &self.rock,
             model::ItemType::GoldRock => &self.gold_rock,
             model::ItemType::MagicCrystal => &self.magic_crystal,

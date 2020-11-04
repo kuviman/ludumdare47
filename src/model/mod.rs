@@ -92,7 +92,7 @@ impl Model {
             Message::Ping => {}
             Message::Goto { pos } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
-                if entity.controllable && pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
+                if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
                     entity.move_to = Some(pos);
                     entity.action = None;
                 }
@@ -100,10 +100,7 @@ impl Model {
             Message::Interact { id } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
-                    if entity.controllable
-                        && item.pos.x < self.size.x as f32
-                        && item.pos.y < self.size.y as f32
-                    {
+                    if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
                         entity.move_to = Some(item.pos);
                         entity.action = Some(Action::Interact { id });
                     }
@@ -111,7 +108,7 @@ impl Model {
             }
             Message::Drop { pos } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
-                if entity.controllable && pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
+                if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
                     entity.move_to = Some(pos);
                     entity.action = Some(Action::Drop { pos });
                 }
@@ -119,10 +116,7 @@ impl Model {
             Message::PickUp { id } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
-                    if entity.controllable
-                        && item.pos.x < self.size.x as f32
-                        && item.pos.y < self.size.y as f32
-                    {
+                    if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
                         entity.move_to = Some(item.pos);
                         entity.action = Some(Action::PickUp { id });
                     }

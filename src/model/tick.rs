@@ -21,15 +21,7 @@ impl Model {
                     let dir = dir / dir.len();
                     let new_pos =
                         entity.pos + dir * self.rules.entity_movement_speed / self.ticks_per_second;
-                    let new_pos_int = new_pos.map(|x| x as i64);
-                    if let Some(tile) = self.tiles.get(&new_pos_int) {
-                        if Biome::Water != tile.biome {
-                            entity.pos = new_pos;
-                            entity.controllable = true;
-                        } else if !entity.controllable {
-                            entity.pos = new_pos;
-                        }
-                    }
+                    entity.pos = new_pos;
                 }
             }
 
@@ -95,15 +87,13 @@ impl Model {
             }
 
             // Round map
-            if !entity.controllable {
-                if entity.pos.x <= 0.0
-                    || entity.pos.x >= self.size.x as f32 - 1.0
-                    || entity.pos.y <= 0.0
-                    || entity.pos.y >= self.size.y as f32 - 1.0
-                {
-                    entity.pos.x = self.size.x as f32 - 1.0 - entity.pos.x;
-                    entity.pos.y = self.size.y as f32 - 1.0 - entity.pos.y;
-                }
+            if entity.pos.x <= 0.0
+                || entity.pos.x >= self.size.x as f32 - 1.0
+                || entity.pos.y <= 0.0
+                || entity.pos.y >= self.size.y as f32 - 1.0
+            {
+                entity.pos.x = self.size.x as f32 - 1.0 - entity.pos.x;
+                entity.pos.y = self.size.y as f32 - 1.0 - entity.pos.y;
             }
 
             entity.view_range =
@@ -241,12 +231,6 @@ impl Model {
                         }
                         self.play_sound(Sound::Craft, self.sound_distance, entity.pos);
                         entity.move_to = None;
-                    } else if let Some(ItemType::Raft) = ingredient2 {
-                        let item = item.take().unwrap();
-                        entity.controllable = false;
-                        entity.move_to = Some(item.pos);
-                        entity.action = None;
-                        self.remove_item(item.pos, 0.001).unwrap();
                     } else if let Some(ItemType::Statue) = ingredient2 {
                         if let Some(item) = ingredient1.take() {
                             self.score += match self.scores_map.get(&item) {

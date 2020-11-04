@@ -191,13 +191,6 @@ impl Config {
                 conditions: None,
             },
             Recipe {
-                ingredient1: Some(Planks),
-                ingredient2: Some(Planks),
-                result1: None,
-                result2: Some(Raft),
-                conditions: Some(Biome::Water),
-            },
-            Recipe {
                 ingredient1: Some(DoubleStick),
                 ingredient2: None,
                 result1: Some(Stick),
