@@ -478,11 +478,7 @@ impl geng::State for App {
             ))
             .map(|pos| pos.xy());
         if let Some(pos) = selected_pos {
-            self.draw_pentagon(
-                framebuffer,
-                pos.map(|x| x as f32 + 0.5),
-                Color::rgba(1.0, 1.0, 1.0, 0.5),
-            );
+            self.draw_pentagon(framebuffer, pos, Color::rgba(1.0, 1.0, 1.0, 0.5));
         }
 
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
