@@ -26,21 +26,16 @@ impl Model {
             }
 
             // Collide with items
-            if let Some((normal, penetration)) = self.items.values().find_map(|item| {
+            for item in self.items.values() {
                 if !item.item_type.is_traversable() {
                     let dir = entity.pos - item.pos;
                     let distance = dir.len();
-                    return if distance <= entity.radius {
+                    if distance <= entity.radius + item.size {
                         let penetration = entity.radius + item.size - distance;
                         let normal = dir / distance;
-                        Some((normal, penetration))
-                    } else {
-                        None
-                    };
+                        entity.pos += normal * penetration;
+                    }
                 }
-                None
-            }) {
-                entity.pos += normal * penetration;
             }
 
             // Collide with entities
