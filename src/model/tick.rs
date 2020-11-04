@@ -14,7 +14,7 @@ impl Model {
                 let dir = dir / dir.len();
                 if move_to.1 && (entity.pos - move_to.0).len() <= entity.radius {
                     let ingredient1 = &mut entity.item;
-                    let mut item = self.remove_item(move_to.0.map(|x| x as i64));
+                    let mut item = self.remove_item(move_to.0, entity.radius);
                     let conditions = self.tiles.get(&move_to.0.map(|x| x as i64)).unwrap().biome;
                     let ingredient2 = match &item {
                         Some(item) => Some(item.item_type),
@@ -35,8 +35,7 @@ impl Model {
                         entity.controllable = false;
                         entity.move_to =
                             Some((vec2(entity.pos.x + dir.x, entity.pos.y + dir.y), false));
-                        self.remove_item(item.take().unwrap().pos.map(|x| x as i64))
-                            .unwrap();
+                        self.remove_item(item.take().unwrap().pos, 0.001).unwrap();
                     } else if let Some(ItemType::Statue) = ingredient2 {
                         if let Some(item) = ingredient1.take() {
                             self.score += match self.scores_map.get(&item) {
@@ -50,9 +49,9 @@ impl Model {
                         self.spawn_item(item.item_type, item.pos);
                     }
                 }
-                if (entity.pos - move_to.0).len() <= 0.05 {
+                if (entity.pos - move_to.0).len() <= entity.radius {
                     entity.move_to = None;
-                } else if entity.move_to != None {
+                } else {
                     let new_pos =
                         entity.pos + dir * self.rules.entity_movement_speed / self.ticks_per_second;
                     let new_pos_int = new_pos.map(|x| x as i64);
@@ -176,14 +175,14 @@ impl Model {
             match item.item_type {
                 ItemType::Campfire | ItemType::Torch => {
                     if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance {
-                        extinguished_positions.push(item.pos.map(|x| x as i64));
+                        extinguished_positions.push(item.pos);
                     }
                 }
                 _ => (),
             }
         }
         for pos in extinguished_positions {
-            self.remove_item(pos).unwrap();
+            self.remove_item(pos, 0.001).unwrap();
         }
 
         for _ in
@@ -194,7 +193,7 @@ impl Model {
                 global_rng().gen_range(0, self.size.y as i64),
             );
             if !view.contains(&pos) {
-                self.remove_item(pos);
+                self.remove_item(pos.map(|x| x as f32), 0.5);
                 self.generate_tile(pos);
             }
         }

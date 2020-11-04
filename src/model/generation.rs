@@ -77,11 +77,11 @@ impl Model {
         };
         self.items.insert(Id::new(), item);
     }
-    pub fn remove_item(&mut self, pos: Vec2<i64>) -> Option<Item> {
+    pub fn remove_item(&mut self, pos: Vec2<f32>, range: f32) -> Option<Item> {
         match self
             .items
             .iter_mut()
-            .find(|(_, item)| item.pos.map(|x| x as i64) == pos)
+            .find(|(_, item)| (item.pos - pos).len() <= range)
         {
             Some((index, _)) => {
                 let index = index.clone();

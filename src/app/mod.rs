@@ -109,7 +109,7 @@ struct EntityData {
 impl EntityData {
     fn new(entity: &model::Entity) -> Self {
         Self {
-            pos: entity.pos.map(|x| x as f32 + 0.5),
+            pos: entity.pos,
             speed: 0.0,
             rotation: 0.0,
             target_pos: entity.pos,
@@ -125,7 +125,7 @@ impl EntityData {
         self.t += tick_time * 5.0;
         if entity.pos != self.target_pos {
             self.target_pos = entity.pos;
-            self.speed = (entity.pos.map(|x| x as f32 + 0.5) - self.pos).len();
+            self.speed = (entity.pos - self.pos).len();
             if rafted {
                 if self.rafted == Rafted::Not {
                     self.rafted = Rafted::Jumping;
@@ -136,7 +136,7 @@ impl EntityData {
                 self.rafted = Rafted::Not;
             }
         }
-        let dpos = entity.pos.map(|x| x as f32 + 0.5) - self.pos;
+        let dpos = entity.pos - self.pos;
         self.pos += dpos.clamp(self.speed * tick_time);
         if dpos.len() > 0.5 {
             self.rotation = dpos.arg();
@@ -447,7 +447,7 @@ impl geng::State for App {
                 .iter()
                 .map(|(&pos, cloud)| ez3d::Instance {
                     i_pos: pos
-                        .map(|x| x as f32 - 0.5)
+                        .map(|x| x as f32)
                         .extend(self.view.height_map.get(&pos).unwrap_or(&0.0).clone()),
                     i_rotation: cloud.rotation,
                     i_size: cloud.size,
@@ -483,7 +483,7 @@ impl geng::State for App {
 
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
         for (_, item) in &self.view.items {
-            let pos = item.pos.map(|x| x as f32 + 0.5);
+            let pos = item.pos;
             let height = self.tile_mesh.get_height(pos).unwrap();
             let pos = pos.extend(height);
             instances
@@ -569,7 +569,7 @@ impl geng::State for App {
             );
             let raft_pos = match data.rafted {
                 Rafted::Not => None,
-                Rafted::Jumping => Some(data.target_pos.map(|x| x as f32 + 0.5).extend(0.0)),
+                Rafted::Jumping => Some(data.target_pos.extend(0.0)),
                 Rafted::On => Some(pos),
             };
             if let Some(raft_pos) = raft_pos {
@@ -605,7 +605,7 @@ impl geng::State for App {
             framebuffer,
             &self.camera,
             tiles_to_draw.into_iter().map(|(pos, color)| ez::Quad {
-                pos: pos.map(|x| x as f32 + 0.5),
+                pos: pos.map(|x| x as f32),
                 rotation: 0.0,
                 size: vec2(0.5, 0.5) * 0.5,
                 color: Color {
@@ -624,7 +624,7 @@ impl geng::State for App {
                 .find(|(_, s)| s.pos.map(|x| x as isize) == pos.map(|x| x as isize))
             {
                 let text = item.item_type.to_string();
-                let pos = pos.map(|x| x as f32 + 0.5);
+                let pos = pos;
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                 self.geng.default_font().draw_aligned(
                     framebuffer,
@@ -644,7 +644,7 @@ impl geng::State for App {
                 if let Some(item) = entity.item {
                     text = format!("{}, holding {:?}", text, item);
                 }
-                let pos = pos.map(|x| x as f32 + 0.5);
+                let pos = pos;
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                 self.geng.default_font().draw_aligned(
                     framebuffer,

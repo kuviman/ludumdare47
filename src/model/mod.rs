@@ -103,7 +103,7 @@ impl Model {
             Message::Drop => {
                 let mut entity = self.entities.get(&player_id).unwrap().clone();
                 let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos.map(|x| x as i64));
+                let mut item = self.remove_item(entity.pos, entity.radius);
                 let ground_item = match &item {
                     Some(item) => Some(item.item_type),
                     None => None,
@@ -122,7 +122,7 @@ impl Model {
             Message::PickUp => {
                 let mut entity = self.entities.get(&player_id).unwrap().clone();
                 let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos.map(|x| x as i64));
+                let mut item = self.remove_item(entity.pos, entity.radius);
                 let ground_item = match &item {
                     Some(item) => Some(item.item_type),
                     None => None,
