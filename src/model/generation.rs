@@ -74,7 +74,7 @@ impl Model {
     pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<f32>) {
         let item = Item {
             pos,
-            size: 0.2,
+            size: item_type.size(),
             item_type,
         };
         self.items.insert(Id::new(), item);

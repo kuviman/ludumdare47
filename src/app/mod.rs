@@ -620,7 +620,7 @@ impl geng::State for App {
                 .view
                 .items
                 .iter()
-                .find(|(_, s)| (s.pos - pos).len() <= 0.2)
+                .find(|(_, s)| (s.pos - pos).len() <= s.size)
             {
                 let text = item.item_type.to_string();
                 let pos = pos;
@@ -637,7 +637,7 @@ impl geng::State for App {
                 .view
                 .entities
                 .iter()
-                .find(|e| (e.pos - pos).len() <= 0.2)
+                .find(|e| (e.pos - pos).len() <= e.radius)
             {
                 let mut text = if entity.id == self.player_id {
                     "Me"
@@ -740,7 +740,7 @@ impl geng::State for App {
                                 .view
                                 .items
                                 .iter()
-                                .find(|(_, item)| (item.pos - pos).len() <= 0.2)
+                                .find(|(_, item)| (item.pos - pos).len() <= item.size)
                             {
                                 self.connection
                                     .send(ClientMessage::Interact { id: id.clone() })
@@ -771,7 +771,7 @@ impl geng::State for App {
                         .view
                         .items
                         .iter()
-                        .find(|(_, item)| (item.pos - pos).len() <= 0.2)
+                        .find(|(_, item)| (item.pos - pos).len() <= item.size)
                     {
                         self.connection
                             .send(ClientMessage::PickUp { id: id.clone() });
