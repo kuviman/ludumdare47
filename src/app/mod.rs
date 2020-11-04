@@ -737,9 +737,12 @@ impl geng::State for App {
                             self.connection.send(ClientMessage::Goto { pos })
                         }
                         geng::MouseButton::Right => {
-                            if let Some((id, _)) = self.view.items.iter().find(|(_, item)| {
-                                item.pos.map(|x| x as isize) == pos.map(|x| x as isize)
-                            }) {
+                            if let Some((id, _)) = self
+                                .view
+                                .items
+                                .iter()
+                                .find(|(_, item)| (item.pos - pos).len() <= 0.2)
+                            {
                                 self.connection
                                     .send(ClientMessage::Interact { id: id.clone() })
                             }
@@ -755,11 +758,26 @@ impl geng::State for App {
                         .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
                 ) {
                     let pos = pos.xy();
-                    self.connection.send(ClientMessage::Drop { pos })
+                    self.connection.send(ClientMessage::Drop { pos });
                 }
             }
             geng::Event::KeyDown { key: geng::Key::E } => {
-                self.connection.send(ClientMessage::PickUp)
+                let position = self.geng.window().mouse_pos();
+                if let Some(pos) = self.tile_mesh.intersect(
+                    self.camera
+                        .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
+                ) {
+                    let pos = pos.xy();
+                    if let Some((id, _)) = self
+                        .view
+                        .items
+                        .iter()
+                        .find(|(_, item)| (item.pos - pos).len() <= 0.2)
+                    {
+                        self.connection
+                            .send(ClientMessage::PickUp { id: id.clone() });
+                    }
+                }
             }
             geng::Event::KeyDown { key: geng::Key::R } => {
                 self.connection.send(ClientMessage::SayHi)

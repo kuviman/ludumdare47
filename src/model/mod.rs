@@ -62,7 +62,7 @@ pub enum Message {
     Goto { pos: Vec2<f32> },
     Interact { id: Id },
     Drop { pos: Vec2<f32> },
-    PickUp,
+    PickUp { id: Id },
     SayHi,
 }
 
@@ -70,7 +70,7 @@ pub enum Message {
 pub enum Action {
     Interact { id: Id },
     Drop { pos: Vec2<f32> },
-    PickUp,
+    PickUp { id: Id },
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
@@ -116,27 +116,17 @@ impl Model {
                     entity.action = Some(Action::Drop { pos });
                 }
             }
-            Message::PickUp => {
-                let mut entity = self.entities.get(&player_id).unwrap().clone();
-                let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos, entity.radius);
-                let ground_item = match &item {
-                    Some(item) => Some(item.item_type),
-                    None => None,
-                };
-                if let None = hand_item {
-                    if let Some(item_type) = ground_item {
-                        if item_type.is_pickable() {
-                            item.take();
-                            *hand_item = Some(item_type);
-                            self.play_sound(Sound::PickUp, self.sound_distance, entity.pos);
-                        }
+            Message::PickUp { id } => {
+                let mut entity = self.entities.get_mut(&player_id).unwrap();
+                if let Some(item) = self.items.get(&id) {
+                    if entity.controllable
+                        && item.pos.x < self.size.x as f32
+                        && item.pos.y < self.size.y as f32
+                    {
+                        entity.move_to = Some(item.pos);
+                        entity.action = Some(Action::PickUp { id });
                     }
                 }
-                if let Some(item) = item {
-                    self.spawn_item(item.item_type, item.pos);
-                }
-                *self.entities.get_mut(&player_id).unwrap() = entity;
             }
             Message::SayHi => {
                 let pos = self.entities.get(&player_id).unwrap().pos;

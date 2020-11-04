@@ -271,7 +271,26 @@ impl Model {
                         self.play_sound(Sound::PutDown, self.sound_distance, pos);
                     }
                 }
-                Action::PickUp => {}
+                Action::PickUp { id } => {
+                    let hand_item = &mut entity.item;
+                    let mut item = self.items.remove(&id);
+                    let ground_item = match &item {
+                        Some(item) => Some(item.item_type),
+                        None => None,
+                    };
+                    if let None = hand_item {
+                        if let Some(item_type) = ground_item {
+                            if item_type.is_pickable() {
+                                item.take();
+                                *hand_item = Some(item_type);
+                                self.play_sound(Sound::PickUp, self.sound_distance, entity.pos);
+                            }
+                        }
+                    }
+                    if let Some(item) = item {
+                        self.spawn_item(item.item_type, item.pos);
+                    }
+                }
             }
             true
         } else {
