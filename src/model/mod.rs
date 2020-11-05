@@ -5,7 +5,6 @@ mod config;
 mod entity;
 mod generation;
 mod item;
-mod pathfind;
 mod player_view;
 mod recipe;
 mod rules;
@@ -17,7 +16,6 @@ pub use config::*;
 pub use entity::*;
 pub use generation::*;
 pub use item::*;
-pub use pathfind::*;
 pub use player_view::*;
 pub use recipe::*;
 pub use rules::*;
@@ -43,9 +41,9 @@ pub struct Model {
     pub rules: Rules,
     pub score: i32,
     pub ticks_per_second: f32,
-    pub height_map: Vec<Vec<f32>>,
+    pub height_map: HashMap<Vec2<i64>, f32>,
     pub size: Vec2<usize>,
-    pub tiles: Vec<Vec<Tile>>,
+    pub tiles: HashMap<Vec2<i64>, Tile>,
     pub entities: HashMap<Id, Entity>,
     pub items: HashMap<Id, Item>,
     pub current_time: usize,
@@ -61,11 +59,18 @@ pub struct Model {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {
     Ping,
-    Goto { pos: Vec2<usize> },
+    Goto { pos: Vec2<f32> },
     Interact { id: Id },
-    Drop,
-    PickUp,
+    Drop { pos: Vec2<f32> },
+    PickUp { id: Id },
     SayHi,
+}
+
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+pub enum Action {
+    Interact { id: Id },
+    Drop { pos: Vec2<f32> },
+    PickUp { id: Id },
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
@@ -84,91 +89,59 @@ impl Model {
     }
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         match message {
-            Message::Ping => println!("Got ping message"),
+            Message::Ping => {}
             Message::Goto { pos } => {
-                println!("Got Goto {}", pos);
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
-                if entity.controllable && pos.x < self.size.x && pos.y < self.size.y {
-                    entity.move_to = Some((pos, false));
+                if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
+                    entity.move_to = Some(pos);
+                    entity.action = None;
                 }
             }
             Message::Interact { id } => {
-                println!("Got Interact with {:?}", id);
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
-                    if entity.controllable && item.pos.x < self.size.x && item.pos.y < self.size.y {
-                        entity.move_to = Some((item.pos, true));
+                    if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
+                        entity.move_to = Some(item.pos);
+                        entity.action = Some(Action::Interact { id });
                     }
                 }
             }
-            Message::Drop => {
-                println!("Got Drop");
-                let mut entity = self.entities.get(&player_id).unwrap().clone();
-                let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos);
-                let ground_item = match &item {
-                    Some(item) => Some(item.item_type),
-                    None => None,
-                };
-                if let None = ground_item {
-                    if let Some(item_type) = hand_item.take() {
-                        self.spawn_item(item_type, entity.pos);
-                        self.play_sound(Sound::PutDown, self.sound_distance, entity.pos);
-                    }
+            Message::Drop { pos } => {
+                let mut entity = self.entities.get_mut(&player_id).unwrap();
+                if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
+                    entity.move_to = Some(pos);
+                    entity.action = Some(Action::Drop { pos });
                 }
-                if let Some(item) = item {
-                    self.spawn_item(item.item_type, item.pos);
-                }
-                *self.entities.get_mut(&player_id).unwrap() = entity;
             }
-            Message::PickUp => {
-                println!("Got PickUp");
-                let mut entity = self.entities.get(&player_id).unwrap().clone();
-                let hand_item = &mut entity.item;
-                let mut item = self.remove_item(entity.pos);
-                let ground_item = match &item {
-                    Some(item) => Some(item.item_type),
-                    None => None,
-                };
-                if let None = hand_item {
-                    if let Some(item_type) = ground_item {
-                        if item_type.is_pickable() {
-                            item.take();
-                            *hand_item = Some(item_type);
-                            self.play_sound(Sound::PickUp, self.sound_distance, entity.pos);
-                        }
+            Message::PickUp { id } => {
+                let mut entity = self.entities.get_mut(&player_id).unwrap();
+                if let Some(item) = self.items.get(&id) {
+                    if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
+                        entity.move_to = Some(item.pos);
+                        entity.action = Some(Action::PickUp { id });
                     }
                 }
-                if let Some(item) = item {
-                    self.spawn_item(item.item_type, item.pos);
-                }
-                *self.entities.get_mut(&player_id).unwrap() = entity;
             }
             Message::SayHi => {
-                println!("Got SayHi");
-                let entity = self.entities.get(&player_id).unwrap();
-                self.play_sound(Sound::Hello, self.sound_distance, entity.pos);
+                let pos = self.entities.get(&player_id).unwrap().pos;
+                self.play_sound(Sound::Hello, self.sound_distance, pos);
             }
         }
     }
-    fn get_tile(&self, pos: Vec2<usize>) -> Option<&Tile> {
-        self.tiles.get(pos.y)?.get(pos.x)
-    }
-    fn is_empty_tile(&self, pos: Vec2<usize>) -> bool {
-        self.items.values().find(|item| item.pos == pos).is_none()
-            && !self.entities.values().any(|entity| pos == entity.pos)
-    }
-    fn is_traversable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.items
+    fn is_empty_tile(&self, pos: Vec2<i64>) -> bool {
+        !self
+            .items
             .values()
-            .find(|item| item.pos == pos)
-            .map_or(true, |item| item.item_type.is_traversable())
-            && !self.entities.values().any(|entity| pos == entity.pos)
+            .any(|item| pos == item.pos.map(|x| x as i64))
+            && !self
+                .entities
+                .values()
+                .any(|entity| pos == entity.pos.map(|x| x as i64))
     }
-    fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<usize>) {
+    fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<f32>) {
         for (id, entity_pos) in self.entities.iter().map(|(id, entity)| (id, entity.pos)) {
-            let dx = pos.x as f32 - entity_pos.x as f32;
-            let dy = pos.y as f32 - entity_pos.y as f32;
+            let dx = pos.x - entity_pos.x;
+            let dy = pos.y - entity_pos.y;
             if dx * dx + dy * dy <= range * range {
                 self.sounds.get_mut(id).unwrap().push(sound);
             }

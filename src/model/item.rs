@@ -2,7 +2,8 @@ use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Item {
-    pub pos: Vec2<usize>,
+    pub pos: Vec2<f32>,
+    pub size: f32,
     pub item_type: ItemType,
 }
 
@@ -17,7 +18,7 @@ impl ItemType {
             | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureMark | TreasureChest => {
                 true
             }
-            Tree | Campfire | Raft | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => false,
+            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => false,
         }
     }
     pub fn is_pickable(&self) -> bool {
@@ -25,8 +26,18 @@ impl ItemType {
         match self {
             Pebble | SharpStone | Stick | Axe | DoubleStick | Log | Planks | Torch | Shovel
             | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureChest => true,
-            Tree | Campfire | Raft | Rock | GoldRock | MagicCrystal | BigMushroom | Statue
+            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue
             | TreasureMark => false,
+        }
+    }
+    pub fn size(&self) -> f32 {
+        use ItemType::*;
+        match self {
+            Pebble | SharpStone | Stick | Axe | DoubleStick | Log | Planks | Torch | Shovel
+            | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureMark | TreasureChest => {
+                0.5
+            }
+            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => 0.5,
         }
     }
 }
@@ -50,7 +61,6 @@ pub enum ItemType {
     TreasureChest,
     Tree,
     Campfire,
-    Raft,
     Rock,
     GoldRock,
     MagicCrystal,

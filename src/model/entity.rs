@@ -55,11 +55,12 @@ impl EntityColors {
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Entity {
     pub id: Id,
-    pub pos: Vec2<usize>,
-    pub size: Vec2<usize>,
+    pub pos: Vec2<f32>,
+    pub radius: f32,
     pub view_range: f32,
-    pub move_to: Option<(Vec2<usize>, bool)>,
+    pub interaction_range: f32,
     pub item: Option<ItemType>,
-    pub controllable: bool,
     pub colors: EntityColors,
+    pub move_to: Option<Vec2<f32>>,
+    pub action: Option<Action>,
 }

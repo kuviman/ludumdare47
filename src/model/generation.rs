@@ -5,6 +5,7 @@ impl Model {
         let recipes = Config::default_recipes();
         let (tiles, height_map) = Self::generate_map(config.map_size);
         let rules = Rules {
+            entity_movement_speed: config.player_movement_speed,
             entity_day_view_distance: config.player_day_view_distance,
             entity_night_view_distance: config.player_night_view_distance,
             campfire_light: config.campfire_light,
@@ -12,6 +13,7 @@ impl Model {
             statue_light: config.statue_light,
             fire_extinguish_chance: config.fire_extinguish_chance,
             regeneration_percent: config.regeneration_percent,
+            entity_interaction_range: config.entity_interaction_range,
         };
         let mut model = Self {
             rules,
@@ -33,7 +35,7 @@ impl Model {
         };
         for y in 0..model.size.y {
             for x in 0..model.size.x {
-                let pos = vec2(x, y);
+                let pos = vec2(x as i64, y as i64);
                 if model.is_empty_tile(pos) {
                     model.generate_tile(pos);
                 }
@@ -51,13 +53,14 @@ impl Model {
         if let Some(pos) = self.get_spawnable_pos(Biome::Beach) {
             let entity = Entity {
                 id: Id::new(),
-                pos,
-                size: vec2(1, 1),
+                pos: pos.map(|x| x as f32),
+                radius: 0.5,
                 view_range: self.calc_view_range(),
-                move_to: None,
+                interaction_range: self.rules.entity_interaction_range,
                 item: None,
-                controllable: true,
                 colors: EntityColors::new(),
+                move_to: None,
+                action: None,
             };
             player_id = entity.id;
             self.sounds.insert(entity.id, vec![]);
@@ -68,23 +71,33 @@ impl Model {
         }
         player_id
     }
-    pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<usize>) {
-        let item = Item { pos, item_type };
+    pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<f32>) {
+        let item = Item {
+            pos,
+            size: item_type.size(),
+            item_type,
+        };
         self.items.insert(Id::new(), item);
     }
-    pub fn remove_item(&mut self, pos: Vec2<usize>) -> Option<Item> {
-        match self.items.iter().find(|(id, item)| item.pos == pos) {
-            Some((index, _)) => self.items.remove(&index.clone()),
+    pub fn remove_item(&mut self, pos: Vec2<f32>, range: f32) -> Option<Item> {
+        match self
+            .items
+            .iter_mut()
+            .find(|(_, item)| (item.pos - pos).len() <= range)
+        {
+            Some((index, _)) => {
+                let index = index.clone();
+                self.items.remove(&index)
+            }
             None => None,
         }
     }
-    fn generate_map(map_size: Vec2<usize>) -> (Vec<Vec<Tile>>, Vec<Vec<f32>>) {
+    fn generate_map(map_size: Vec2<usize>) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
         let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
-        let mut height_map = vec![];
-        for y in 0..map_size.y + 1 {
-            let mut row = vec![];
-            for x in 0..map_size.x + 1 {
+        let mut height_map = HashMap::new();
+        for y in 0..map_size.y as i64 + 1 {
+            for x in 0..map_size.x as i64 + 1 {
                 let pos = vec2(x, y).map(|x| x as f32);
                 let normalized_pos = vec2(pos.x / map_size.x as f32, pos.y / map_size.y as f32)
                     * 2.0
@@ -101,74 +114,71 @@ impl Model {
                     ]) as f32
                         / 1.0;
                 }
-                row.push((height_original, height));
+                height_map.insert(vec2(x, y), (height_original, height));
             }
-            height_map.push(row);
         }
-        let mut tiles = vec![];
-        for y in 0..map_size.y {
-            let mut tiles_row = vec![];
-            for x in 0..map_size.x {
-                let water = height_map[x][y].1 < 0.0
-                    || height_map[x + 1][y].1 < 0.0
-                    || height_map[x + 1][y + 1].1 < 0.0
-                    || height_map[x][y + 1].1 < 0.0;
-                let middle_height = (height_map[x][y].0
-                    + height_map[x + 1][y].0
-                    + height_map[x + 1][y + 1].0
-                    + height_map[x][y + 1].0)
+        let mut tiles = HashMap::new();
+        for y in 0..map_size.y as i64 {
+            for x in 0..map_size.x as i64 {
+                let water = height_map[&vec2(x, y)].1 < 0.0
+                    || height_map[&vec2(x + 1, y)].1 < 0.0
+                    || height_map[&vec2(x + 1, y + 1)].1 < 0.0
+                    || height_map[&vec2(x, y + 1)].1 < 0.0;
+                let middle_height = (height_map[&vec2(x, y)].0
+                    + height_map[&vec2(x + 1, y)].0
+                    + height_map[&vec2(x + 1, y + 1)].0
+                    + height_map[&vec2(x, y + 1)].0)
                     / 4.0;
-                tiles_row.push(Tile {
-                    pos: vec2(x, y),
-                    biome: if water {
-                        Biome::Water
-                    } else if middle_height < 0.05 {
-                        Biome::Beach
-                    } else {
-                        if noise2.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2 {
-                            Biome::Hills
-                        } else if noise.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2
-                            && noise2.get([x as f64 / 20.0 + 100.0, y as f64 / 20.0]) > 0.2
-                        {
-                            Biome::MagicForest
+                tiles.insert(
+                    vec2(x, y),
+                    Tile {
+                        pos: vec2(x, y),
+                        biome: if water {
+                            Biome::Water
+                        } else if middle_height < 0.05 {
+                            Biome::Beach
                         } else {
-                            Biome::Forest
-                        }
+                            if noise2.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2 {
+                                Biome::Hills
+                            } else if noise.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2
+                                && noise2.get([x as f64 / 20.0 + 100.0, y as f64 / 20.0]) > 0.2
+                            {
+                                Biome::MagicForest
+                            } else {
+                                Biome::Forest
+                            }
+                        },
                     },
-                });
+                );
             }
-            tiles.push(tiles_row);
         }
-        (
-            tiles,
-            height_map
-                .into_iter()
-                .map(|row| row.into_iter().map(|(_, y)| y).collect())
-                .collect(),
-        )
+        let mut heights = HashMap::with_capacity(height_map.len());
+        for (pos, (_, y)) in height_map {
+            heights.insert(pos, y);
+        }
+        (tiles, heights)
     }
-    pub fn generate_tile(&mut self, pos: Vec2<usize>) {
+    pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
-        let choice = self.generation_choices[&self.tiles[pos.y][pos.x].biome]
+        let choice = self.generation_choices[&self.tiles.get(&pos).unwrap().biome]
             .choose_weighted(&mut rng, |item| item.1)
             .unwrap()
             .0;
         if let Some(item_type) = choice {
-            self.spawn_item(item_type, pos);
+            self.spawn_item(item_type, pos.map(|x| x as f32));
         }
     }
-    fn is_spawnable_tile(&self, pos: Vec2<usize>) -> bool {
-        self.tiles[pos.y][pos.x].biome != Biome::Water && self.is_empty_tile(pos)
+    fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
+        self.tiles.get(&pos).unwrap().biome != Biome::Water && self.is_empty_tile(pos)
     }
-    fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<usize>> {
+    fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<f32>> {
         let mut positions = vec![];
-        for y in 0..self.size.y {
-            for x in 0..self.size.x {
+        for y in 0..self.size.y as i64 {
+            for x in 0..self.size.x as i64 {
                 let pos = vec2(x, y);
-                if self.is_spawnable_tile(pos)
-                    && self.get_tile(vec2(x, y)).unwrap().biome == ground_type
+                if self.is_spawnable_tile(pos) && self.tiles.get(&pos).unwrap().biome == ground_type
                 {
-                    positions.push(pos);
+                    positions.push(vec2(x as f32, y as f32));
                 }
             }
         }

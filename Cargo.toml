@@ -10,5 +10,9 @@ serde = "1"
 noise = "0.6.0"
 structopt = "0.3"
 
+[dependencies.serde_with]
+version = "1.5.1"
+features = ["json"]
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 ctrlc = "3"

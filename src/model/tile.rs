@@ -11,6 +11,6 @@ pub enum Biome {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Tile {
-    pub pos: Vec2<usize>,
+    pub pos: Vec2<i64>,
     pub biome: Biome,
 }

@@ -4,6 +4,7 @@ use super::*;
 pub struct Config {
     pub ticks_per_second: f32,
     pub map_size: Vec2<usize>,
+    pub player_movement_speed: f32,
     pub player_day_view_distance: f32,
     pub player_night_view_distance: f32,
     pub day_length: usize,
@@ -14,23 +15,26 @@ pub struct Config {
     pub torch_light: f32,
     pub statue_light: f32,
     pub sound_distance: f32,
+    pub entity_interaction_range: f32,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            ticks_per_second: 2.0,
+            ticks_per_second: 20.0,
             map_size: vec2(256, 256),
+            player_movement_speed: 2.0,
             player_day_view_distance: 10.0,
             player_night_view_distance: 3.0,
-            day_length: 100,
-            night_length: 50,
+            day_length: 1000,
+            night_length: 500,
             fire_extinguish_chance: 0.001,
             regeneration_percent: 0.01,
             campfire_light: 5.0,
             torch_light: 5.0,
             statue_light: 10.0,
             sound_distance: 5.0,
+            entity_interaction_range: 1.5,
         }
     }
 }
@@ -185,13 +189,6 @@ impl Config {
                 result1: None,
                 result2: Some(Campfire),
                 conditions: None,
-            },
-            Recipe {
-                ingredient1: Some(Planks),
-                ingredient2: Some(Planks),
-                result1: None,
-                result2: Some(Raft),
-                conditions: Some(Biome::Water),
             },
             Recipe {
                 ingredient1: Some(DoubleStick),

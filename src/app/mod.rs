@@ -79,7 +79,6 @@ impl Assets {
             model::ItemType::TreasureChest => &self.treasure_chest,
             model::ItemType::Tree => &self.tree,
             model::ItemType::Campfire => &self.campfire,
-            model::ItemType::Raft => &self.raft,
             model::ItemType::Rock => &self.rock,
             model::ItemType::GoldRock => &self.gold_rock,
             model::ItemType::MagicCrystal => &self.magic_crystal,
@@ -98,7 +97,8 @@ enum Rafted {
 
 struct EntityData {
     pos: Vec2<f32>,
-    target_pos: Vec2<usize>,
+    size: f32,
+    target_pos: Vec2<f32>,
     speed: f32,
     rotation: f32,
     ampl: f32,
@@ -109,7 +109,8 @@ struct EntityData {
 impl EntityData {
     fn new(entity: &model::Entity) -> Self {
         Self {
-            pos: entity.pos.map(|x| x as f32 + 0.5),
+            pos: entity.pos,
+            size: entity.radius,
             speed: 0.0,
             rotation: 0.0,
             target_pos: entity.pos,
@@ -121,11 +122,18 @@ impl EntityData {
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(&mut self, entity: &model::Entity, rafted: bool, tick_time: f32) {
-        self.t += tick_time * 5.0;
+    fn update(
+        &mut self,
+        entity: &model::Entity,
+        rafted: bool,
+        delta_time: f32,
+        view: &model::PlayerView,
+    ) {
+        self.size = entity.radius;
+        self.t += delta_time * 10.0;
         if entity.pos != self.target_pos {
             self.target_pos = entity.pos;
-            self.speed = (entity.pos.map(|x| x as f32 + 0.5) - self.pos).len();
+            self.speed = (entity.pos - self.pos).len() / (2.0 / view.ticks_per_second);
             if rafted {
                 if self.rafted == Rafted::Not {
                     self.rafted = Rafted::Jumping;
@@ -136,15 +144,13 @@ impl EntityData {
                 self.rafted = Rafted::Not;
             }
         }
-        let dpos = entity.pos.map(|x| x as f32 + 0.5) - self.pos;
-        self.pos += dpos.clamp(self.speed * tick_time);
-        if dpos.len() > 0.5 {
+        let dpos = entity.pos - self.pos;
+        self.pos += dpos.clamp(self.speed * delta_time);
+        if dpos.len() > 1e-9 {
             self.rotation = dpos.arg();
-        }
-        if dpos.len() > 0.01 {
-            self.ampl = (self.ampl + tick_time * 10.0).min(1.0);
+            self.ampl = (self.ampl + delta_time * 20.0).min(1.0);
         } else {
-            self.ampl = (self.ampl - tick_time * 10.0).max(0.0);
+            self.ampl = (self.ampl - delta_time * 20.0).max(0.0);
         }
     }
 }
@@ -227,7 +233,7 @@ pub struct App {
     camera_controls: camera::Controls,
     ez: Ez,
     ez3d: Ez3D,
-    pentagon: ugli::VertexBuffer<ez3d::Vertex>,
+    circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
     view: model::PlayerView,
@@ -235,7 +241,7 @@ pub struct App {
     noise: noise::OpenSimplex,
     light: light::Uniforms,
     entity_positions: HashMap<Id, EntityData>,
-    black_clouds: HashMap<Vec2<usize>, BlackCloud>,
+    black_clouds: HashMap<Vec2<i64>, BlackCloud>,
     music: Option<geng::SoundEffect>,
     walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
@@ -266,8 +272,8 @@ impl App {
             player_id,
             view,
             tile_mesh,
-            pentagon: ugli::VertexBuffer::new_static(geng.ugli(), {
-                const N: usize = 5;
+            circle: ugli::VertexBuffer::new_static(geng.ugli(), {
+                const N: usize = 25;
                 (0..=N)
                     .flat_map(|i| {
                         (0..2).map(move |j| ez3d::Vertex {
@@ -295,10 +301,11 @@ impl App {
         }
     }
 
-    fn draw_pentagon(
+    fn draw_circle(
         &self,
         framebuffer: &mut ugli::Framebuffer,
         pos: Vec2<f32>,
+        radius: f32,
         color: Color<f32>,
     ) {
         let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
@@ -306,11 +313,11 @@ impl App {
             framebuffer,
             &self.camera,
             &self.light,
-            &self.pentagon,
+            &self.circle,
             std::iter::once(ez3d::Instance {
                 i_pos: pos,
-                i_size: 0.5,
-                i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32,
+                i_size: radius,
+                i_rotation: 0.0,
                 i_color: color,
             }),
             ugli::DrawMode::TriangleStrip,
@@ -323,15 +330,15 @@ impl App {
 
     fn update_black_clouds(&mut self, delta_time: f32) {
         let mut positions = HashSet::new();
-        for tile in &self.view.tiles {
+        for (pos, _) in &self.view.tiles {
             for dx in 0..3 {
                 for dy in 0..3 {
-                    positions.insert(tile.pos + vec2(dx, dy));
+                    positions.insert(*pos + vec2(dx, dy));
                 }
             }
         }
-        for tile in &self.view.tiles {
-            positions.remove(&(tile.pos + vec2(1, 1)));
+        for (pos, _) in &self.view.tiles {
+            positions.remove(&(*pos + vec2(1, 1)));
         }
         for &pos in &positions {
             self.black_clouds.entry(pos).or_default();
@@ -398,11 +405,13 @@ impl geng::State for App {
                     self.view
                         .tiles
                         .iter()
-                        .find(|tile| tile.pos == entity.pos)
+                        .find(|&(pos, _)| *pos == entity.pos.map(|x| x as i64))
                         .unwrap()
+                        .1
                         .biome
                         == model::Biome::Water,
-                    delta_time * self.view.ticks_per_second,
+                    delta_time,
+                    &self.view,
                 );
             } else {
                 self.entity_positions
@@ -445,10 +454,9 @@ impl geng::State for App {
             self.black_clouds
                 .iter()
                 .map(|(&pos, cloud)| ez3d::Instance {
-                    i_pos: pos.map(|x| x as f32 - 0.5).extend(
-                        self.view.height_map[pos.y.min(self.view.height_map.len() - 1)]
-                            [pos.x.min(self.view.height_map[0].len() - 1)],
-                    ),
+                    i_pos: pos
+                        .map(|x| x as f32)
+                        .extend(self.view.height_map.get(&pos).unwrap_or(&0.0).clone()),
                     i_rotation: cloud.rotation,
                     i_size: cloud.size,
                     i_color: Color::BLACK,
@@ -467,27 +475,55 @@ impl geng::State for App {
             }),
         );
 
-        if let Some(data) = self.entity_positions.get(&self.player_id) {
-            self.draw_pentagon(framebuffer, data.pos, Color::GREEN);
-        }
         let selected_pos = self
             .tile_mesh
             .intersect(self.camera.pixel_ray(
                 self.framebuffer_size,
                 self.geng.window().mouse_pos().map(|x| x as f32),
             ))
-            .map(|pos| pos.xy().map(|x| x as usize));
+            .map(|pos| pos.xy());
+        let mut selected_item = None;
+        let mut selected_entity = None;
+        if let Some(data) = self.entity_positions.get(&self.player_id) {
+            self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
+        }
         if let Some(pos) = selected_pos {
-            self.draw_pentagon(
-                framebuffer,
-                pos.map(|x| x as f32 + 0.5),
-                Color::rgba(1.0, 1.0, 1.0, 0.5),
-            );
+            if let Some((_, item)) = self
+                .view
+                .items
+                .iter()
+                .find(|(_, s)| (s.pos - pos).len() <= s.size)
+            {
+                self.draw_circle(
+                    framebuffer,
+                    item.pos,
+                    item.size,
+                    Color::rgba(1.0, 1.0, 1.0, 0.5),
+                );
+                selected_item = Some(item);
+            } else if let Some(entity) = self
+                .view
+                .entities
+                .iter()
+                .find(|e| (e.pos - pos).len() <= e.radius)
+            {
+                if let Some(data) = self.entity_positions.get(&entity.id) {
+                    if entity.id != self.player_id {
+                        self.draw_circle(
+                            framebuffer,
+                            data.pos,
+                            entity.radius,
+                            Color::rgba(1.0, 1.0, 1.0, 0.5),
+                        );
+                    }
+                }
+                selected_entity = Some(entity);
+            }
         }
 
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
         for (_, item) in &self.view.items {
-            let pos = item.pos.map(|x| x as f32 + 0.5);
+            let pos = item.pos;
             let height = self.tile_mesh.get_height(pos).unwrap();
             let pos = pos.extend(height);
             instances
@@ -573,7 +609,7 @@ impl geng::State for App {
             );
             let raft_pos = match data.rafted {
                 Rafted::Not => None,
-                Rafted::Jumping => Some(data.target_pos.map(|x| x as f32 + 0.5).extend(0.0)),
+                Rafted::Jumping => Some(data.target_pos.extend(0.0)),
                 Rafted::On => Some(pos),
             };
             if let Some(raft_pos) = raft_pos {
@@ -609,7 +645,7 @@ impl geng::State for App {
             framebuffer,
             &self.camera,
             tiles_to_draw.into_iter().map(|(pos, color)| ez::Quad {
-                pos: pos.map(|x| x as f32 + 0.5),
+                pos: pos.map(|x| x as f32),
                 rotation: 0.0,
                 size: vec2(0.5, 0.5) * 0.5,
                 color: Color {
@@ -620,20 +656,20 @@ impl geng::State for App {
                 },
             }),
         );
-        if let Some(pos) = selected_pos {
-            if let Some((_, item)) = self.view.items.iter().find(|(_, s)| s.pos == pos) {
-                let text = item.item_type.to_string();
-                let pos = pos.map(|x| x as f32 + 0.5);
-                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
-                self.geng.default_font().draw_aligned(
-                    framebuffer,
-                    &text,
-                    self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
-                    0.5,
-                    32.0,
-                    Color::WHITE,
-                );
-            } else if let Some(entity) = self.view.entities.iter().find(|e| e.pos == pos) {
+        if let Some(item) = selected_item {
+            let text = item.item_type.to_string();
+            let pos = item.pos;
+            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+            self.geng.default_font().draw_aligned(
+                framebuffer,
+                &text,
+                self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
+                0.5,
+                32.0,
+                Color::WHITE,
+            );
+        } else if let Some(entity) = selected_entity {
+            if let Some(data) = self.entity_positions.get(&entity.id) {
                 let mut text = if entity.id == self.player_id {
                     "Me"
                 } else {
@@ -643,7 +679,7 @@ impl geng::State for App {
                 if let Some(item) = entity.item {
                     text = format!("{}, holding {:?}", text, item);
                 }
-                let pos = pos.map(|x| x as f32 + 0.5);
+                let pos = data.pos;
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                 self.geng.default_font().draw_aligned(
                     framebuffer,
@@ -725,14 +761,17 @@ impl geng::State for App {
                     self.camera
                         .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
                 ) {
-                    let pos = pos.xy().map(|x| x as usize);
+                    let pos = pos.xy();
                     match button {
                         geng::MouseButton::Left => {
                             self.connection.send(ClientMessage::Goto { pos })
                         }
                         geng::MouseButton::Right => {
-                            if let Some((id, _)) =
-                                self.view.items.iter().find(|(_, item)| item.pos == pos)
+                            if let Some((id, _)) = self
+                                .view
+                                .items
+                                .iter()
+                                .find(|(_, item)| (item.pos - pos).len() <= item.size)
                             {
                                 self.connection
                                     .send(ClientMessage::Interact { id: id.clone() })
@@ -742,9 +781,33 @@ impl geng::State for App {
                     }
                 }
             }
-            geng::Event::KeyDown { key: geng::Key::Q } => self.connection.send(ClientMessage::Drop),
+            geng::Event::KeyDown { key: geng::Key::Q } => {
+                let position = self.geng.window().mouse_pos();
+                if let Some(pos) = self.tile_mesh.intersect(
+                    self.camera
+                        .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
+                ) {
+                    let pos = pos.xy();
+                    self.connection.send(ClientMessage::Drop { pos });
+                }
+            }
             geng::Event::KeyDown { key: geng::Key::E } => {
-                self.connection.send(ClientMessage::PickUp)
+                let position = self.geng.window().mouse_pos();
+                if let Some(pos) = self.tile_mesh.intersect(
+                    self.camera
+                        .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
+                ) {
+                    let pos = pos.xy();
+                    if let Some((id, _)) = self
+                        .view
+                        .items
+                        .iter()
+                        .find(|(_, item)| (item.pos - pos).len() <= item.size)
+                    {
+                        self.connection
+                            .send(ClientMessage::PickUp { id: id.clone() });
+                    }
+                }
             }
             geng::Event::KeyDown { key: geng::Key::R } => {
                 self.connection.send(ClientMessage::SayHi)

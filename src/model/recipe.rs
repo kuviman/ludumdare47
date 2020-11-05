@@ -14,13 +14,13 @@ impl Recipe {
         &self,
         ingredient1: Option<ItemType>,
         ingredient2: Option<ItemType>,
-        conditions: Biome,
+        conditions: Option<Biome>,
     ) -> bool {
         ingredient1 == self.ingredient1
             && ingredient2 == self.ingredient2
-            && match &self.conditions {
+            && match self.conditions {
                 None => true,
-                Some(cond) => *cond == conditions,
+                _ => conditions == self.conditions,
             }
     }
     pub fn is_relevant(&self, player_id: Id, view: &PlayerView) -> bool {
