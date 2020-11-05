@@ -1,5 +1,25 @@
 use super::*;
 
+#[derive(Debug, Copy, Clone)]
+pub struct BiomeGeneration {
+    pub size: f32,
+    pub weight: f32,
+}
+
+impl BiomeGeneration {
+    pub fn new(size: f32, weight: f32) -> Self {
+        assert!(
+            size >= 0.0,
+            "Size in BiomeGeneration must be in range 0.0..1.0"
+        );
+        assert!(
+            size <= 1.0,
+            "Size in BiomeGeneration must be in range 0.0..1.0"
+        );
+        Self { size, weight }
+    }
+}
+
 impl Model {
     pub fn new(config: Config) -> Self {
         let recipes = Config::default_recipes();
@@ -94,7 +114,7 @@ impl Model {
     }
     fn generate_map(
         map_size: Vec2<usize>,
-        biomes: HashMap<Biome, (f32, f32)>,
+        biomes: HashMap<Biome, BiomeGeneration>,
     ) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
         let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
@@ -123,9 +143,9 @@ impl Model {
 
         let mut noises = HashMap::with_capacity(biomes.len());
         let mut total_weight = 0.0;
-        for (&biome, &(_, weight)) in &biomes {
+        for (&biome, &biome_generation) in &biomes {
             noises.insert(biome, OpenSimplex::new().set_seed(global_rng().gen()));
-            total_weight += weight as f64;
+            total_weight += biome_generation.weight as f64;
         }
 
         let mut tiles = HashMap::new();
@@ -151,18 +171,22 @@ impl Model {
                         } else {
                             let mut biome = Biome::Forest;
                             let mut biome_weight = 0.0;
-                            for (&biom, &(size, weight)) in &biomes {
-                                if weight > biome_weight
+                            for (&biom, &biome_generation) in &biomes {
+                                if biome_generation.weight > biome_weight
                                     && noises[&biom].get([
-                                        x as f64 * weight as f64 / total_weight / 10.0,
-                                        y as f64 * weight as f64 / total_weight / 10.0,
+                                        x as f64 * biome_generation.weight as f64
+                                            / total_weight
+                                            / 10.0,
+                                        y as f64 * biome_generation.weight as f64
+                                            / total_weight
+                                            / 10.0,
                                     ]) as f32
                                         / 2.0
                                         + 0.5
-                                        <= size
+                                        <= biome_generation.size
                                 {
                                     biome = biom;
-                                    biome_weight = weight;
+                                    biome_weight = biome_generation.weight;
                                 }
                             }
                             biome
