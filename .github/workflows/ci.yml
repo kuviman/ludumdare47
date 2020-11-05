@@ -50,8 +50,8 @@ jobs:
       - name: Copy server files
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.SERVER }}
-          username: ${{ secrets.SSH_USERNAME }}
+          host: ${{ secrets.LD47_SERVER }}
+          username: ${{ secrets.LD47_SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           source: artifacts/linux/ludumdare47
           target: .
@@ -60,9 +60,9 @@ jobs:
       - name: Deploy server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          host: ${{ secrets.LD47_SERVER }}
+          username: ${{ secrets.LD47_SSH_USERNAME }}
+          key: ${{ secrets.LD47_SSH_KEY }}
           script: |
             cat > ~/.config/systemd/user/ld47.service <<EOF
             [Unit]
