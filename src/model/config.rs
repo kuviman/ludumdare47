@@ -234,7 +234,13 @@ impl Config {
             },
         ]
     }
-
+    pub fn default_biomes() -> HashMap<Biome, (f32, f32)> {
+        let mut biomes = HashMap::new();
+        biomes.insert(Biome::Forest, (0.5, 6.0));
+        biomes.insert(Biome::Hills, (0.4, 4.0));
+        biomes.insert(Biome::MagicForest, (0.3, 3.0));
+        biomes
+    }
     pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
         let mut generation_choices = HashMap::new();
         generation_choices.insert(Biome::Water, vec![(None, 1)]);

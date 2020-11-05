@@ -3,7 +3,7 @@ use super::*;
 impl Model {
     pub fn new(config: Config) -> Self {
         let recipes = Config::default_recipes();
-        let (tiles, height_map) = Self::generate_map(config.map_size);
+        let (tiles, height_map) = Self::generate_map(config.map_size, Config::default_biomes());
         let rules = Rules {
             entity_movement_speed: config.player_movement_speed,
             entity_day_view_distance: config.player_day_view_distance,
@@ -92,7 +92,10 @@ impl Model {
             None => None,
         }
     }
-    fn generate_map(map_size: Vec2<usize>) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
+    fn generate_map(
+        map_size: Vec2<usize>,
+        biomes: HashMap<Biome, (f32, f32)>,
+    ) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
         let noise = OpenSimplex::new().set_seed(global_rng().gen());
         let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
         let mut height_map = HashMap::new();
@@ -117,6 +120,14 @@ impl Model {
                 height_map.insert(vec2(x, y), (height_original, height));
             }
         }
+
+        let mut noises = HashMap::with_capacity(biomes.len());
+        let mut total_weight = 0.0;
+        for (&biome, &(_, weight)) in &biomes {
+            noises.insert(biome, OpenSimplex::new().set_seed(global_rng().gen()));
+            total_weight += weight as f64;
+        }
+
         let mut tiles = HashMap::new();
         for y in 0..map_size.y as i64 {
             for x in 0..map_size.x as i64 {
@@ -138,15 +149,23 @@ impl Model {
                         } else if middle_height < 0.05 {
                             Biome::Beach
                         } else {
-                            if noise2.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2 {
-                                Biome::Hills
-                            } else if noise.get([x as f64 / 10.0, y as f64 / 10.0]) > 0.2
-                                && noise2.get([x as f64 / 20.0 + 100.0, y as f64 / 20.0]) > 0.2
-                            {
-                                Biome::MagicForest
-                            } else {
-                                Biome::Forest
+                            let mut biome = Biome::Forest;
+                            let mut biome_weight = 0.0;
+                            for (&biom, &(size, weight)) in &biomes {
+                                if weight > biome_weight
+                                    && noises[&biom].get([
+                                        x as f64 * weight as f64 / total_weight / 10.0,
+                                        y as f64 * weight as f64 / total_weight / 10.0,
+                                    ]) as f32
+                                        / 2.0
+                                        + 0.5
+                                        <= size
+                                {
+                                    biome = biom;
+                                    biome_weight = weight;
+                                }
                             }
+                            biome
                         },
                     },
                 );
