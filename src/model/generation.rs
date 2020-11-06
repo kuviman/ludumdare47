@@ -50,7 +50,8 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos(Biome::Forest) {
+        if let Some(pos) = Some(vec2(20.0, 20.0)) {
+            //self.get_spawnable_pos(Biome::Forest) {
             let entity = Entity {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
@@ -96,11 +97,19 @@ impl Model {
         map_size: Vec2<usize>,
         biomes: HashMap<Biome, BiomeGeneration>,
     ) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
-        let mut noises = HashMap::with_capacity(biomes.len());
-        let mut total_weight = 0.0;
-        for (&biome, &biome_generation) in &biomes {
-            noises.insert(biome, OpenSimplex::new().set_seed(global_rng().gen()));
-            total_weight += biome_generation.weight as f64;
+        let mut noise_storage = HashMap::new();
+        let mut noises = HashMap::new();
+        for (_, biome_generation) in &biomes {
+            for &setting in biome_generation
+                .parameters
+                .keys()
+                .filter(|&setting| !noises.contains_key(setting))
+            {
+                noise_storage.insert(setting, OpenSimplex::new().set_seed(global_rng().gen()));
+            }
+        }
+        for (&setting, noise) in &noise_storage {
+            noises.insert(setting, noise as &dyn NoiseFn<[f64; 2]>);
         }
 
         let mut tiles_height_map = HashMap::new();
@@ -113,7 +122,7 @@ impl Model {
                     Tile {
                         pos,
                         biome: {
-                            match Self::generate_biome(pos, total_weight, None, &noises, &biomes) {
+                            match Self::generate_biome(pos, None, &noises, &biomes) {
                                 Some(biome) => {
                                     tiles_height_map.insert(pos, biomes[&biome].height);
                                     biome
@@ -181,32 +190,25 @@ impl Model {
     }
     fn generate_biome(
         pos: Vec2<i64>,
-        total_weight: f64,
         parent_biome: Option<Biome>,
-        noises: &HashMap<Biome, OpenSimplex>,
+        noises: &HashMap<BiomeParameters, &dyn NoiseFn<[f64; 2]>>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Option<Biome> {
-        let mut biome = None;
-        let mut biome_weight = 0.0;
-        for (&biom, &biome_generation) in biomes
+        match biomes
             .iter()
-            .filter(|(_, biome_generation)| biome_generation.parent_biome == parent_biome)
+            .filter(|(&biome, biome_generation)| {
+                biome_generation.parent_biome == parent_biome || Some(biome) == parent_biome
+            })
+            .map(|(biome, biome_generation)| (biome, biome_generation.calculate_score(pos, noises)))
+            .max_by(|(_, score1), (_, score2)| score1.partial_cmp(score2).unwrap())
         {
-            if biome_generation.weight > biome_weight
-                && noises[&biom].get([
-                    pos.x as f64 * biome_generation.weight as f64 / total_weight / 10.0,
-                    pos.y as f64 * biome_generation.weight as f64 / total_weight / 10.0,
-                ]) as f32
-                    / 2.0
-                    + 0.5
-                    <= biome_generation.size
-            {
-                biome_weight = biome_generation.weight;
-                biome = Some(biom);
+            Some((&biome, _)) => {
+                if Some(biome) == parent_biome {
+                    parent_biome
+                } else {
+                    Self::generate_biome(pos, Some(biome), noises, biomes)
+                }
             }
-        }
-        match biome {
-            Some(biome) => Self::generate_biome(pos, total_weight, Some(biome), noises, biomes),
             None => parent_biome,
         }
     }
