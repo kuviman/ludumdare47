@@ -24,8 +24,8 @@ impl Default for Config {
             ticks_per_second: 20.0,
             map_size: vec2(256, 256),
             player_movement_speed: 2.0,
-            player_day_view_distance: 500.0,
-            player_night_view_distance: 500.0,
+            player_day_view_distance: 10.0,
+            player_night_view_distance: 3.0,
             day_length: 1000,
             night_length: 500,
             fire_extinguish_chance: 0.001,
@@ -239,9 +239,9 @@ impl Config {
 
         let mut biomes = HashMap::new();
         biomes.insert(Lake, BiomeGeneration::new(Some(Forest), -1.0, 0.3, 3.0));
-        biomes.insert(Forest, BiomeGeneration::new(None, 1.0, 0.5, 6.0));
-        biomes.insert(Hills, BiomeGeneration::new(None, 2.0, 0.4, 4.0));
-        biomes.insert(MagicForest, BiomeGeneration::new(None, 1.0, 0.3, 3.0));
+        biomes.insert(Forest, BiomeGeneration::new(None, 0.5, 0.5, 6.0));
+        biomes.insert(Hills, BiomeGeneration::new(None, 1.0, 0.4, 4.0));
+        biomes.insert(MagicForest, BiomeGeneration::new(None, 0.5, 0.3, 3.0));
         biomes
     }
     pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {

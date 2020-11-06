@@ -119,7 +119,7 @@ impl Model {
                                     biome
                                 }
                                 None => {
-                                    tiles_height_map.insert(pos, 1.0);
+                                    tiles_height_map.insert(pos, biomes[&Biome::Forest].height);
                                     Biome::Forest
                                 }
                             }
