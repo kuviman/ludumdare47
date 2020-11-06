@@ -54,18 +54,28 @@ impl Model {
             day_length: self.day_length,
             night_length: self.night_length,
             tiles: {
-                let mut tiles = HashMap::with_capacity(self.size.x * self.size.y);
-                for y in 0..self.size.y {
-                    for x in 0..self.size.x {
-                        let pos = vec2(x as i64, y as i64);
-                        if view.contains(&pos) {
-                            tiles.insert(pos, self.tiles.get(&pos).unwrap().clone());
-                        }
+                let mut tiles = HashMap::new();
+                for &pos in &view {
+                    if let Some(tile) = self.tiles.get(&pos) {
+                        tiles.insert(pos, tile.clone());
                     }
                 }
                 tiles
             },
-            height_map: self.height_map.clone(),
+            height_map: {
+                let mut height_map = HashMap::new();
+                for &pos in &view {
+                    for dx in 0..=1 {
+                        for dy in 0..=1 {
+                            let pos = pos + vec2(dx, dy);
+                            if let Some(&height) = self.height_map.get(&pos) {
+                                height_map.insert(pos, height);
+                            }
+                        }
+                    }
+                }
+                height_map
+            },
             entities: self
                 .entities
                 .iter()
