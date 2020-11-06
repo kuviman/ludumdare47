@@ -226,6 +226,10 @@ impl UiState {
 
 pub struct App {
     show_help: bool,
+    last_tin: usize,
+    last_tout: usize,
+    traffic_update: f32,
+    traffic_text: String,
     geng: Rc<Geng>,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
@@ -263,6 +267,10 @@ impl App {
         Self {
             geng: geng.clone(),
             assets,
+            last_tin: 0,
+            last_tout: 0,
+            traffic_update: 0.0,
+            traffic_text: String::new(),
             framebuffer_size: vec2(1, 1),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
@@ -368,6 +376,18 @@ impl geng::State for App {
             );
         }
         let delta_time = delta_time as f32;
+
+        self.traffic_update -= delta_time;
+        if self.traffic_update < 0.0 {
+            self.traffic_update = 1.0;
+            self.traffic_text = format!(
+                "{} kb/s in, {} kb/s out",
+                (self.connection.traffic().inbound() - self.last_tin) / 1024,
+                (self.connection.traffic().outbound() - self.last_tout) / 1024,
+            );
+            self.last_tin = self.connection.traffic().inbound();
+            self.last_tout = self.connection.traffic().outbound();
+        }
 
         let mut got_message = false;
         for message in self.connection.new_messages() {
@@ -736,6 +756,7 @@ impl geng::State for App {
             text("    Right Mouse Button to interact");
             text("    Left Mouse Button to move");
             text("    H to toggle help");
+            text(&self.traffic_text);
         }
         self.ui_controller
             .draw(&mut self.ui_state.ui(), framebuffer);
