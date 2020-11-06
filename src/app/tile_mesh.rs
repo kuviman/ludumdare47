@@ -82,7 +82,7 @@ impl TileMesh {
                     .unwrap()
                     .clone(),
                 match tile.biome {
-                    model::Biome::Water => Color::rgb(0.8, 0.8, 0.0),
+                    model::Biome::Lake => Color::rgb(0.8, 0.8, 0.0),
                     model::Biome::Forest => Color::rgb(0.0, 0.8, 0.0),
                     model::Biome::Hills => Color::rgb(0.7, 0.7, 0.7),
                     model::Biome::Beach => Color::YELLOW,

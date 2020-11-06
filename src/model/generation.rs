@@ -1,25 +1,5 @@
 use super::*;
 
-#[derive(Debug, Copy, Clone)]
-pub struct BiomeGeneration {
-    pub size: f32,
-    pub weight: f32,
-}
-
-impl BiomeGeneration {
-    pub fn new(size: f32, weight: f32) -> Self {
-        assert!(
-            size >= 0.0,
-            "Size in BiomeGeneration must be in range 0.0..1.0"
-        );
-        assert!(
-            size <= 1.0,
-            "Size in BiomeGeneration must be in range 0.0..1.0"
-        );
-        Self { size, weight }
-    }
-}
-
 impl Model {
     pub fn new(config: Config) -> Self {
         let recipes = Config::default_recipes();
@@ -70,7 +50,7 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos(Biome::Beach) {
+        if let Some(pos) = self.get_spawnable_pos(Biome::Forest) {
             let entity = Entity {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
@@ -116,31 +96,6 @@ impl Model {
         map_size: Vec2<usize>,
         biomes: HashMap<Biome, BiomeGeneration>,
     ) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
-        let noise = OpenSimplex::new().set_seed(global_rng().gen());
-        let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
-        let mut height_map = HashMap::new();
-        for y in 0..map_size.y as i64 + 1 {
-            for x in 0..map_size.x as i64 + 1 {
-                let pos = vec2(x, y).map(|x| x as f32);
-                let normalized_pos = vec2(pos.x / map_size.x as f32, pos.y / map_size.y as f32)
-                    * 2.0
-                    - vec2(1.0, 1.0);
-                let height_original = 1.0 - normalized_pos.len() * 1.2
-                    + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
-                        as f32
-                        / 10.0);
-                let mut height = height_original.min(0.3);
-                if height > 0.2 {
-                    height += noise2.get([
-                        normalized_pos.x as f64 * 10.0,
-                        normalized_pos.y as f64 * 10.0,
-                    ]) as f32
-                        / 1.0;
-                }
-                height_map.insert(vec2(x, y), (height_original, height));
-            }
-        }
-
         let mut noises = HashMap::with_capacity(biomes.len());
         let mut total_weight = 0.0;
         for (&biome, &biome_generation) in &biomes {
@@ -148,28 +103,16 @@ impl Model {
             total_weight += biome_generation.weight as f64;
         }
 
+        let mut tiles_height_map = HashMap::new();
         let mut tiles = HashMap::new();
         for y in 0..map_size.y as i64 {
             for x in 0..map_size.x as i64 {
-                let water = height_map[&vec2(x, y)].1 < 0.0
-                    || height_map[&vec2(x + 1, y)].1 < 0.0
-                    || height_map[&vec2(x + 1, y + 1)].1 < 0.0
-                    || height_map[&vec2(x, y + 1)].1 < 0.0;
-                let middle_height = (height_map[&vec2(x, y)].0
-                    + height_map[&vec2(x + 1, y)].0
-                    + height_map[&vec2(x + 1, y + 1)].0
-                    + height_map[&vec2(x, y + 1)].0)
-                    / 4.0;
                 tiles.insert(
                     vec2(x, y),
                     Tile {
                         pos: vec2(x, y),
-                        biome: if water {
-                            Biome::Water
-                        } else if middle_height < 0.05 {
-                            Biome::Beach
-                        } else {
-                            let mut biome = Biome::Forest;
+                        biome: {
+                            let mut biome = None;
                             let mut biome_weight = 0.0;
                             for (&biom, &biome_generation) in &biomes {
                                 if biome_generation.weight > biome_weight
@@ -185,21 +128,73 @@ impl Model {
                                         + 0.5
                                         <= biome_generation.size
                                 {
-                                    biome = biom;
+                                    biome = Some(biom);
                                     biome_weight = biome_generation.weight;
+                                    tiles_height_map.insert(vec2(x, y), biome_generation.height);
                                 }
                             }
-                            biome
+                            match biome {
+                                Some(biome) => biome,
+                                None => {
+                                    tiles_height_map.insert(vec2(x, y), 1.0);
+                                    Biome::Forest
+                                }
+                            }
                         },
                     },
                 );
             }
         }
-        let mut heights = HashMap::with_capacity(height_map.len());
-        for (pos, (_, y)) in height_map {
-            heights.insert(pos, y);
+        let mut height_map =
+            HashMap::with_capacity(tiles_height_map.len() + map_size.x + map_size.y + 1);
+        for y in 1..map_size.y as i64 {
+            for x in 1..map_size.x as i64 {
+                let height = (tiles_height_map[&vec2(x, y)]
+                    + tiles_height_map[&vec2(x - 1, y)]
+                    + tiles_height_map[&vec2(x, y - 1)]
+                    + tiles_height_map[&vec2(x - 1, y - 1)])
+                    / 4.0;
+                height_map.insert(vec2(x, y), height);
+            }
         }
-        (tiles, heights)
+        for y in 1..map_size.y as i64 {
+            // Right
+            let height = (tiles_height_map[&vec2(map_size.x as i64 - 1, y)]
+                + tiles_height_map[&vec2(map_size.x as i64 - 1, y - 1)])
+                / 2.0;
+            height_map.insert(vec2(map_size.x as i64, y), height);
+            // Left
+            let height = (tiles_height_map[&vec2(0, y)] + tiles_height_map[&vec2(0, y - 1)]) / 2.0;
+            height_map.insert(vec2(0, y), height);
+        }
+        for x in 1..map_size.x as i64 {
+            // Top
+            let height = (tiles_height_map[&vec2(x, map_size.y as i64 - 1)]
+                + tiles_height_map[&vec2(x - 1, map_size.y as i64 - 1)])
+                / 2.0;
+            height_map.insert(vec2(x, map_size.y as i64), height);
+            // Bottom
+            let height = (tiles_height_map[&vec2(x, 0)] + tiles_height_map[&vec2(x - 1, 0)]) / 2.0;
+            height_map.insert(vec2(x, 0), height);
+        }
+        // Top-right
+        height_map.insert(
+            vec2(map_size.x as i64, map_size.y as i64),
+            tiles_height_map[&vec2(map_size.x as i64 - 1, map_size.y as i64 - 1)],
+        );
+        // Top-left
+        height_map.insert(
+            vec2(0, map_size.y as i64),
+            tiles_height_map[&vec2(0, map_size.y as i64 - 1)],
+        );
+        // Bottom-right
+        height_map.insert(
+            vec2(map_size.x as i64, 0),
+            tiles_height_map[&vec2(map_size.x as i64 - 1, 0)],
+        );
+        // Bottom-left
+        height_map.insert(vec2(0, 0), tiles_height_map[&vec2(0, 0)]);
+        (tiles, height_map)
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
@@ -212,7 +207,7 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
-        self.tiles.get(&pos).unwrap().biome != Biome::Water && self.is_empty_tile(pos)
+        self.tiles.get(&pos).unwrap().biome != Biome::Lake && self.is_empty_tile(pos)
     }
     fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<f32>> {
         let mut positions = vec![];

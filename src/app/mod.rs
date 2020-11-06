@@ -409,7 +409,7 @@ impl geng::State for App {
                         .unwrap()
                         .1
                         .biome
-                        == model::Biome::Water,
+                        == model::Biome::Lake,
                     delta_time,
                     &self.view,
                 );

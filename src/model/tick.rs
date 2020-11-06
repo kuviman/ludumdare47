@@ -63,7 +63,7 @@ impl Model {
                     let pos = vec2(x, y) + entity.pos.map(|x| x as i64);
                     if let Some((normal, penetration)) = match self.tiles.get(&pos) {
                         Some(tile) => {
-                            if tile.biome == Biome::Water {
+                            if tile.biome == Biome::Lake {
                                 Self::collide(
                                     entity.pos,
                                     entity.radius,

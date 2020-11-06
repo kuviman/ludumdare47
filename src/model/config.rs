@@ -24,8 +24,8 @@ impl Default for Config {
             ticks_per_second: 20.0,
             map_size: vec2(256, 256),
             player_movement_speed: 2.0,
-            player_day_view_distance: 10.0,
-            player_night_view_distance: 3.0,
+            player_day_view_distance: 500.0,
+            player_night_view_distance: 500.0,
             day_length: 1000,
             night_length: 500,
             fire_extinguish_chance: 0.001,
@@ -236,14 +236,15 @@ impl Config {
     }
     pub fn default_biomes() -> HashMap<Biome, BiomeGeneration> {
         let mut biomes = HashMap::new();
-        biomes.insert(Biome::Forest, BiomeGeneration::new(0.5, 6.0));
-        biomes.insert(Biome::Hills, BiomeGeneration::new(0.4, 4.0));
-        biomes.insert(Biome::MagicForest, BiomeGeneration::new(0.3, 3.0));
+        biomes.insert(Biome::Lake, BiomeGeneration::new(-1.0, 0.3, 3.0));
+        biomes.insert(Biome::Forest, BiomeGeneration::new(1.0, 0.5, 6.0));
+        biomes.insert(Biome::Hills, BiomeGeneration::new(2.0, 0.4, 4.0));
+        biomes.insert(Biome::MagicForest, BiomeGeneration::new(1.0, 0.3, 3.0));
         biomes
     }
     pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
         let mut generation_choices = HashMap::new();
-        generation_choices.insert(Biome::Water, vec![(None, 1)]);
+        generation_choices.insert(Biome::Lake, vec![(None, 1)]);
         generation_choices.insert(
             Biome::Beach,
             vec![(None, 200), (Some(ItemType::TreasureMark), 1)],
