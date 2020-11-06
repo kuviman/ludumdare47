@@ -1,6 +1,5 @@
 use super::*;
 
-#[serde_with::serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct PlayerView {
     pub players_online: usize,
@@ -10,9 +9,7 @@ pub struct PlayerView {
     pub ticks_per_second: f32,
     pub day_length: usize,
     pub night_length: usize,
-    #[serde_as(as = "HashMap<serde_with::json::JsonString, _>")]
     pub height_map: HashMap<Vec2<i64>, f32>,
-    #[serde_as(as = "HashMap<serde_with::json::JsonString, _>")]
     pub tiles: HashMap<Vec2<i64>, Tile>,
     pub entities: Vec<Entity>,
     pub items: HashMap<Id, Item>,
