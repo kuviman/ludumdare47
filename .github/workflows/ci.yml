@@ -1,0 +1,86 @@
+name: CI
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      WSS: wss
+      DEFAULT_ADDR: island.kuviman.com
+    container: kuviman/geng
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build Linux
+        run: |
+          cargo geng build --release
+          mkdir -p artifacts && mv target/geng artifacts/linux
+
+      - name: Build Web
+        run: |
+          cargo geng build --release --target wasm32-unknown-unknown
+          mkdir -p artifacts && mv target/geng artifacts/web
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: artifacts
+          path: artifacts
+
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/master'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: artifacts
+          path: artifacts
+
+      - name: Copy server files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: artifacts/linux
+          target: island/server
+          strip_components: 2
+
+      - name: Copy web files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: artifacts/web
+          target: island/www
+          strip_components: 2
+
+      - name: Deploy server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cat > ~/.config/systemd/user/island-server.service <<EOF
+            [Unit]
+            Description=Island server
+            After=network.target
+
+            [Install]
+            WantedBy=multi-user.target
+
+            [Service]
+            Type=simple
+            ExecStart=/bin/bash -c "chmod +x ~/island/server/island && ~/island/server/island --addr 127.0.0.1:7887 --no-client"
+            Restart=always
+            RestartSec=10
+            EOF
+
+            systemctl --user daemon-reload
+            systemctl --user restart island-server
