@@ -107,36 +107,19 @@ impl Model {
         let mut tiles = HashMap::new();
         for y in 0..map_size.y as i64 {
             for x in 0..map_size.x as i64 {
+                let pos = vec2(x, y);
                 tiles.insert(
-                    vec2(x, y),
+                    pos,
                     Tile {
-                        pos: vec2(x, y),
+                        pos,
                         biome: {
-                            let mut biome = None;
-                            let mut biome_weight = 0.0;
-                            for (&biom, &biome_generation) in &biomes {
-                                if biome_generation.weight > biome_weight
-                                    && noises[&biom].get([
-                                        x as f64 * biome_generation.weight as f64
-                                            / total_weight
-                                            / 10.0,
-                                        y as f64 * biome_generation.weight as f64
-                                            / total_weight
-                                            / 10.0,
-                                    ]) as f32
-                                        / 2.0
-                                        + 0.5
-                                        <= biome_generation.size
-                                {
-                                    biome = Some(biom);
-                                    biome_weight = biome_generation.weight;
-                                    tiles_height_map.insert(vec2(x, y), biome_generation.height);
+                            match Self::generate_biome(pos, total_weight, None, &noises, &biomes) {
+                                Some(biome) => {
+                                    tiles_height_map.insert(pos, biomes[&biome].height);
+                                    biome
                                 }
-                            }
-                            match biome {
-                                Some(biome) => biome,
                                 None => {
-                                    tiles_height_map.insert(vec2(x, y), 1.0);
+                                    tiles_height_map.insert(pos, 1.0);
                                     Biome::Forest
                                 }
                             }
@@ -195,6 +178,37 @@ impl Model {
         // Bottom-left
         height_map.insert(vec2(0, 0), tiles_height_map[&vec2(0, 0)]);
         (tiles, height_map)
+    }
+    fn generate_biome(
+        pos: Vec2<i64>,
+        total_weight: f64,
+        parent_biome: Option<Biome>,
+        noises: &HashMap<Biome, OpenSimplex>,
+        biomes: &HashMap<Biome, BiomeGeneration>,
+    ) -> Option<Biome> {
+        let mut biome = None;
+        let mut biome_weight = 0.0;
+        for (&biom, &biome_generation) in biomes
+            .iter()
+            .filter(|(_, biome_generation)| biome_generation.parent_biome == parent_biome)
+        {
+            if biome_generation.weight > biome_weight
+                && noises[&biom].get([
+                    pos.x as f64 * biome_generation.weight as f64 / total_weight / 10.0,
+                    pos.y as f64 * biome_generation.weight as f64 / total_weight / 10.0,
+                ]) as f32
+                    / 2.0
+                    + 0.5
+                    <= biome_generation.size
+            {
+                biome_weight = biome_generation.weight;
+                biome = Some(biom);
+            }
+        }
+        match biome {
+            Some(biome) => Self::generate_biome(pos, total_weight, Some(biome), noises, biomes),
+            None => parent_biome,
+        }
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();

@@ -17,13 +17,14 @@ pub enum Biome {
 
 #[derive(Debug, Copy, Clone)]
 pub struct BiomeGeneration {
+    pub parent_biome: Option<Biome>,
     pub height: f32,
     pub size: f32,
     pub weight: f32,
 }
 
 impl BiomeGeneration {
-    pub fn new(height: f32, size: f32, weight: f32) -> Self {
+    pub fn new(parent_biome: Option<Biome>, height: f32, size: f32, weight: f32) -> Self {
         assert!(
             size >= 0.0,
             "Size in BiomeGeneration must be in range 0.0..1.0"
@@ -33,6 +34,7 @@ impl BiomeGeneration {
             "Size in BiomeGeneration must be in range 0.0..1.0"
         );
         Self {
+            parent_biome,
             height,
             size,
             weight,
