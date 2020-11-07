@@ -67,13 +67,6 @@ pub enum Message {
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
-pub enum Action {
-    Interact { id: Id },
-    Drop { pos: Vec2<f32> },
-    PickUp { id: Id },
-}
-
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
 pub enum Sound {
     Craft,
     PickUp,
@@ -93,32 +86,40 @@ impl Model {
             Message::Goto { pos } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
-                    entity.move_to = Some(pos);
-                    entity.action = None;
+                    entity.action = Some(EntityAction::MovingTo {
+                        pos,
+                        finish_action: None,
+                    });
                 }
             }
             Message::Interact { id } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
                     if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
-                        entity.move_to = Some(item.pos);
-                        entity.action = Some(Action::Interact { id });
+                        entity.action = Some(EntityAction::MovingTo {
+                            pos: item.pos,
+                            finish_action: Some(MomentAction::Interact { id }),
+                        });
                     }
                 }
             }
             Message::Drop { pos } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
-                    entity.move_to = Some(pos);
-                    entity.action = Some(Action::Drop { pos });
+                    entity.action = Some(EntityAction::MovingTo {
+                        pos,
+                        finish_action: Some(MomentAction::Drop { pos }),
+                    });
                 }
             }
             Message::PickUp { id } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
                     if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
-                        entity.move_to = Some(item.pos);
-                        entity.action = Some(Action::PickUp { id });
+                        entity.action = Some(EntityAction::MovingTo {
+                            pos: item.pos,
+                            finish_action: Some(MomentAction::PickUp { id }),
+                        });
                     }
                 }
             }

@@ -59,7 +59,6 @@ impl Model {
                 interaction_range: self.rules.entity_interaction_range,
                 item: None,
                 colors: EntityColors::new(),
-                move_to: None,
                 action: None,
             };
             player_id = entity.id;
