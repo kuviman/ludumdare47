@@ -114,7 +114,7 @@ impl Model {
             for x in 0..map_size.x as i64 {
                 let pos = vec2(x, y);
                 let (noise, noise_parameters) = &noises[&BiomeParameters::Height];
-                let biome = Self::generate_biome(pos, None, &noises, &biomes).unwrap();
+                let biome = Self::generate_biome(pos, &noises, &biomes);
                 let height = biomes[&biome].height;
                 tiles_height_map.insert(pos, height);
                 tiles.insert(pos, Tile { pos, height, biome });
@@ -173,29 +173,17 @@ impl Model {
     }
     fn generate_biome(
         pos: Vec2<i64>,
-        parent_biome: Option<Biome>,
         noises: &HashMap<BiomeParameters, (Box<dyn NoiseFn<[f64; 2]>>, NoiseParameters)>,
         biomes: &HashMap<Biome, BiomeGeneration>,
-    ) -> Option<Biome> {
-        match biomes
+    ) -> Biome {
+        biomes
             .iter()
-            .filter(|(&biome, biome_generation)| {
-                biome_generation.parent_biome == parent_biome || Some(biome) == parent_biome
-            })
             .map(|(&biome, biome_generation)| {
                 (biome, biome_generation.calculate_score(pos, noises))
             })
             .max_by(|(_, score1), (_, score2)| score1.partial_cmp(score2).unwrap())
-        {
-            Some((biome, _)) => {
-                if Some(biome) == parent_biome {
-                    parent_biome
-                } else {
-                    Self::generate_biome(pos, Some(biome), noises, biomes)
-                }
-            }
-            None => parent_biome,
-        }
+            .unwrap()
+            .0
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();

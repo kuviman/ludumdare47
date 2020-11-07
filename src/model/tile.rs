@@ -10,7 +10,6 @@ pub struct Tile {
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Trans, Hash, PartialEq, Eq)]
 pub enum Biome {
     Ocean,
-    Island,
     Beach,
     Lake,
     Forest,
@@ -20,22 +19,13 @@ pub enum Biome {
 
 #[derive(Debug, Clone)]
 pub struct BiomeGeneration {
-    pub parent_biome: Option<Biome>,
     pub height: f32,
     pub parameters: HashMap<BiomeParameters, f32>,
 }
 
 impl BiomeGeneration {
-    pub fn new(
-        parent_biome: Option<Biome>,
-        height: f32,
-        parameters: HashMap<BiomeParameters, f32>,
-    ) -> Self {
-        Self {
-            parent_biome,
-            height,
-            parameters,
-        }
+    pub fn new(height: f32, parameters: HashMap<BiomeParameters, f32>) -> Self {
+        Self { height, parameters }
     }
     pub fn calculate_score(
         &self,
