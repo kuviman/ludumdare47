@@ -46,8 +46,8 @@ impl Config {
             Recipe {
                 ingredient1: Some(Pebble),
                 ingredient2: Some(Pebble),
-                result1: None,
-                result2: Some(SharpStone),
+                result1: Some(SharpStone),
+                result2: None,
                 conditions: None,
                 craft_time: 0.1,
             },
