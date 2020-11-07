@@ -115,7 +115,7 @@ impl Model {
                 let pos = vec2(x, y);
                 let (noise, noise_parameters) = &noises[&BiomeParameters::Height];
                 let biome = Self::generate_biome(pos, &noises, &biomes);
-                let height = biomes[&biome].height;
+                let height = biome.height();
                 tiles_height_map.insert(pos, height);
                 tiles.insert(pos, Tile { pos, height, biome });
             }

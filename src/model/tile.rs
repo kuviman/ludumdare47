@@ -17,15 +17,24 @@ pub enum Biome {
     MagicForest,
 }
 
+impl Biome {
+    pub fn height(&self) -> f32 {
+        match self {
+            Self::Ocean => -1.0,
+            Self::Lake => -0.2,
+            _ => 0.2,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct BiomeGeneration {
-    pub height: f32,
     pub parameters: HashMap<BiomeParameters, f32>,
 }
 
 impl BiomeGeneration {
-    pub fn new(height: f32, parameters: HashMap<BiomeParameters, f32>) -> Self {
-        Self { height, parameters }
+    pub fn new(parameters: HashMap<BiomeParameters, f32>) -> Self {
+        Self { parameters }
     }
     pub fn calculate_score(
         &self,
