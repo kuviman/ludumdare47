@@ -35,7 +35,7 @@ impl BiomeGeneration {
         &self,
         biome: Biome,
         pos: Vec2<i64>,
-        noises: &HashMap<BiomeParameters, &dyn NoiseFn<[f64; 2]>>,
+        noises: &HashMap<BiomeParameters, (Box<dyn NoiseFn<[f64; 2]>>, NoiseParameters)>,
     ) -> f32 {
         match biome {
             Biome::Ocean | Biome::Island => Self::calculate_parameter(
@@ -57,9 +57,13 @@ impl BiomeGeneration {
         pos: Vec2<i64>,
         parameter: &BiomeParameters,
         parameter_value: f32,
-        noises: &HashMap<BiomeParameters, &dyn NoiseFn<[f64; 2]>>,
+        noises: &HashMap<BiomeParameters, (Box<dyn NoiseFn<[f64; 2]>>, NoiseParameters)>,
     ) -> f32 {
-        let noise = noises[parameter].get([pos.x as f64 / 20.0, pos.y as f64 / 20.0]) as f32;
+        let (noise, noise_parameters) = &noises[parameter];
+        let noise = noise.get([
+            pos.x as f64 / noise_parameters.scale as f64,
+            pos.y as f64 / noise_parameters.scale as f64,
+        ]) as f32;
         2.0 - (parameter_value - noise).abs()
     }
 }
@@ -69,4 +73,16 @@ pub enum BiomeParameters {
     Height,
     Temperature,
     Humidity,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct NoiseParameters {
+    pub scale: f32,
+}
+
+impl NoiseParameters {
+    pub fn new(scale: f32) -> Self {
+        assert!(scale > 0.0, "Noise scale must be positive");
+        Self { scale }
+    }
 }

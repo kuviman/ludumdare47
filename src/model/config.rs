@@ -24,8 +24,8 @@ impl Default for Config {
             ticks_per_second: 20.0,
             map_size: vec2(256, 256),
             player_movement_speed: 2.0,
-            player_day_view_distance: 300.0,
-            player_night_view_distance: 300.0,
+            player_day_view_distance: 10.0,
+            player_night_view_distance: 3.0,
             day_length: 1000,
             night_length: 500,
             fire_extinguish_chance: 0.001,
@@ -233,6 +233,13 @@ impl Config {
                 conditions: None,
             },
         ]
+    }
+    pub fn default_parameters() -> HashMap<BiomeParameters, NoiseParameters> {
+        let mut map = HashMap::new();
+        map.insert(BiomeParameters::Height, NoiseParameters::new(100.0));
+        map.insert(BiomeParameters::Temperature, NoiseParameters::new(20.0));
+        map.insert(BiomeParameters::Humidity, NoiseParameters::new(20.0));
+        map
     }
     pub fn default_biomes() -> HashMap<Biome, BiomeGeneration> {
         use Biome::*;
