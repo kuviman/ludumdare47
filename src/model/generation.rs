@@ -192,7 +192,7 @@ impl Model {
                 biome_generation.parent_biome == parent_biome || Some(biome) == parent_biome
             })
             .map(|(&biome, biome_generation)| {
-                (biome, biome_generation.calculate_score(biome, pos, noises))
+                (biome, biome_generation.calculate_score(pos, noises))
             })
             .max_by(|(_, score1), (_, score2)| score1.partial_cmp(score2).unwrap())
         {

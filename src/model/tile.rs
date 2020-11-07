@@ -33,38 +33,19 @@ impl BiomeGeneration {
     }
     pub fn calculate_score(
         &self,
-        biome: Biome,
         pos: Vec2<i64>,
         noises: &HashMap<BiomeParameters, (Box<dyn NoiseFn<[f64; 2]>>, NoiseParameters)>,
     ) -> f32 {
-        match biome {
-            Biome::Ocean | Biome::Island => Self::calculate_parameter(
-                pos,
-                &BiomeParameters::Height,
-                self.parameters[&BiomeParameters::Height],
-                noises,
-            ),
-            _ => {
-                let mut score = 0.0;
-                for (parameter, &value) in &self.parameters {
-                    score += Self::calculate_parameter(pos, parameter, value, noises);
-                }
-                score
-            }
+        let mut score = 0.0;
+        for (parameter, &parameter_value) in &self.parameters {
+            let (noise, noise_parameters) = &noises[parameter];
+            let noise = noise.get([
+                pos.x as f64 / noise_parameters.scale as f64,
+                pos.y as f64 / noise_parameters.scale as f64,
+            ]) as f32;
+            score += 2.0 - (parameter_value - noise).abs();
         }
-    }
-    fn calculate_parameter(
-        pos: Vec2<i64>,
-        parameter: &BiomeParameters,
-        parameter_value: f32,
-        noises: &HashMap<BiomeParameters, (Box<dyn NoiseFn<[f64; 2]>>, NoiseParameters)>,
-    ) -> f32 {
-        let (noise, noise_parameters) = &noises[parameter];
-        let noise = noise.get([
-            pos.x as f64 / noise_parameters.scale as f64,
-            pos.y as f64 / noise_parameters.scale as f64,
-        ]) as f32;
-        2.0 - (parameter_value - noise).abs()
+        score
     }
 }
 
