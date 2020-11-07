@@ -114,19 +114,10 @@ impl Model {
             for x in 0..map_size.x as i64 {
                 let pos = vec2(x, y);
                 let (noise, noise_parameters) = &noises[&BiomeParameters::Height];
-                let height = noise.get([
-                    pos.x as f64 / noise_parameters.scale as f64,
-                    pos.y as f64 / noise_parameters.scale as f64,
-                ]) as f32;
+                let biome = Self::generate_biome(pos, None, &noises, &biomes).unwrap();
+                let height = biomes[&biome].height;
                 tiles_height_map.insert(pos, height);
-                tiles.insert(
-                    pos,
-                    Tile {
-                        pos,
-                        height,
-                        biome: Self::generate_biome(pos, None, &noises, &biomes).unwrap(),
-                    },
-                );
+                tiles.insert(pos, Tile { pos, height, biome });
             }
         }
         let mut height_map =

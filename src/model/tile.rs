@@ -21,13 +21,19 @@ pub enum Biome {
 #[derive(Debug, Clone)]
 pub struct BiomeGeneration {
     pub parent_biome: Option<Biome>,
+    pub height: f32,
     pub parameters: HashMap<BiomeParameters, f32>,
 }
 
 impl BiomeGeneration {
-    pub fn new(parent_biome: Option<Biome>, parameters: HashMap<BiomeParameters, f32>) -> Self {
+    pub fn new(
+        parent_biome: Option<Biome>,
+        height: f32,
+        parameters: HashMap<BiomeParameters, f32>,
+    ) -> Self {
         Self {
             parent_biome,
+            height,
             parameters,
         }
     }
@@ -45,7 +51,7 @@ impl BiomeGeneration {
             ]) as f32;
             score += 2.0 - (parameter_value - noise).abs();
         }
-        score
+        score / self.parameters.len() as f32
     }
 }
 
