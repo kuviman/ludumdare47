@@ -117,22 +117,16 @@ impl Model {
         for y in 0..map_size.y as i64 {
             for x in 0..map_size.x as i64 {
                 let pos = vec2(x, y);
+                let height = noises[&BiomeParameters::Height]
+                    .get([pos.x as f64 / 20.0, pos.y as f64 / 20.0])
+                    as f32;
+                tiles_height_map.insert(pos, height);
                 tiles.insert(
                     pos,
                     Tile {
                         pos,
-                        biome: {
-                            match Self::generate_biome(pos, None, &noises, &biomes) {
-                                Some(biome) => {
-                                    tiles_height_map.insert(pos, biomes[&biome].height);
-                                    biome
-                                }
-                                None => {
-                                    tiles_height_map.insert(pos, biomes[&Biome::Forest].height);
-                                    Biome::Forest
-                                }
-                            }
-                        },
+                        height,
+                        biome: Self::generate_biome(pos, None, &noises, &biomes).unwrap(),
                     },
                 );
             }
@@ -199,10 +193,12 @@ impl Model {
             .filter(|(&biome, biome_generation)| {
                 biome_generation.parent_biome == parent_biome || Some(biome) == parent_biome
             })
-            .map(|(biome, biome_generation)| (biome, biome_generation.calculate_score(pos, noises)))
+            .map(|(&biome, biome_generation)| {
+                (biome, biome_generation.calculate_score(biome, pos, noises))
+            })
             .max_by(|(_, score1), (_, score2)| score1.partial_cmp(score2).unwrap())
         {
-            Some((&biome, _)) => {
+            Some((biome, _)) => {
                 if Some(biome) == parent_biome {
                     parent_biome
                 } else {

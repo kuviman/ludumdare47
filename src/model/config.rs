@@ -239,9 +239,26 @@ impl Config {
 
         let mut biomes = HashMap::new();
         biomes.insert(
-            Beach,
-            BiomeGeneration::new(None, 0.5, {
+            Ocean,
+            BiomeGeneration::new(None, {
                 let mut map = HashMap::new();
+                map.insert(BiomeParameters::Height, -0.9);
+                map
+            }),
+        );
+        biomes.insert(
+            Island,
+            BiomeGeneration::new(None, {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameters::Height, 0.9);
+                map
+            }),
+        );
+        biomes.insert(
+            Beach,
+            BiomeGeneration::new(Some(Island), {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameters::Height, 0.5);
                 map.insert(BiomeParameters::Temperature, 0.7);
                 map.insert(BiomeParameters::Humidity, -0.7);
                 map
@@ -249,8 +266,9 @@ impl Config {
         );
         biomes.insert(
             Lake,
-            BiomeGeneration::new(Some(Forest), -1.0, {
+            BiomeGeneration::new(Some(Forest), {
                 let mut map = HashMap::new();
+                map.insert(BiomeParameters::Height, -0.5);
                 map.insert(BiomeParameters::Temperature, 0.1);
                 map.insert(BiomeParameters::Humidity, 0.5);
                 map
@@ -258,8 +276,9 @@ impl Config {
         );
         biomes.insert(
             Forest,
-            BiomeGeneration::new(None, 0.5, {
+            BiomeGeneration::new(Some(Island), {
                 let mut map = HashMap::new();
+                map.insert(BiomeParameters::Height, 0.5);
                 map.insert(BiomeParameters::Temperature, -0.1);
                 map.insert(BiomeParameters::Humidity, -0.1);
                 map
@@ -267,8 +286,9 @@ impl Config {
         );
         biomes.insert(
             Hills,
-            BiomeGeneration::new(None, 1.0, {
+            BiomeGeneration::new(Some(Island), {
                 let mut map = HashMap::new();
+                map.insert(BiomeParameters::Height, 0.8);
                 map.insert(BiomeParameters::Temperature, -0.2);
                 map.insert(BiomeParameters::Humidity, -0.2);
                 map
@@ -276,8 +296,9 @@ impl Config {
         );
         biomes.insert(
             MagicForest,
-            BiomeGeneration::new(None, 0.5, {
+            BiomeGeneration::new(Some(Island), {
                 let mut map = HashMap::new();
+                map.insert(BiomeParameters::Height, 0.5);
                 map.insert(BiomeParameters::Temperature, 0.4);
                 map.insert(BiomeParameters::Humidity, 0.3);
                 map
@@ -287,6 +308,8 @@ impl Config {
     }
     pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
         let mut generation_choices = HashMap::new();
+        generation_choices.insert(Biome::Ocean, vec![(None, 1)]);
+        generation_choices.insert(Biome::Island, vec![(None, 1)]);
         generation_choices.insert(Biome::Lake, vec![(None, 1)]);
         generation_choices.insert(
             Biome::Beach,
