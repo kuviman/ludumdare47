@@ -1,12 +1,13 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
 pub struct Recipe {
     pub ingredient1: Option<ItemType>,
     pub ingredient2: Option<ItemType>,
     pub result1: Option<ItemType>,
     pub result2: Option<ItemType>,
     pub conditions: Option<Biome>,
+    pub craft_time: f32,
 }
 
 impl Recipe {

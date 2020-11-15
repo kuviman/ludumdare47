@@ -711,6 +711,33 @@ impl geng::State for App {
                 );
             }
         }
+
+        let entity = self
+            .view
+            .entities
+            .iter()
+            .find(|entity| entity.id == self.player_id)
+            .unwrap();
+        let data = &self.entity_positions[&entity.id];
+        if let Some(action) = entity.action {
+            match action {
+                model::EntityAction::Crafting { time_left, .. } => {
+                    let text = format!("{:.1}", time_left);
+                    let pos = data.pos;
+                    let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+                    self.geng.default_font().draw_aligned(
+                        framebuffer,
+                        &text,
+                        self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 50.0),
+                        0.5,
+                        32.0,
+                        Color::WHITE,
+                    );
+                }
+                _ => (),
+            }
+        }
+
         self.geng.default_font().draw_aligned(
             framebuffer,
             &format!("SCORE: {}", self.view.score),
