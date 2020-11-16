@@ -116,26 +116,10 @@ impl TileMesh {
         let pos_f = pos.map(|x| x.fract());
         let pos = pos.map(|x| x as i64);
         if let Some(tile) = self.tiles.get(&pos) {
-            // if let Some(tile_x) = self.tiles.get(&vec2(tile.pos.x + 1, tile.pos.y)) {
-            //     if let Some(tile_y) = self.tiles.get(&vec2(tile.pos.x, tile.pos.y + 1)) {
-            //         if let Some(tile_xy) = self.tiles.get(&vec2(tile.pos.x + 1, tile.pos.y + 1)) {
-            //             let h00 = tile.height;
-            //             let h10 = tile_x.height;
-            //             let h11 = tile_xy.height;
-            //             let h01 = tile_y.height;
-            //             return Some(if pos_f.y < pos_f.x {
-            //                 h00 * (1.0 - pos_f.x)
-            //                     + (h10 * (1.0 - pos_f.y) + h11 * pos_f.y) * pos_f.x
-            //             } else {
-            //                 h00 * (1.0 - pos_f.y)
-            //                     + (h01 * (1.0 - pos_f.x) + h11 * pos_f.x) * pos_f.y
-            //             });
-            //         }
-            //     }
-            // }
-            return Some(tile.height);
+            Some(tile.height)
+        } else {
+            None
         }
-        None
     }
     pub fn intersect(&self, ray: camera::Ray) -> Option<Vec3<f32>> {
         let mut result: Option<(f32, Vec3<f32>)> = None;
