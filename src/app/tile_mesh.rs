@@ -2,7 +2,6 @@ use super::*;
 
 pub struct TileMesh {
     pub tiles: HashMap<Vec2<i64>, model::Tile>,
-    pub height_map: HashMap<Vec2<i64>, f32>,
     pub mesh: ugli::VertexBuffer<ez3d::Vertex>,
 }
 
@@ -10,7 +9,6 @@ impl TileMesh {
     pub fn new(
         geng: &Rc<Geng>,
         tiles: &HashMap<Vec2<i64>, model::Tile>,
-        height_map: &HashMap<Vec2<i64>, f32>,
         noise: &dyn NoiseFn<[f64; 2]>,
     ) -> Self {
         let mut mesh = Vec::new();
@@ -65,22 +63,29 @@ impl TileMesh {
                     a_color,
                 });
             };
-        for tile in tiles.values() {
+        for (&tile_pos, tile) in &tiles {
+            let x_height = if let Some(tile_x) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y)) {
+                tile_x.height
+            } else {
+                tile.height
+            };
+            let y_height = if let Some(tile_y) = tiles.get(&vec2(tile_pos.x, tile_pos.y + 1)) {
+                tile_y.height
+            } else {
+                tile.height
+            };
+            let xy_height = if let Some(tile_xy) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y + 1))
+            {
+                tile_xy.height
+            } else {
+                (x_height + y_height) / 2.0
+            };
             append_quad(
-                tile.pos,
-                height_map.get(&tile.pos).unwrap().clone(),
-                height_map
-                    .get(&vec2(tile.pos.x + 1, tile.pos.y))
-                    .unwrap()
-                    .clone(),
-                height_map
-                    .get(&vec2(tile.pos.x + 1, tile.pos.y + 1))
-                    .unwrap()
-                    .clone(),
-                height_map
-                    .get(&vec2(tile.pos.x, tile.pos.y + 1))
-                    .unwrap()
-                    .clone(),
+                tile_pos,
+                tile.height,
+                x_height,
+                xy_height,
+                y_height,
                 match tile.biome {
                     model::Biome::Water => Color::rgb(0.8, 0.8, 0.0),
                     model::Biome::Forest => Color::rgb(0.0, 0.8, 0.0),
@@ -91,9 +96,9 @@ impl TileMesh {
                 },
             );
         }
-        for tile in tiles.values() {
+        for (&tile_pos, _) in &tiles {
             append_quad(
-                tile.pos,
+                tile_pos,
                 0.0,
                 0.0,
                 0.0,
@@ -104,22 +109,33 @@ impl TileMesh {
         ez3d::calc_normals(&mut mesh);
         Self {
             tiles,
-            height_map: height_map.clone(),
             mesh: ugli::VertexBuffer::new_dynamic(geng.ugli(), mesh),
         }
     }
     pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
         let pos_f = pos.map(|x| x.fract());
         let pos = pos.map(|x| x as i64);
-        let h00 = self.height_map[&pos];
-        let h10 = self.height_map[&vec2(pos.x + 1, pos.y)];
-        let h11 = self.height_map[&vec2(pos.x + 1, pos.y + 1)];
-        let h01 = self.height_map[&vec2(pos.x, pos.y + 1)];
-        Some(if pos_f.y < pos_f.x {
-            h00 * (1.0 - pos_f.x) + (h10 * (1.0 - pos_f.y) + h11 * pos_f.y) * pos_f.x
-        } else {
-            h00 * (1.0 - pos_f.y) + (h01 * (1.0 - pos_f.x) + h11 * pos_f.x) * pos_f.y
-        })
+        if let Some(tile) = self.tiles.get(&pos) {
+            // if let Some(tile_x) = self.tiles.get(&vec2(tile.pos.x + 1, tile.pos.y)) {
+            //     if let Some(tile_y) = self.tiles.get(&vec2(tile.pos.x, tile.pos.y + 1)) {
+            //         if let Some(tile_xy) = self.tiles.get(&vec2(tile.pos.x + 1, tile.pos.y + 1)) {
+            //             let h00 = tile.height;
+            //             let h10 = tile_x.height;
+            //             let h11 = tile_xy.height;
+            //             let h01 = tile_y.height;
+            //             return Some(if pos_f.y < pos_f.x {
+            //                 h00 * (1.0 - pos_f.x)
+            //                     + (h10 * (1.0 - pos_f.y) + h11 * pos_f.y) * pos_f.x
+            //             } else {
+            //                 h00 * (1.0 - pos_f.y)
+            //                     + (h01 * (1.0 - pos_f.x) + h11 * pos_f.x) * pos_f.y
+            //             });
+            //         }
+            //     }
+            // }
+            return Some(tile.height);
+        }
+        None
     }
     pub fn intersect(&self, ray: camera::Ray) -> Option<Vec3<f32>> {
         let mut result: Option<(f32, Vec3<f32>)> = None;

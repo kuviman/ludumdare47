@@ -47,15 +47,10 @@ impl Model {
             for x in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
                 for y in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
                     let pos = vec2(x, y) + entity.pos.map(|x| x as i64);
-                    if let Some((normal, penetration)) = match self.tiles.get(&pos) {
+                    if let Some((normal, penetration)) = match self.get_tile(pos) {
                         Some(tile) => {
                             if tile.biome == Biome::Water {
-                                Self::collide(
-                                    entity.pos,
-                                    entity.radius,
-                                    tile.pos.map(|x| x as f32),
-                                    1.0,
-                                )
+                                Self::collide(entity.pos, entity.radius, pos.map(|x| x as f32), 1.0)
                             } else {
                                 None
                             }
@@ -65,16 +60,6 @@ impl Model {
                         entity.pos += normal * penetration;
                     }
                 }
-            }
-
-            // Round map
-            if entity.pos.x <= 0.0
-                || entity.pos.x >= self.size.x as f32 - 1.0
-                || entity.pos.y <= 0.0
-                || entity.pos.y >= self.size.y as f32 - 1.0
-            {
-                entity.pos.x = self.size.x as f32 - 1.0 - entity.pos.x;
-                entity.pos.y = self.size.y as f32 - 1.0 - entity.pos.y;
             }
 
             entity.view_range =
@@ -121,19 +106,6 @@ impl Model {
         }
         for pos in extinguished_positions {
             self.remove_item(pos, 0.001).unwrap();
-        }
-
-        for _ in
-            0..(self.size.x as f32 * self.size.y as f32 * self.rules.regeneration_percent) as usize
-        {
-            let pos = vec2(
-                global_rng().gen_range(0, self.size.x as i64),
-                global_rng().gen_range(0, self.size.y as i64),
-            );
-            if !view.contains(&pos) {
-                self.remove_item(pos.map(|x| x as f32), 0.5);
-                self.generate_tile(pos);
-            }
         }
     }
     fn collide(
@@ -215,7 +187,7 @@ impl Model {
                         let mut item = self.items.remove(&item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
-                                Some(self.tiles.get(&item.pos.map(|x| x as i64)).unwrap().biome),
+                                Some(self.get_tile(item.pos.map(|x| x as i64)).unwrap().biome),
                                 Some(item.item_type),
                             ),
                             None => (None, None),
@@ -249,7 +221,7 @@ impl Model {
                     let ingredient1 = &mut entity.item;
                     let (conditions, ingredient2) = match self.items.get(&id) {
                         Some(item) => (
-                            Some(self.tiles.get(&item.pos.map(|x| x as i64)).unwrap().biome),
+                            Some(self.get_tile(item.pos.map(|x| x as i64)).unwrap().biome),
                             Some(item.item_type),
                         ),
                         None => (None, None),

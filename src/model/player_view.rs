@@ -9,7 +9,6 @@ pub struct PlayerView {
     pub ticks_per_second: f32,
     pub day_length: usize,
     pub night_length: usize,
-    pub height_map: HashMap<Vec2<i64>, f32>,
     pub tiles: HashMap<Vec2<i64>, Tile>,
     pub entities: Vec<Entity>,
     pub items: HashMap<Id, Item>,
@@ -56,25 +55,11 @@ impl Model {
             tiles: {
                 let mut tiles = HashMap::new();
                 for &pos in &view {
-                    if let Some(tile) = self.tiles.get(&pos) {
+                    if let Some(tile) = self.get_tile(pos) {
                         tiles.insert(pos, tile.clone());
                     }
                 }
                 tiles
-            },
-            height_map: {
-                let mut height_map = HashMap::new();
-                for &pos in &view {
-                    for dx in 0..=1 {
-                        for dy in 0..=1 {
-                            let pos = pos + vec2(dx, dy);
-                            if let Some(&height) = self.height_map.get(&pos) {
-                                height_map.insert(pos, height);
-                            }
-                        }
-                    }
-                }
-                height_map
             },
             entities: self
                 .entities
