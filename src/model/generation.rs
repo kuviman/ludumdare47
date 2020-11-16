@@ -50,11 +50,11 @@ impl Model {
                 }
             }
         }
-        // if let Some(pos) = model.get_spawnable_pos(Biome::Forest) {
-        //     model.spawn_item(ItemType::Statue, pos);
-        // } else {
-        //     error!("Did not find a position for a statue");
-        // }
+        if let Some(pos) = model.get_spawnable_pos(Biome::Forest) {
+            model.spawn_item(ItemType::Statue, pos);
+        } else {
+            error!("Did not find a position for a statue");
+        }
         model
     }
     pub fn new_player(&mut self) -> Id {
