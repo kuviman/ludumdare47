@@ -29,12 +29,14 @@ impl Biome {
 
 #[derive(Debug, Clone)]
 pub struct BiomeGeneration {
+    pub offset: f32,
     pub parameters: HashMap<BiomeParameters, f32>,
 }
 
 impl BiomeGeneration {
-    pub fn new(parameters: HashMap<BiomeParameters, f32>) -> Self {
-        Self { parameters }
+    pub fn new(offset: f32, parameters: HashMap<BiomeParameters, f32>) -> Self {
+        // TODO: check every parameter to be in range -1..1 and offset to be in range 0..1
+        Self { offset, parameters }
     }
     pub fn calculate_score(
         &self,
@@ -50,7 +52,7 @@ impl BiomeGeneration {
             ]) as f32;
             score += 2.0 - (parameter_value - noise).abs();
         }
-        score / self.parameters.len() as f32
+        score / self.parameters.len() as f32 - self.offset
     }
 }
 

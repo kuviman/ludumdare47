@@ -24,8 +24,8 @@ impl Default for Config {
             ticks_per_second: 20.0,
             map_size: vec2(256, 256),
             player_movement_speed: 2.0,
-            player_day_view_distance: 10.0,
-            player_night_view_distance: 3.0,
+            player_day_view_distance: 300.0,
+            player_night_view_distance: 300.0,
             day_length: 1000,
             night_length: 500,
             fire_extinguish_chance: 0.001,
@@ -247,25 +247,25 @@ impl Config {
         let mut biomes = HashMap::new();
         biomes.insert(
             Ocean,
-            BiomeGeneration::new({
+            BiomeGeneration::new(0.0, {
                 let mut map = HashMap::new();
-                map.insert(BiomeParameters::Height, -0.02);
+                map.insert(BiomeParameters::Height, -0.5);
                 map
             }),
         );
         biomes.insert(
             Beach,
-            BiomeGeneration::new({
+            BiomeGeneration::new(0.2, {
                 let mut map = HashMap::new();
-                map.insert(BiomeParameters::Height, 0.02);
+                map.insert(BiomeParameters::Height, -0.1);
                 map
             }),
         );
         biomes.insert(
             Lake,
-            BiomeGeneration::new({
+            BiomeGeneration::new(0.1, {
                 let mut map = HashMap::new();
-                map.insert(BiomeParameters::Height, 0.1);
+                map.insert(BiomeParameters::Height, 0.3);
                 map.insert(BiomeParameters::Temperature, 0.1);
                 map.insert(BiomeParameters::Humidity, 0.5);
                 map
@@ -273,9 +273,9 @@ impl Config {
         );
         biomes.insert(
             Forest,
-            BiomeGeneration::new({
+            BiomeGeneration::new(0.0, {
                 let mut map = HashMap::new();
-                map.insert(BiomeParameters::Height, 0.1);
+                map.insert(BiomeParameters::Height, 0.3);
                 map.insert(BiomeParameters::Temperature, -0.1);
                 map.insert(BiomeParameters::Humidity, -0.1);
                 map
@@ -283,9 +283,9 @@ impl Config {
         );
         biomes.insert(
             Hills,
-            BiomeGeneration::new({
+            BiomeGeneration::new(0.0, {
                 let mut map = HashMap::new();
-                map.insert(BiomeParameters::Height, 0.5);
+                map.insert(BiomeParameters::Height, 0.6);
                 map.insert(BiomeParameters::Temperature, -0.2);
                 map.insert(BiomeParameters::Humidity, -0.2);
                 map
@@ -293,9 +293,9 @@ impl Config {
         );
         biomes.insert(
             MagicForest,
-            BiomeGeneration::new({
+            BiomeGeneration::new(0.1, {
                 let mut map = HashMap::new();
-                map.insert(BiomeParameters::Height, 0.1);
+                map.insert(BiomeParameters::Height, 0.3);
                 map.insert(BiomeParameters::Temperature, 0.4);
                 map.insert(BiomeParameters::Humidity, 0.3);
                 map
