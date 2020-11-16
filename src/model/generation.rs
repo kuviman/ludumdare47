@@ -56,7 +56,7 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos(Biome::Forest) {
+        if let Some(pos) = self.get_spawnable_pos(Biome::Beach) {
             let entity = Entity {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
@@ -102,8 +102,10 @@ impl Model {
         let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
 
         let mut chunks = HashMap::new();
-        for y in 0..config.initial_generation_size.y as i64 {
-            for x in 0..config.initial_generation_size.x as i64 {
+        let gen_y = config.initial_generation_size.y as i64 / 2;
+        let gen_x = config.initial_generation_size.x as i64 / 2;
+        for y in -gen_y..gen_y + 1 {
+            for x in -gen_x..gen_x + 1 {
                 chunks.insert(
                     vec2(x, y),
                     Self::generate_chunk(config, vec2(x, y), &noise, &noise2),
@@ -123,12 +125,15 @@ impl Model {
             for x in 0..config.chunk_size.x as i64 {
                 let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y))
                     .map(|x| x as f32);
-                // let normalized_pos = vec2(pos.x / 250.0, pos.y / 250.0) * 2.0 - vec2(1.0, 1.0);
-                // let height = 1.0 - normalized_pos.len() * 1.2
-                //     + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
-                //         as f32
-                //         / 10.0);
-                let height = 0.3; // height.min(0.3);
+                let normalized_pos = vec2(
+                    pos.x / config.initial_generation_size.x as f32 / config.chunk_size.x as f32,
+                    pos.y / config.initial_generation_size.y as f32 / config.chunk_size.y as f32,
+                ) * 2.0;
+                let height = 1.0 - normalized_pos.len() * 1.2
+                    + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
+                        as f32
+                        / 10.0);
+                height.min(0.3);
                 tile_map.insert(
                     vec2(x, y),
                     Tile {
@@ -157,28 +162,32 @@ impl Model {
     }
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         match self.get_chunk(pos) {
-            Some(chunk) => {
+            Some((chunk_pos, chunk)) => {
                 let tile_pos = vec2(
-                    pos.x % self.chunk_size.x as i64,
-                    pos.y % self.chunk_size.y as i64,
+                    pos.x - chunk_pos.x * self.chunk_size.x as i64,
+                    pos.y - chunk_pos.y * self.chunk_size.y as i64,
                 );
                 Some(&chunk.tile_map[&tile_pos])
             }
             None => None,
         }
     }
-    pub fn get_chunk(&self, pos: Vec2<i64>) -> Option<&Chunk> {
-        let mut chunk_pos = vec2(
-            pos.x / self.chunk_size.x as i64,
-            pos.y / self.chunk_size.y as i64,
-        );
-        if pos.x < 0 {
-            chunk_pos.x -= 1;
+    pub fn get_chunk(&self, pos: Vec2<i64>) -> Option<(Vec2<i64>, &Chunk)> {
+        let x = if pos.x >= 0 {
+            pos.x / self.chunk_size.x as i64
+        } else {
+            (pos.x + 1) / self.chunk_size.x as i64 - 1
+        };
+        let y = if pos.y >= 0 {
+            pos.y / self.chunk_size.y as i64
+        } else {
+            (pos.y + 1) / self.chunk_size.y as i64 - 1
+        };
+        let chunk_pos = vec2(x, y);
+        match self.chunks.get(&chunk_pos) {
+            Some(chunk) => Some((chunk_pos, chunk)),
+            None => None,
         }
-        if pos.y < 0 {
-            chunk_pos.y -= 1;
-        }
-        self.chunks.get(&chunk_pos)
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();

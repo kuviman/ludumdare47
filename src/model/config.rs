@@ -24,7 +24,7 @@ impl Default for Config {
         Self {
             ticks_per_second: 20.0,
             chunk_size: vec2(10, 10),
-            initial_generation_size: vec2(10, 10),
+            initial_generation_size: vec2(20, 20),
             player_movement_speed: 2.0,
             player_day_view_distance: 10.0,
             player_night_view_distance: 3.0,
