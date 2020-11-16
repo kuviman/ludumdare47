@@ -40,10 +40,7 @@ impl Model {
         for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
             for y in 0..model.chunk_size.y as i64 {
                 for x in 0..model.chunk_size.x as i64 {
-                    let pos = vec2(
-                        chunk_pos.x * model.chunk_size.x as i64 + x,
-                        chunk_pos.y * model.chunk_size.y as i64 + y,
-                    );
+                    let pos = Self::local_to_global_pos(model.chunk_size, chunk_pos, vec2(x, y));
                     if model.is_empty_tile(pos) {
                         model.generate_tile(pos);
                     }
@@ -124,10 +121,8 @@ impl Model {
         let mut tile_map = HashMap::new();
         for y in 0..config.chunk_size.y as i64 {
             for x in 0..config.chunk_size.x as i64 {
-                let pos = vec2(
-                    chunk_pos.x as f32 * config.chunk_size.x as f32 + x as f32,
-                    chunk_pos.y as f32 * config.chunk_size.y as f32 + y as f32,
-                );
+                let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y))
+                    .map(|x| x as f32);
                 // let normalized_pos = vec2(pos.x / 250.0, pos.y / 250.0) * 2.0 - vec2(1.0, 1.0);
                 // let height = 1.0 - normalized_pos.len() * 1.2
                 //     + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
@@ -203,7 +198,7 @@ impl Model {
         for (&chunk_pos, _) in &self.chunks {
             for y in 0..self.chunk_size.y as i64 {
                 for x in 0..self.chunk_size.x as i64 {
-                    let pos = chunk_pos + vec2(x, y);
+                    let pos = Self::local_to_global_pos(self.chunk_size, chunk_pos, vec2(x, y));
                     if self.is_spawnable_tile(pos)
                         && self.get_tile(pos).unwrap().biome == ground_type
                     {
@@ -218,5 +213,15 @@ impl Model {
         } else {
             None
         }
+    }
+    pub fn local_to_global_pos(
+        chunk_size: Vec2<usize>,
+        chunk_pos: Vec2<i64>,
+        pos: Vec2<i64>,
+    ) -> Vec2<i64> {
+        vec2(
+            chunk_pos.x * chunk_size.x as i64 + pos.x,
+            chunk_pos.y * chunk_size.y as i64 + pos.y,
+        )
     }
 }
