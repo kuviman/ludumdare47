@@ -46,11 +46,11 @@ impl BiomeGeneration {
         let mut score = 0.0;
         for (parameter, &parameter_value) in &self.parameters {
             let (noise, noise_parameters) = &noises[parameter];
-            let noise = noise.get([
+            let noise_value = noise.get([
                 pos.x as f64 / noise_parameters.scale as f64,
                 pos.y as f64 / noise_parameters.scale as f64,
             ]) as f32;
-            score += 2.0 - (parameter_value - noise).abs();
+            score += 2.0 - (parameter_value - noise_value).abs();
         }
         score / self.parameters.len() as f32 - self.offset
     }
