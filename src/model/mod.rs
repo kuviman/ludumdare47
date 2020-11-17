@@ -90,8 +90,8 @@ impl Model {
                 });
             }
             Message::Interact { id } => {
-                let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
+                    let mut entity = self.entities.get_mut(&player_id).unwrap();
                     entity.action = Some(EntityAction::MovingTo {
                         pos: item.pos,
                         finish_action: Some(MomentAction::Interact { id }),

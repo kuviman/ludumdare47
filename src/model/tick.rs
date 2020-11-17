@@ -184,7 +184,7 @@ impl Model {
                     let time_left = time_left - 1.0 / self.ticks_per_second;
                     if time_left <= 0.0 {
                         let hand_item = &mut entity.item;
-                        let mut item = self.items.remove(&item_id);
+                        let mut item = self.remove_item_id(item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
                                 Some(self.get_tile(item.pos.map(|x| x as i64)).unwrap().biome),

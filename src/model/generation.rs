@@ -3,6 +3,7 @@ use super::*;
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Chunk {
     pub tile_map: HashMap<Vec2<i64>, Tile>,
+    pub items: HashMap<Id, Item>,
 }
 
 impl Model {
@@ -82,7 +83,26 @@ impl Model {
             size: item_type.size(),
             item_type,
         };
-        self.items.insert(Id::new(), item);
+        let id = Id::new();
+        self.items.insert(id, item.clone());
+        self.chunks
+            .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
+            .unwrap()
+            .items
+            .insert(id, item);
+    }
+    pub fn remove_item_id(&mut self, id: Id) -> Option<Item> {
+        let item = self.items.remove(&id);
+        if let Some(item) = item {
+            self.chunks
+                .get_mut(&self.get_chunk_pos(item.pos.map(|x| x as i64)))
+                .unwrap()
+                .items
+                .remove(&id);
+            Some(item)
+        } else {
+            None
+        }
     }
     pub fn remove_item(&mut self, pos: Vec2<f32>, range: f32) -> Option<Item> {
         match self
@@ -92,6 +112,11 @@ impl Model {
         {
             Some((index, _)) => {
                 let index = index.clone();
+                self.chunks
+                    .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
+                    .unwrap()
+                    .items
+                    .remove(&index);
                 self.items.remove(&index)
             }
             None => None,
@@ -158,11 +183,15 @@ impl Model {
                 );
             }
         }
-        Chunk { tile_map }
+        Chunk {
+            tile_map,
+            items: HashMap::new(),
+        }
     }
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
-        match self.get_chunk(pos) {
-            Some((chunk_pos, chunk)) => {
+        let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
+        match self.chunks.get(&chunk_pos) {
+            Some(chunk) => {
                 let tile_pos = vec2(
                     pos.x - chunk_pos.x * self.chunk_size.x as i64,
                     pos.y - chunk_pos.y * self.chunk_size.y as i64,
@@ -172,7 +201,7 @@ impl Model {
             None => None,
         }
     }
-    pub fn get_chunk(&self, pos: Vec2<i64>) -> Option<(Vec2<i64>, &Chunk)> {
+    pub fn get_chunk_pos(&self, pos: Vec2<i64>) -> Vec2<i64> {
         let x = if pos.x >= 0 {
             pos.x / self.chunk_size.x as i64
         } else {
@@ -183,11 +212,7 @@ impl Model {
         } else {
             (pos.y + 1) / self.chunk_size.y as i64 - 1
         };
-        let chunk_pos = vec2(x, y);
-        match self.chunks.get(&chunk_pos) {
-            Some(chunk) => Some((chunk_pos, chunk)),
-            None => None,
-        }
+        vec2(x, y)
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
