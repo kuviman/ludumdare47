@@ -101,10 +101,10 @@ impl Model {
             let noise = OpenSimplex::new().set_seed(global_rng().gen());
             noises.insert(
                 biome,
-                (
-                    Box::new(noise) as Box<dyn NoiseFn<[f64; 2]>>,
-                    noise_parameters,
-                ),
+                Noise {
+                    noise: Box::new(noise),
+                    parameters: noise_parameters,
+                },
             );
         }
 
@@ -113,7 +113,6 @@ impl Model {
         for y in 0..map_size.y as i64 {
             for x in 0..map_size.x as i64 {
                 let pos = vec2(x, y);
-                let (noise, noise_parameters) = &noises[&BiomeParameters::Height];
                 let biome = Self::generate_biome(pos, &noises, &biomes);
                 let height = biome.height();
                 tiles_height_map.insert(pos, height);
@@ -173,16 +172,26 @@ impl Model {
     }
     fn generate_biome(
         pos: Vec2<i64>,
-        noises: &HashMap<BiomeParameters, (Box<dyn NoiseFn<[f64; 2]>>, NoiseParameters)>,
+        noises: &HashMap<BiomeParameter, Noise>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Biome {
-        biomes
+        *biomes
             .iter()
-            .map(|(&biome, biome_generation)| {
-                (biome, biome_generation.calculate_score(pos, noises))
+            .filter_map(|(biome, biome_gen)| {
+                let mut total_score = 0.0;
+                for (biome_parameter, noise) in noises {
+                    let score =
+                        biome_gen.get_distance(pos.map(|x| x as f32), biome_parameter, noise);
+                    if score < 0.0 {
+                        return None;
+                    } else {
+                        total_score += score;
+                    }
+                }
+                Some((biome, total_score))
             })
-            .max_by(|(_, score1), (_, score2)| score1.partial_cmp(score2).unwrap())
-            .unwrap()
+            .min_by_key(|(_, score)| r32(*score))
+            .unwrap_or((&Biome::Void, 0.0))
             .0
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
