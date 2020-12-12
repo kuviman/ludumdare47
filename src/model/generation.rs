@@ -57,7 +57,7 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos(Biome::Beach) {
+        if let Some(pos) = self.get_spawnable_pos(Biome::Forest) {
             let entity = Entity {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
@@ -123,8 +123,16 @@ impl Model {
         }
     }
     fn generate_map(config: &Config) -> HashMap<Vec2<i64>, Chunk> {
-        let noise = OpenSimplex::new().set_seed(global_rng().gen());
-        let noise2 = OpenSimplex::new().set_seed(global_rng().gen());
+        let mut noises = HashMap::new();
+        for (biome_parameter, parameters) in Config::default_parameters() {
+            noises.insert(
+                biome_parameter,
+                Noise {
+                    noise: Box::new(OpenSimplex::new().set_seed(global_rng().gen())),
+                    parameters,
+                },
+            );
+        }
 
         let mut chunks = HashMap::new();
         let gen_y = config.initial_generation_size.y as i64 / 2;
@@ -133,7 +141,7 @@ impl Model {
             for x in -gen_x..gen_x + 1 {
                 chunks.insert(
                     vec2(x, y),
-                    Self::generate_chunk(config, vec2(x, y), &noise, &noise2),
+                    Self::generate_chunk(config, vec2(x, y), &noises, &Config::default_biomes()),
                 );
             }
         }
@@ -142,51 +150,46 @@ impl Model {
     fn generate_chunk(
         config: &Config,
         chunk_pos: Vec2<i64>,
-        noise: &dyn NoiseFn<[f64; 2]>,
-        noise2: &dyn NoiseFn<[f64; 2]>,
+        noises: &HashMap<BiomeParameter, Noise>,
+        biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Chunk {
         let mut tile_map = HashMap::new();
         for y in 0..config.chunk_size.y as i64 {
             for x in 0..config.chunk_size.x as i64 {
-                let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y))
-                    .map(|x| x as f32);
-                let normalized_pos = vec2(
-                    pos.x / config.initial_generation_size.x as f32 / config.chunk_size.x as f32,
-                    pos.y / config.initial_generation_size.y as f32 / config.chunk_size.y as f32,
-                ) * 2.0;
-                let height = 1.0 - normalized_pos.len() * 1.2
-                    + (noise.get([normalized_pos.x as f64 * 5.0, normalized_pos.y as f64 * 5.0])
-                        as f32
-                        / 10.0);
-                height.min(0.3);
-                tile_map.insert(
-                    vec2(x, y),
-                    Tile {
-                        height,
-                        biome: if height < 0.0 {
-                            Biome::Water
-                        } else if height < 0.05 {
-                            Biome::Beach
-                        } else {
-                            if noise2.get([pos.x as f64 / 10.0, pos.y as f64 / 10.0]) > 0.2 {
-                                Biome::Hills
-                            } else if noise.get([pos.x as f64 / 10.0, pos.y as f64 / 10.0]) > 0.2
-                                && noise2.get([pos.x as f64 / 20.0 + 100.0, pos.y as f64 / 20.0])
-                                    > 0.2
-                            {
-                                Biome::MagicForest
-                            } else {
-                                Biome::Forest
-                            }
-                        },
-                    },
-                );
+                let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y));
+                let biome = Self::generate_biome(pos, noises, biomes);
+                let height = biome.height();
+                tile_map.insert(vec2(x, y), Tile { pos, height, biome });
             }
         }
         Chunk {
             tile_map,
             items: HashMap::new(),
         }
+    }
+    fn generate_biome(
+        pos: Vec2<i64>,
+        noises: &HashMap<BiomeParameter, Noise>,
+        biomes: &HashMap<Biome, BiomeGeneration>,
+    ) -> Biome {
+        *biomes
+            .iter()
+            .filter_map(|(biome, biome_gen)| {
+                let mut total_score = 0.0;
+                for (biome_parameter, noise) in noises {
+                    let score =
+                        biome_gen.get_distance(pos.map(|x| x as f32), biome_parameter, noise);
+                    if score < 0.0 {
+                        return None;
+                    } else {
+                        total_score += score;
+                    }
+                }
+                Some((biome, total_score))
+            })
+            .min_by_key(|(_, score)| r32(*score))
+            .unwrap_or((&Biome::Void, 0.0))
+            .0
     }
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
@@ -225,7 +228,7 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
-        self.get_tile(pos).unwrap().biome != Biome::Water && self.is_empty_tile(pos)
+        self.get_tile(pos).unwrap().biome != Biome::Lake && self.is_empty_tile(pos)
     }
     fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<f32>> {
         let mut positions = vec![];

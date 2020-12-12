@@ -38,6 +38,7 @@ fn main() {
     }
 
     logger::init().unwrap();
+    geng::setup_panic_handler();
     let opt: Opt = StructOpt::from_args();
     let addr = opt
         .addr

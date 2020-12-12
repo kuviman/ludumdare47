@@ -263,10 +263,82 @@ impl Config {
             },
         ]
     }
+    pub fn default_parameters() -> HashMap<BiomeParameter, NoiseParameters> {
+        let mut map = HashMap::new();
+        map.insert(
+            BiomeParameter::Height,
+            NoiseParameters::new(-1.0, 1.0, 100.0, 3, 2.0, 0.5),
+        );
+        map.insert(
+            BiomeParameter::Magic,
+            NoiseParameters::new(0.0, 1.0, 50.0, 1, 1.0, 1.0),
+        );
+        map.insert(
+            BiomeParameter::Humidity,
+            NoiseParameters::new(0.0, 1.0, 50.0, 1, 1.0, 1.0),
+        );
+        map
+    }
+    pub fn default_biomes() -> HashMap<Biome, BiomeGeneration> {
+        use Biome::*;
 
+        let mut biomes = HashMap::new();
+        biomes.insert(
+            Ocean,
+            BiomeGeneration::new(0.0, {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameter::Height, (-1.0, -0.3));
+                map
+            }),
+        );
+        biomes.insert(
+            Beach,
+            BiomeGeneration::new(0.2, {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameter::Height, (-0.3, -0.2));
+                map
+            }),
+        );
+        biomes.insert(
+            Forest,
+            BiomeGeneration::new(0.0, {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameter::Height, (-0.2, 0.6));
+                map
+            }),
+        );
+        biomes.insert(
+            Lake,
+            BiomeGeneration::new(0.1, {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameter::Height, (0.2, 0.5));
+                map.insert(BiomeParameter::Humidity, (0.9, 1.0));
+                map
+            }),
+        );
+        biomes.insert(
+            MagicForest,
+            BiomeGeneration::new(0.1, {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameter::Height, (0.2, 0.5));
+                map.insert(BiomeParameter::Magic, (0.8, 1.0));
+                map
+            }),
+        );
+        biomes.insert(
+            Hills,
+            BiomeGeneration::new(0.0, {
+                let mut map = HashMap::new();
+                map.insert(BiomeParameter::Height, (0.6, 1.0));
+                map
+            }),
+        );
+        biomes
+    }
     pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
         let mut generation_choices = HashMap::new();
-        generation_choices.insert(Biome::Water, vec![(None, 1)]);
+        generation_choices.insert(Biome::Ocean, vec![(None, 1)]);
+        generation_choices.insert(Biome::Lake, vec![(None, 1)]);
         generation_choices.insert(
             Biome::Beach,
             vec![(None, 200), (Some(ItemType::TreasureMark), 1)],
