@@ -61,6 +61,25 @@ pub struct Entity {
     pub interaction_range: f32,
     pub item: Option<ItemType>,
     pub colors: EntityColors,
-    pub move_to: Option<Vec2<f32>>,
-    pub action: Option<Action>,
+    pub action: Option<EntityAction>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+pub enum EntityAction {
+    MovingTo {
+        pos: Vec2<f32>,
+        finish_action: Option<MomentAction>,
+    },
+    Crafting {
+        item_id: Id,
+        recipe: Recipe,
+        time_left: f32,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+pub enum MomentAction {
+    Interact { id: Id },
+    Drop { pos: Vec2<f32> },
+    PickUp { id: Id },
 }

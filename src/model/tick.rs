@@ -9,21 +9,7 @@ impl Model {
         let ids: Vec<Id> = self.entities.keys().copied().collect();
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
-            if let Some(move_to) = entity.move_to {
-                if (entity.pos - move_to).len() <= entity.interaction_range
-                    && self.entity_action(&mut entity)
-                    || (entity.pos - move_to).len()
-                        <= self.rules.entity_movement_speed / self.ticks_per_second
-                {
-                    entity.move_to = None;
-                } else {
-                    let dir = move_to - entity.pos;
-                    let dir = dir / dir.len();
-                    let new_pos =
-                        entity.pos + dir * self.rules.entity_movement_speed / self.ticks_per_second;
-                    entity.pos = new_pos;
-                }
-            }
+            self.entity_action(&mut entity);
 
             // Collide with items
             for item in self.items.values() {
@@ -198,13 +184,67 @@ impl Model {
             None
         }
     }
-    fn entity_action(&mut self, entity: &mut Entity) -> bool {
+    fn entity_action(&mut self, entity: &mut Entity) {
         if let Some(action) = entity.action.take() {
             match action {
-                Action::Interact { id } => {
+                EntityAction::MovingTo { pos, finish_action } => {
+                    let finished = (entity.pos - pos).len() <= entity.interaction_range
+                        && self.finish_action(entity, finish_action)
+                        || (entity.pos - pos).len()
+                            <= self.rules.entity_movement_speed / self.ticks_per_second;
+                    if !finished {
+                        let dir = pos - entity.pos;
+                        let dir = dir / dir.len();
+                        let new_pos = entity.pos
+                            + dir * self.rules.entity_movement_speed / self.ticks_per_second;
+                        entity.pos = new_pos;
+                        entity.action = Some(EntityAction::MovingTo { pos, finish_action });
+                    }
+                }
+                EntityAction::Crafting {
+                    item_id,
+                    recipe,
+                    time_left,
+                } => {
+                    let time_left = time_left - 1.0 / self.ticks_per_second;
+                    if time_left <= 0.0 {
+                        let hand_item = &mut entity.item;
+                        let mut item = self.items.remove(&item_id);
+                        let (conditions, ingredient2) = match &item {
+                            Some(item) => (
+                                Some(self.tiles.get(&item.pos.map(|x| x as i64)).unwrap().biome),
+                                Some(item.item_type),
+                            ),
+                            None => (None, None),
+                        };
+                        if recipe.ingredients_equal(hand_item.take(), ingredient2, conditions) {
+                            *hand_item = recipe.result1;
+                            if let Some(item) = item.take() {
+                                if let Some(item_type) = recipe.result2 {
+                                    self.spawn_item(item_type, item.pos);
+                                }
+                            }
+                            self.play_sound(Sound::Craft, self.sound_distance, entity.pos);
+                        } else if let Some(item) = item {
+                            self.spawn_item(item.item_type, item.pos);
+                        }
+                    } else {
+                        entity.action = Some(EntityAction::Crafting {
+                            item_id,
+                            recipe,
+                            time_left,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    fn finish_action(&mut self, entity: &mut Entity, finish_action: Option<MomentAction>) -> bool {
+        if let Some(finish_action) = finish_action {
+            match finish_action {
+                MomentAction::Interact { id } => {
                     let ingredient1 = &mut entity.item;
-                    let mut item = self.items.remove(&id);
-                    let (conditions, ingredient2) = match &item {
+                    let (conditions, ingredient2) = match self.items.get(&id) {
                         Some(item) => (
                             Some(self.tiles.get(&item.pos.map(|x| x as i64)).unwrap().biome),
                             Some(item.item_type),
@@ -215,14 +255,11 @@ impl Model {
                         recipe.ingredients_equal(*ingredient1, ingredient2, conditions)
                     });
                     if let Some(recipe) = recipe {
-                        *ingredient1 = recipe.result1;
-                        if let Some(item) = item.take() {
-                            if let Some(item_type) = recipe.result2 {
-                                self.spawn_item(item_type, item.pos);
-                            }
-                        }
-                        self.play_sound(Sound::Craft, self.sound_distance, entity.pos);
-                        entity.move_to = None;
+                        entity.action = Some(EntityAction::Crafting {
+                            item_id: id,
+                            recipe: recipe.clone(),
+                            time_left: recipe.craft_time,
+                        });
                     } else if let Some(ItemType::Statue) = ingredient2 {
                         if let Some(item) = ingredient1.take() {
                             self.score += match self.scores_map.get(&item) {
@@ -232,18 +269,15 @@ impl Model {
                             self.play_sound(Sound::StatueGift, self.sound_distance, entity.pos);
                         }
                     }
-                    if let Some(item) = item {
-                        self.spawn_item(item.item_type, item.pos);
-                    }
                 }
-                Action::Drop { pos } => {
+                MomentAction::Drop { pos } => {
                     let hand_item = &mut entity.item;
                     if let Some(item_type) = hand_item.take() {
                         self.spawn_item(item_type, pos);
                         self.play_sound(Sound::PutDown, self.sound_distance, pos);
                     }
                 }
-                Action::PickUp { id } => {
+                MomentAction::PickUp { id } => {
                     let hand_item = &mut entity.item;
                     let mut item = self.items.remove(&id);
                     let ground_item = match &item {

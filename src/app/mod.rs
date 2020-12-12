@@ -226,6 +226,10 @@ impl UiState {
 
 pub struct App {
     show_help: bool,
+    last_tin: usize,
+    last_tout: usize,
+    traffic_update: f32,
+    traffic_text: String,
     geng: Rc<Geng>,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
@@ -263,6 +267,10 @@ impl App {
         Self {
             geng: geng.clone(),
             assets,
+            last_tin: 0,
+            last_tout: 0,
+            traffic_update: 0.0,
+            traffic_text: String::new(),
             framebuffer_size: vec2(1, 1),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
@@ -368,6 +376,18 @@ impl geng::State for App {
             );
         }
         let delta_time = delta_time as f32;
+
+        self.traffic_update -= delta_time;
+        if self.traffic_update < 0.0 {
+            self.traffic_update = 1.0;
+            self.traffic_text = format!(
+                "{} kb/s in, {} kb/s out",
+                (self.connection.traffic().inbound() - self.last_tin) / 1024,
+                (self.connection.traffic().outbound() - self.last_tout) / 1024,
+            );
+            self.last_tin = self.connection.traffic().inbound();
+            self.last_tout = self.connection.traffic().outbound();
+        }
 
         let mut got_message = false;
         for message in self.connection.new_messages() {
@@ -691,6 +711,33 @@ impl geng::State for App {
                 );
             }
         }
+
+        let entity = self
+            .view
+            .entities
+            .iter()
+            .find(|entity| entity.id == self.player_id)
+            .unwrap();
+        let data = &self.entity_positions[&entity.id];
+        if let Some(action) = entity.action {
+            match action {
+                model::EntityAction::Crafting { time_left, .. } => {
+                    let text = format!("{:.1}", time_left);
+                    let pos = data.pos;
+                    let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+                    self.geng.default_font().draw_aligned(
+                        framebuffer,
+                        &text,
+                        self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 50.0),
+                        0.5,
+                        32.0,
+                        Color::WHITE,
+                    );
+                }
+                _ => (),
+            }
+        }
+
         self.geng.default_font().draw_aligned(
             framebuffer,
             &format!("SCORE: {}", self.view.score),
@@ -736,6 +783,7 @@ impl geng::State for App {
             text("    Right Mouse Button to interact");
             text("    Left Mouse Button to move");
             text("    H to toggle help");
+            text(&self.traffic_text);
         }
         self.ui_controller
             .draw(&mut self.ui_state.ui(), framebuffer);

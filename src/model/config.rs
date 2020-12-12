@@ -46,9 +46,10 @@ impl Config {
             Recipe {
                 ingredient1: Some(Pebble),
                 ingredient2: Some(Pebble),
-                result1: None,
-                result2: Some(SharpStone),
+                result1: Some(SharpStone),
+                result2: None,
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(Pebble),
@@ -56,6 +57,7 @@ impl Config {
                 result1: Some(SharpStone),
                 result2: Some(Rock),
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(Stick),
@@ -63,6 +65,7 @@ impl Config {
                 result1: Some(Shovel),
                 result2: None,
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(Pebble),
@@ -70,6 +73,7 @@ impl Config {
                 result1: Some(Shovel),
                 result2: None,
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(Stick),
@@ -77,6 +81,7 @@ impl Config {
                 result1: Some(Axe),
                 result2: None,
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(SharpStone),
@@ -84,6 +89,7 @@ impl Config {
                 result1: Some(Axe),
                 result2: None,
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(Axe),
@@ -91,6 +97,7 @@ impl Config {
                 result1: Some(Pickaxe),
                 result2: None,
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(SharpStone),
@@ -98,6 +105,7 @@ impl Config {
                 result1: Some(Pickaxe),
                 result2: None,
                 conditions: None,
+                craft_time: 0.1,
             },
             Recipe {
                 ingredient1: Some(Pickaxe),
@@ -105,6 +113,7 @@ impl Config {
                 result1: Some(Pickaxe),
                 result2: Some(SharpStone),
                 conditions: None,
+                craft_time: 1.0,
             },
             Recipe {
                 ingredient1: Some(Pickaxe),
@@ -112,6 +121,7 @@ impl Config {
                 result1: Some(Pickaxe),
                 result2: Some(GoldNugget),
                 conditions: None,
+                craft_time: 1.0,
             },
             Recipe {
                 ingredient1: Some(Stick),
@@ -119,6 +129,7 @@ impl Config {
                 result1: Some(GoldPickaxe),
                 result2: None,
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(GoldNugget),
@@ -126,6 +137,7 @@ impl Config {
                 result1: Some(GoldPickaxe),
                 result2: None,
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(Stick),
@@ -133,6 +145,7 @@ impl Config {
                 result1: None,
                 result2: Some(DoubleStick),
                 conditions: None,
+                craft_time: 0.01,
             },
             Recipe {
                 ingredient1: Some(Axe),
@@ -140,6 +153,7 @@ impl Config {
                 result1: Some(Axe),
                 result2: Some(Log),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(Axe),
@@ -147,6 +161,7 @@ impl Config {
                 result1: Some(Axe),
                 result2: Some(Planks),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(Log),
@@ -154,6 +169,7 @@ impl Config {
                 result1: None,
                 result2: Some(Campfire),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(Log),
@@ -161,6 +177,7 @@ impl Config {
                 result1: None,
                 result2: Some(Campfire),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(Torch),
@@ -168,6 +185,7 @@ impl Config {
                 result1: Some(Torch),
                 result2: Some(Campfire),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(Torch),
@@ -175,6 +193,7 @@ impl Config {
                 result1: Some(Torch),
                 result2: Some(Campfire),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(Torch),
@@ -182,6 +201,7 @@ impl Config {
                 result1: Some(Torch),
                 result2: Some(Campfire),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(DoubleStick),
@@ -189,6 +209,7 @@ impl Config {
                 result1: None,
                 result2: Some(Campfire),
                 conditions: None,
+                craft_time: 0.5,
             },
             Recipe {
                 ingredient1: Some(DoubleStick),
@@ -196,6 +217,7 @@ impl Config {
                 result1: Some(Stick),
                 result2: Some(Stick),
                 conditions: None,
+                craft_time: 0.01,
             },
             Recipe {
                 ingredient1: Some(Stick),
@@ -203,6 +225,7 @@ impl Config {
                 result1: Some(Torch),
                 result2: Some(Campfire),
                 conditions: None,
+                craft_time: 0.01,
             },
             Recipe {
                 ingredient1: Some(GoldPickaxe),
@@ -210,6 +233,7 @@ impl Config {
                 result1: Some(GoldPickaxe),
                 result2: Some(CrystalShard),
                 conditions: None,
+                craft_time: 1.0,
             },
             Recipe {
                 ingredient1: Some(GoldPickaxe),
@@ -217,6 +241,7 @@ impl Config {
                 result1: Some(GoldPickaxe),
                 result2: Some(SharpStone),
                 conditions: None,
+                craft_time: 1.0,
             },
             Recipe {
                 ingredient1: Some(GoldPickaxe),
@@ -224,6 +249,7 @@ impl Config {
                 result1: Some(GoldPickaxe),
                 result2: Some(GoldNugget),
                 conditions: None,
+                craft_time: 1.0,
             },
             Recipe {
                 ingredient1: Some(Shovel),
@@ -231,6 +257,7 @@ impl Config {
                 result1: Some(Shovel),
                 result2: Some(TreasureChest),
                 conditions: None,
+                craft_time: 0.5,
             },
         ]
     }
