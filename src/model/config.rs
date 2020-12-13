@@ -330,6 +330,7 @@ impl Config {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
 pub struct ResourcePack {
     pub biomes: HashMap<Biome, BiomeGeneration>,
     pub parameters: HashMap<BiomeParameter, NoiseParameters>,

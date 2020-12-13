@@ -28,8 +28,10 @@ impl Biome {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
 pub struct BiomeGeneration {
+    pub collidable: bool,
+    pub spawnable: bool,
     pub parameters: HashMap<BiomeParameter, (f32, f32)>,
 }
 
@@ -45,7 +47,7 @@ impl BiomeGeneration {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize, Trans)]
 pub enum BiomeParameter {
     Height,
     Magic,
@@ -78,7 +80,7 @@ impl Noise {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Trans)]
 pub struct NoiseParameters {
     pub min_value: f32,
     pub max_value: f32,

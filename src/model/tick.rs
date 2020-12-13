@@ -44,15 +44,18 @@ impl Model {
                 for y in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
                     let pos = vec2(x, y) + entity.pos.map(|x| x as i64);
                     if let Some((normal, penetration)) = match self.get_tile(pos) {
-                        Some(tile) => match tile.biome {
-                            Biome::Lake | Biome::Ocean => Self::collide(
-                                entity.pos,
-                                entity.radius,
-                                tile.pos.map(|x| x as f32),
-                                1.0,
-                            ),
-                            _ => None,
-                        },
+                        Some(tile) => {
+                            if self.resource_pack.biomes[&tile.biome].collidable {
+                                Self::collide(
+                                    entity.pos,
+                                    entity.radius,
+                                    tile.pos.map(|x| x as f32),
+                                    1.0,
+                                )
+                            } else {
+                                None
+                            }
+                        }
                         None => None,
                     } {
                         entity.pos += normal * penetration;

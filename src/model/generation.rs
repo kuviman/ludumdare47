@@ -20,8 +20,10 @@ impl Model {
             regeneration_percent: config.regeneration_percent,
             entity_interaction_range: config.entity_interaction_range,
         };
+        let generation_choices = Config::default_generation_choices();
         let mut model = Self {
             pack_list,
+            resource_pack,
             rules,
             score: 0,
             ticks_per_second: config.ticks_per_second,
@@ -33,7 +35,7 @@ impl Model {
             recipes,
             scores_map: Config::default_scores_map(),
             sound_distance: config.sound_distance,
-            generation_choices: Config::default_generation_choices(),
+            generation_choices,
             sounds: HashMap::new(),
         };
         for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
@@ -46,7 +48,7 @@ impl Model {
                 }
             }
         }
-        if let Some(pos) = model.get_spawnable_pos(Biome::Forest) {
+        if let Some(pos) = model.get_spawnable_pos() {
             model.spawn_item(ItemType::Statue, pos);
         } else {
             error!("Did not find a position for a statue");
@@ -55,7 +57,7 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos(Biome::Forest) {
+        if let Some(pos) = self.get_spawnable_pos() {
             let entity = Entity {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
@@ -207,17 +209,16 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
-        self.get_tile(pos).unwrap().biome != Biome::Lake && self.is_empty_tile(pos)
+        self.resource_pack.biomes[&self.get_tile(pos).unwrap().biome].spawnable
+            && self.is_empty_tile(pos)
     }
-    fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<f32>> {
+    fn get_spawnable_pos(&self) -> Option<Vec2<f32>> {
         let mut positions = vec![];
         for (&chunk_pos, _) in &self.chunks {
             for y in 0..self.chunk_size.y as i64 {
                 for x in 0..self.chunk_size.x as i64 {
                     let pos = Self::local_to_global_pos(self.chunk_size, chunk_pos, vec2(x, y));
-                    if self.is_spawnable_tile(pos)
-                        && self.get_tile(pos).unwrap().biome == ground_type
-                    {
+                    if self.is_spawnable_tile(pos) {
                         positions.push(pos.map(|x| x as f32));
                     }
                 }
