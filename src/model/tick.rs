@@ -194,7 +194,7 @@ impl Model {
                         ),
                         None => (None, None),
                     };
-                    let recipe = self.recipes.iter().find(|recipe| {
+                    let recipe = self.resource_pack.recipes.iter().find(|recipe| {
                         recipe.ingredients_equal(*ingredient1, ingredient2, conditions.clone())
                     });
                     if let Some(recipe) = recipe {

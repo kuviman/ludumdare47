@@ -69,7 +69,7 @@ impl Model {
                 .filter(|(_, item)| view.contains(&item.pos.map(|x| x as i64)))
                 .map(|(id, item)| (id.clone(), item.clone()))
                 .collect(),
-            recipes: self.recipes.clone(),
+            recipes: self.resource_pack.recipes.clone(),
             sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),
         };
         vision

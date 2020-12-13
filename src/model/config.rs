@@ -63,232 +63,16 @@ impl Config {
             biome_gen.insert(biome, biome_generation);
         }
 
+        let recipes_path = path.path().join("server/recipes.json");
+        let recipes: Vec<Recipe> =
+            serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(recipes_path)?))?;
+
         Ok(ResourcePack {
             biome_names,
             biomes: biome_gen,
             parameters: generation_parameters,
+            recipes,
         })
-    }
-    pub fn default_recipes() -> Vec<Recipe> {
-        use ItemType::*;
-        vec![
-            Recipe {
-                ingredient1: Some(Pebble),
-                ingredient2: Some(Pebble),
-                result1: Some(SharpStone),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Pebble),
-                ingredient2: Some(Rock),
-                result1: Some(SharpStone),
-                result2: Some(Rock),
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(Pebble),
-                result1: Some(Shovel),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Pebble),
-                ingredient2: Some(Stick),
-                result1: Some(Shovel),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(SharpStone),
-                result1: Some(Axe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(SharpStone),
-                ingredient2: Some(Stick),
-                result1: Some(Axe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Axe),
-                ingredient2: Some(SharpStone),
-                result1: Some(Pickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(SharpStone),
-                ingredient2: Some(Axe),
-                result1: Some(Pickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Pickaxe),
-                ingredient2: Some(Rock),
-                result1: Some(Pickaxe),
-                result2: Some(SharpStone),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(Pickaxe),
-                ingredient2: Some(GoldRock),
-                result1: Some(Pickaxe),
-                result2: Some(GoldNugget),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(GoldNugget),
-                result1: Some(GoldPickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(GoldNugget),
-                ingredient2: Some(Stick),
-                result1: Some(GoldPickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(Stick),
-                result1: None,
-                result2: Some(DoubleStick),
-                conditions: None,
-                craft_time: 0.01,
-            },
-            Recipe {
-                ingredient1: Some(Axe),
-                ingredient2: Some(Tree),
-                result1: Some(Axe),
-                result2: Some(Log),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Axe),
-                ingredient2: Some(Log),
-                result1: Some(Axe),
-                result2: Some(Planks),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Log),
-                ingredient2: Some(DoubleStick),
-                result1: None,
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Log),
-                ingredient2: Some(Planks),
-                result1: None,
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Torch),
-                ingredient2: Some(Log),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Torch),
-                ingredient2: Some(Planks),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Torch),
-                ingredient2: Some(DoubleStick),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(DoubleStick),
-                ingredient2: Some(Log),
-                result1: None,
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(DoubleStick),
-                ingredient2: None,
-                result1: Some(Stick),
-                result2: Some(Stick),
-                conditions: None,
-                craft_time: 0.01,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(Campfire),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.01,
-            },
-            Recipe {
-                ingredient1: Some(GoldPickaxe),
-                ingredient2: Some(MagicCrystal),
-                result1: Some(GoldPickaxe),
-                result2: Some(CrystalShard),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(GoldPickaxe),
-                ingredient2: Some(Rock),
-                result1: Some(GoldPickaxe),
-                result2: Some(SharpStone),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(GoldPickaxe),
-                ingredient2: Some(GoldRock),
-                result1: Some(GoldPickaxe),
-                result2: Some(GoldNugget),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(Shovel),
-                ingredient2: Some(TreasureMark),
-                result1: Some(Shovel),
-                result2: Some(TreasureChest),
-                conditions: None,
-                craft_time: 0.5,
-            },
-        ]
     }
     pub fn default_generation_choices(
         resource_pack: &ResourcePack,
@@ -349,6 +133,7 @@ pub struct ResourcePack {
     pub biome_names: HashMap<String, Biome>,
     pub biomes: HashMap<Biome, BiomeGeneration>,
     pub parameters: HashMap<BiomeParameter, NoiseParameters>,
+    pub recipes: Vec<Recipe>,
 }
 
 impl ResourcePack {
@@ -357,12 +142,14 @@ impl ResourcePack {
             biome_names: HashMap::new(),
             biomes: HashMap::new(),
             parameters: HashMap::new(),
+            recipes: Vec::new(),
         }
     }
     pub fn merge(&mut self, resource_pack: ResourcePack) {
         self.biome_names.extend(resource_pack.biome_names);
         self.biomes.extend(resource_pack.biomes);
         self.parameters.extend(resource_pack.parameters);
+        self.recipes.extend(resource_pack.recipes);
     }
     pub fn get_biome(&self, biome_name: &str) -> Option<&Biome> {
         self.biome_names.get(biome_name)

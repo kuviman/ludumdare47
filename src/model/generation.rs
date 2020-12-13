@@ -9,7 +9,6 @@ pub struct Chunk {
 impl Model {
     pub fn new(config: Config) -> Self {
         let (pack_list, resource_pack) = Config::load_resource_packs().unwrap();
-        let recipes = Config::default_recipes();
         let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
             entity_movement_speed: config.player_movement_speed,
@@ -32,7 +31,6 @@ impl Model {
             entities: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
-            recipes,
             scores_map: Config::default_scores_map(),
             sound_distance: config.sound_distance,
             generation_choices,

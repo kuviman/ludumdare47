@@ -48,7 +48,6 @@ pub struct Model {
     pub entities: HashMap<Id, Entity>,
     pub items: HashMap<Id, Item>,
     pub current_time: usize,
-    pub recipes: Vec<Recipe>,
     pub scores_map: HashMap<ItemType, i32>,
     pub sound_distance: f32,
     generation_choices: HashMap<Biome, Vec<(Option<ItemType>, usize)>>,

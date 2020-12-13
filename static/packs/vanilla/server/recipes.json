@@ -1,0 +1,210 @@
+[
+  {
+    "ingredient1": "Pebble",
+    "ingredient2": "Pebble",
+    "result1": "SharpStone",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "Pebble",
+    "ingredient2": "Rock",
+    "result1": "SharpStone",
+    "result2": "Rock",
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "Stick",
+    "ingredient2": "Pebble",
+    "result1": "Shovel",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "Pebble",
+    "ingredient2": "Stick",
+    "result1": "Shovel",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "Stick",
+    "ingredient2": "SharpStone",
+    "result1": "Axe",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "SharpStone",
+    "ingredient2": "Stick",
+    "result1": "Axe",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "Axe",
+    "ingredient2": "SharpStone",
+    "result1": "Pickaxe",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "SharpStone",
+    "ingredient2": "Axe",
+    "result1": "Pickaxe",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.1
+  },
+  {
+    "ingredient1": "Pickaxe",
+    "ingredient2": "Rock",
+    "result1": "Pickaxe",
+    "result2": "SharpStone",
+    "conditions": null,
+    "craft_time": 1.0
+  },
+  {
+    "ingredient1": "Pickaxe",
+    "ingredient2": "GoldRock",
+    "result1": "Pickaxe",
+    "result2": "GoldNugget",
+    "conditions": null,
+    "craft_time": 1.0
+  },
+  {
+    "ingredient1": "Stick",
+    "ingredient2": "GoldNugget",
+    "result1": "GoldPickaxe",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "GoldNugget",
+    "ingredient2": "Stick",
+    "result1": "GoldPickaxe",
+    "result2": null,
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "Stick",
+    "ingredient2": "Stick",
+    "result1": null,
+    "result2": "DoubleStick",
+    "conditions": null,
+    "craft_time": 0.01
+  },
+  {
+    "ingredient1": "Axe",
+    "ingredient2": "Tree",
+    "result1": "Axe",
+    "result2": "Log",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "Axe",
+    "ingredient2": "Log",
+    "result1": "Axe",
+    "result2": "Planks",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "Log",
+    "ingredient2": "DoubleStick",
+    "result1": null,
+    "result2": "Campfire",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "Log",
+    "ingredient2": "Planks",
+    "result1": null,
+    "result2": "Campfire",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "Torch",
+    "ingredient2": "Log",
+    "result1": "Torch",
+    "result2": "Campfire",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "Torch",
+    "ingredient2": "Planks",
+    "result1": "Torch",
+    "result2": "Campfire",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "Torch",
+    "ingredient2": "DoubleStick",
+    "result1": "Torch",
+    "result2": "Campfire",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "DoubleStick",
+    "ingredient2": "Log",
+    "result1": null,
+    "result2": "Campfire",
+    "conditions": null,
+    "craft_time": 0.5
+  },
+  {
+    "ingredient1": "DoubleStick",
+    "ingredient2": null,
+    "result1": "Stick",
+    "result2": "Stick",
+    "conditions": null,
+    "craft_time": 0.01
+  },
+  {
+    "ingredient1": "Stick",
+    "ingredient2": "Campfire",
+    "result1": "Torch",
+    "result2": "Campfire",
+    "conditions": null,
+    "craft_time": 0.01
+  },
+  {
+    "ingredient1": "GoldPickaxe",
+    "ingredient2": "Rock",
+    "result1": "GoldPickaxe",
+    "result2": "SharpStone",
+    "conditions": null,
+    "craft_time": 1.0
+  },
+  {
+    "ingredient1": "GoldPickaxe",
+    "ingredient2": "GoldRock",
+    "result1": "GoldPickaxe",
+    "result2": "GoldNugget",
+    "conditions": null,
+    "craft_time": 1.0
+  },
+  {
+    "ingredient1": "Shovel",
+    "ingredient2": "TreasureMark",
+    "result1": "Shovel",
+    "result2": "TreasureChest",
+    "conditions": null,
+    "craft_time": 0.5
+  }
+]
