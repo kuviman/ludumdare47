@@ -42,6 +42,32 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn load_resource_packs() -> Result<ResourcePack, std::io::Error> {
+        let mut resource_pack = ResourcePack {
+            biomes: HashMap::new(),
+            parameters: HashMap::new(),
+        };
+        for pack in std::fs::read_dir("packs/")? {
+            resource_pack.merge(Self::load_resource_pack(pack?)?);
+        }
+        Ok(resource_pack)
+    }
+    fn load_resource_pack(path: std::fs::DirEntry) -> Result<ResourcePack, std::io::Error> {
+        let parameters_path = path.path().join("server/generation-parameters.json");
+        let generation_parameters: HashMap<BiomeParameter, NoiseParameters> =
+            serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(
+                parameters_path,
+            )?))?;
+
+        let biomes_path = path.path().join("server/generation-biomes.json");
+        let biomes: HashMap<Biome, BiomeGeneration> =
+            serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(biomes_path)?))?;
+
+        Ok(ResourcePack {
+            biomes,
+            parameters: generation_parameters,
+        })
+    }
     pub fn default_recipes() -> Vec<Recipe> {
         use ItemType::*;
         vec![
@@ -263,78 +289,6 @@ impl Config {
             },
         ]
     }
-    pub fn default_parameters() -> HashMap<BiomeParameter, NoiseParameters> {
-        let mut map = HashMap::new();
-        map.insert(
-            BiomeParameter::Height,
-            NoiseParameters::new(-1.0, 1.0, 100.0, 3, 2.0, 0.5),
-        );
-        map.insert(
-            BiomeParameter::Magic,
-            NoiseParameters::new(0.0, 1.0, 50.0, 1, 1.0, 1.0),
-        );
-        map.insert(
-            BiomeParameter::Humidity,
-            NoiseParameters::new(0.0, 1.0, 50.0, 1, 1.0, 1.0),
-        );
-        map
-    }
-    pub fn default_biomes() -> HashMap<Biome, BiomeGeneration> {
-        use Biome::*;
-
-        let mut biomes = HashMap::new();
-        biomes.insert(
-            Ocean,
-            BiomeGeneration::new(0.0, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (-1.0, -0.3));
-                map
-            }),
-        );
-        biomes.insert(
-            Beach,
-            BiomeGeneration::new(0.2, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (-0.3, -0.2));
-                map
-            }),
-        );
-        biomes.insert(
-            Forest,
-            BiomeGeneration::new(0.0, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (-0.2, 0.6));
-                map
-            }),
-        );
-        biomes.insert(
-            Lake,
-            BiomeGeneration::new(0.1, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (0.2, 0.5));
-                map.insert(BiomeParameter::Humidity, (0.9, 1.0));
-                map
-            }),
-        );
-        biomes.insert(
-            MagicForest,
-            BiomeGeneration::new(0.1, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (0.2, 0.5));
-                map.insert(BiomeParameter::Magic, (0.8, 1.0));
-                map
-            }),
-        );
-        biomes.insert(
-            Hills,
-            BiomeGeneration::new(0.0, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (0.6, 1.0));
-                map
-            }),
-        );
-        biomes
-    }
     pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
         let mut generation_choices = HashMap::new();
         generation_choices.insert(Biome::Ocean, vec![(None, 1)]);
@@ -378,5 +332,17 @@ impl Config {
         scores_map.insert(ItemType::Stick, -1);
         scores_map.insert(ItemType::Pebble, -1);
         scores_map
+    }
+}
+
+pub struct ResourcePack {
+    pub biomes: HashMap<Biome, BiomeGeneration>,
+    pub parameters: HashMap<BiomeParameter, NoiseParameters>,
+}
+
+impl ResourcePack {
+    pub fn merge(&mut self, resource_pack: ResourcePack) {
+        self.biomes.extend(resource_pack.biomes);
+        self.parameters.extend(resource_pack.parameters);
     }
 }

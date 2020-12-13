@@ -28,17 +28,12 @@ impl Biome {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BiomeGeneration {
-    pub offset: f32,
     pub parameters: HashMap<BiomeParameter, (f32, f32)>,
 }
 
 impl BiomeGeneration {
-    pub fn new(offset: f32, parameters: HashMap<BiomeParameter, (f32, f32)>) -> Self {
-        // TODO: check every parameter to be in range -1..1 and offset to be in range 0..1
-        Self { offset, parameters }
-    }
     pub fn get_distance(&self, pos: Vec2<f32>, parameter: &BiomeParameter, noise: &Noise) -> f32 {
         match self.parameters.get(parameter) {
             Some(parameter_zone) => {
@@ -50,7 +45,7 @@ impl BiomeGeneration {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BiomeParameter {
     Height,
     Magic,
@@ -83,7 +78,7 @@ impl Noise {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct NoiseParameters {
     pub min_value: f32,
     pub max_value: f32,

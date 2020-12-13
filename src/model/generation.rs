@@ -8,8 +8,9 @@ pub struct Chunk {
 
 impl Model {
     pub fn new(config: Config) -> Self {
+        let resource_pack = Config::load_resource_packs().unwrap();
         let recipes = Config::default_recipes();
-        let chunks = Self::generate_map(&config);
+        let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
             entity_movement_speed: config.player_movement_speed,
             entity_day_view_distance: config.player_day_view_distance,
@@ -122,14 +123,14 @@ impl Model {
             None => None,
         }
     }
-    fn generate_map(config: &Config) -> HashMap<Vec2<i64>, Chunk> {
+    fn generate_map(config: &Config, resource_pack: &ResourcePack) -> HashMap<Vec2<i64>, Chunk> {
         let mut noises = HashMap::new();
-        for (biome_parameter, parameters) in Config::default_parameters() {
+        for (&biome_parameter, parameters) in &resource_pack.parameters {
             noises.insert(
                 biome_parameter,
                 Noise {
                     noise: Box::new(OpenSimplex::new().set_seed(global_rng().gen())),
-                    parameters,
+                    parameters: parameters.clone(),
                 },
             );
         }
@@ -141,7 +142,7 @@ impl Model {
             for x in -gen_x..gen_x + 1 {
                 chunks.insert(
                     vec2(x, y),
-                    Self::generate_chunk(config, vec2(x, y), &noises, &Config::default_biomes()),
+                    Self::generate_chunk(config, vec2(x, y), &noises, &resource_pack.biomes),
                 );
             }
         }

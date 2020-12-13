@@ -1,46 +1,58 @@
 {
     "Ocean": {
-        "Height": [
-            -1.0,
-            -0.3
-        ]
+        "parameters": {
+            "Height": [
+                -1.0,
+                -0.3
+            ]
+        }
     },
     "Beach": {
-        "Height": [
-            -0.3,
-            -0.2
-        ]
+        "parameters": {
+            "Height": [
+                -0.3,
+                -0.2
+            ]
+        }
     },
     "Forest": {
-        "Height": [
-            -0.2,
-            0.6
-        ]
+        "parameters": {
+            "Height": [
+                -0.2,
+                0.6
+            ]
+        }
     },
     "Lake": {
-        "Height": [
-            0.2,
-            0.5
-        ],
-        "Humidity": [
-            0.9,
-            1.0
-        ]
+        "parameters": {
+            "Height": [
+                0.2,
+                0.5
+            ],
+            "Humidity": [
+                0.9,
+                1.0
+            ]
+        }
     },
     "MagicForest": {
-        "Height": [
-            0.2,
-            0.5
-        ],
-        "Magic": [
-            0.8,
-            1.0
-        ]
+        "parameters": {
+            "Height": [
+                0.2,
+                0.5
+            ],
+            "Magic": [
+                0.8,
+                1.0
+            ]
+        }
     },
     "Hills": {
-        "Height": [
-            0.6,
-            1.0
-        ]
+        "parameters": {
+            "Height": [
+                0.6,
+                1.0
+            ]
+        }
     }
 }
