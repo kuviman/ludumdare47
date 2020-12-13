@@ -7,14 +7,6 @@
         "lacunarity": 2,
         "persistance": 0.5
     },
-    "Magic": {
-        "min_value": 0,
-        "max_value": 1,
-        "scale": 50,
-        "octaves": 1,
-        "lacunarity": 1,
-        "persistance": 1
-    },
     "Humidity": {
         "min_value": 0,
         "max_value": 1,
