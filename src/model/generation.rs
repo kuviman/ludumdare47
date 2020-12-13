@@ -13,12 +13,10 @@ impl Model {
         let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
             entity_movement_speed: config.player_movement_speed,
-            entity_day_view_distance: config.player_day_view_distance,
-            entity_night_view_distance: config.player_night_view_distance,
+            entity_view_distance: config.view_distance,
             campfire_light: config.campfire_light,
             torch_light: config.torch_light,
             statue_light: config.statue_light,
-            fire_extinguish_chance: config.fire_extinguish_chance,
             regeneration_percent: config.regeneration_percent,
             entity_interaction_range: config.entity_interaction_range,
         };
@@ -31,8 +29,6 @@ impl Model {
             entities: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
-            day_length: config.day_length,
-            night_length: config.night_length,
             recipes,
             scores_map: Config::default_scores_map(),
             sound_distance: config.sound_distance,
@@ -63,7 +59,6 @@ impl Model {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
                 radius: 0.5,
-                view_range: self.calc_view_range(),
                 interaction_range: self.rules.entity_interaction_range,
                 item: None,
                 colors: EntityColors::new(),
@@ -103,24 +98,6 @@ impl Model {
             Some(item)
         } else {
             None
-        }
-    }
-    pub fn remove_item(&mut self, pos: Vec2<f32>, range: f32) -> Option<Item> {
-        match self
-            .items
-            .iter_mut()
-            .find(|(_, item)| (item.pos - pos).len() <= range)
-        {
-            Some((index, _)) => {
-                let index = index.clone();
-                self.chunks
-                    .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
-                    .unwrap()
-                    .items
-                    .remove(&index);
-                self.items.remove(&index)
-            }
-            None => None,
         }
     }
     fn generate_map(config: &Config, resource_pack: &ResourcePack) -> HashMap<Vec2<i64>, Chunk> {

@@ -49,8 +49,7 @@ impl Controls {
                     let p2 = camera.screen_to_world(self.framebuffer_size, position);
                     camera.center += p1 - p2;
                 }
-                if let Some(p) = self.rotating {
-                    let p1 = camera.screen_to_world(self.framebuffer_size, p);
+                if self.rotating.is_some() {
                     camera.rotation +=
                         2.0 * (position.x - self.previous_mouse.x) / self.framebuffer_size.y as f32;
                     camera.attack = clamp(
@@ -59,8 +58,6 @@ impl Controls {
                                 / self.framebuffer_size.y as f32,
                         Self::ATTACK_RANGE,
                     );
-                    let p2 = camera.screen_to_world(self.framebuffer_size, p);
-                    // camera.center += p1 - p2;
                 }
                 self.previous_mouse = position;
             }
@@ -73,13 +70,10 @@ impl Controls {
             },
             geng::Event::Wheel { delta } => {
                 let delta = delta as f32;
-                let p1 = camera.screen_to_world(self.framebuffer_size, self.previous_mouse);
                 camera.distance = clamp(
                     camera.distance / (delta / 300.0).exp2(),
                     Self::DISTANCE_RANGE,
                 );
-                let p2 = camera.screen_to_world(self.framebuffer_size, self.previous_mouse);
-                camera.center += p1 - p2;
             }
             geng::Event::KeyDown { key } => match key {
                 geng::Key::O => camera.perspective = !camera.perspective,

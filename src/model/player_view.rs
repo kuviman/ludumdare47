@@ -7,8 +7,6 @@ pub struct PlayerView {
     pub score: i32,
     pub current_time: usize,
     pub ticks_per_second: f32,
-    pub day_length: usize,
-    pub night_length: usize,
     pub tiles: HashMap<Vec2<i64>, Tile>,
     pub entities: Vec<Entity>,
     pub items: HashMap<Id, Item>,
@@ -20,7 +18,7 @@ impl Model {
     pub fn get_view(&mut self, player_id: Id) -> PlayerView {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = HashSet::new();
-        Self::add_view_radius(&mut view, entity.pos, entity.view_range);
+        Self::add_view_radius(&mut view, entity.pos, self.rules.entity_view_distance);
         for light_source in self.items.values().filter(|item| {
             item.item_type == ItemType::Campfire
                 || item.item_type == ItemType::Statue
@@ -50,8 +48,6 @@ impl Model {
             score: self.score,
             ticks_per_second: self.ticks_per_second,
             current_time: self.current_time,
-            day_length: self.day_length,
-            night_length: self.night_length,
             tiles: {
                 let mut tiles = HashMap::new();
                 for &pos in &view {
