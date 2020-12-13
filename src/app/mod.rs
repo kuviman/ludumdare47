@@ -31,7 +31,6 @@ pub struct Assets {
     player: PlayerAssets,
     axe: ez3d::Obj,
     campfire: ez3d::Obj,
-    black_cloud: ez3d::Obj,
     double_stick: ez3d::Obj,
     log: ez3d::Obj,
     planks: ez3d::Obj,
@@ -155,22 +154,6 @@ impl EntityData {
     }
 }
 
-struct BlackCloud {
-    size: f32,
-    rotation: f32,
-    rotation_speed: f32,
-}
-
-impl Default for BlackCloud {
-    fn default() -> Self {
-        Self {
-            size: 0.0,
-            rotation: global_rng().gen_range(0.0, 2.0 * f32::PI),
-            rotation_speed: global_rng().gen_range(-1.0, 1.0),
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize)]
 struct Settings {
     volume: f64,
@@ -245,7 +228,6 @@ pub struct App {
     noise: noise::OpenSimplex,
     light: light::Uniforms,
     entity_positions: HashMap<Id, EntityData>,
-    black_clouds: HashMap<Vec2<i64>, BlackCloud>,
     music: Option<geng::SoundEffect>,
     walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
@@ -300,7 +282,6 @@ impl App {
             noise,
             light,
             entity_positions: HashMap::new(),
-            black_clouds: HashMap::new(),
             show_help: true,
             music: None,
             walk_sound: None,
@@ -334,32 +315,6 @@ impl App {
                 ..default()
             },
         );
-    }
-
-    fn update_black_clouds(&mut self, delta_time: f32) {
-        let mut positions = HashSet::new();
-        for (pos, _) in &self.view.tiles {
-            for dx in 0..3 {
-                for dy in 0..3 {
-                    positions.insert(*pos + vec2(dx, dy));
-                }
-            }
-        }
-        for (pos, _) in &self.view.tiles {
-            positions.remove(&(*pos + vec2(1, 1)));
-        }
-        for &pos in &positions {
-            self.black_clouds.entry(pos).or_default();
-        }
-        for (&pos, cloud) in &mut self.black_clouds {
-            if positions.contains(&pos) {
-                cloud.size = 0.8;
-            } else {
-                cloud.size = 0.0;
-            }
-            cloud.rotation += cloud.rotation_speed * delta_time;
-        }
-        self.black_clouds.retain(|_, cloud| cloud.size > 0.0);
     }
 }
 
@@ -443,8 +398,6 @@ impl geng::State for App {
             move |&id, _| view.entities.iter().find(|e| e.id == id).is_some()
         });
 
-        self.update_black_clouds(delta_time);
-
         self.camera.center += (self.entity_positions.get(&self.player_id).unwrap().pos
             - self.camera.center)
             * (delta_time * 5.0).min(1.0);
@@ -461,26 +414,6 @@ impl geng::State for App {
 
         let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 
-        self.ez3d.draw(
-            framebuffer,
-            &self.camera,
-            &self.light,
-            self.assets.black_cloud.vb(),
-            self.black_clouds
-                .iter()
-                .map(|(&pos, cloud)| ez3d::Instance {
-                    i_pos: pos.map(|x| x as f32).extend(
-                        self.view
-                            .tiles
-                            .get(&pos)
-                            .map(|tile| tile.height)
-                            .unwrap_or(0.0),
-                    ),
-                    i_rotation: cloud.rotation,
-                    i_size: cloud.size,
-                    i_color: Color::BLACK,
-                }),
-        );
         self.ez3d.draw(
             framebuffer,
             &self.camera,
