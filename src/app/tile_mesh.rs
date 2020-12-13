@@ -114,6 +114,7 @@ impl TileMesh {
         }
     }
     pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
+        // TODO: actually use mesh to determine height
         let pos_f = pos.map(|x| x.fract());
         let pos = pos.map(|x| x as i64);
         if let Some(tile) = self.tiles.get(&pos) {

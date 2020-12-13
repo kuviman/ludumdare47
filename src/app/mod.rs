@@ -3,13 +3,11 @@ use super::*;
 use noise::NoiseFn;
 
 mod camera;
-mod ez;
 mod ez3d;
 mod light;
 mod tile_mesh;
 
 use camera::Camera;
-use ez::Ez;
 use ez3d::Ez3D;
 use tile_mesh::TileMesh;
 
@@ -218,7 +216,6 @@ pub struct App {
     framebuffer_size: Vec2<usize>,
     camera: Camera,
     camera_controls: camera::Controls,
-    ez: Ez,
     ez3d: Ez3D,
     circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
@@ -256,7 +253,6 @@ impl App {
             framebuffer_size: vec2(1, 1),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
-            ez: Ez::new(geng),
             ez3d: Ez3D::new(geng),
             connection,
             player_id,
@@ -411,8 +407,6 @@ impl geng::State for App {
         self.camera_controls.draw(&mut self.camera, framebuffer);
 
         self.tile_mesh = TileMesh::new(&self.geng, &self.view.tiles, &self.noise);
-
-        let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 
         self.ez3d.draw(
             framebuffer,
@@ -593,21 +587,6 @@ impl geng::State for App {
                 );
             }
         }
-        self.ez.quads(
-            framebuffer,
-            &self.camera,
-            tiles_to_draw.into_iter().map(|(pos, color)| ez::Quad {
-                pos: pos.map(|x| x as f32),
-                rotation: 0.0,
-                size: vec2(0.5, 0.5) * 0.5,
-                color: Color {
-                    r: color.r / 2.0,
-                    g: color.g / 2.0,
-                    b: color.b / 2.0,
-                    a: 0.5,
-                },
-            }),
-        );
         if let Some(item) = selected_item {
             let text = item.item_type.to_string();
             let pos = item.pos;

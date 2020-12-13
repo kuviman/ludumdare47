@@ -67,8 +67,8 @@ impl geng::LoadAsset for Obj {
                     let to_vertex = |s: &str| {
                         let mut parts = s.split("/");
                         let i_v: usize = parts.next().unwrap().parse().unwrap();
-                        let i_vt: usize = parts.next().unwrap().parse().unwrap();
-                        let i_vn: usize = parts.next().unwrap().parse().unwrap();
+                        let _i_vt: usize = parts.next().unwrap().parse().unwrap();
+                        let _i_vn: usize = parts.next().unwrap().parse().unwrap();
                         Vertex {
                             a_pos: v[i_v - 1],
                             a_normal: vec3(0.0, 0.0, 0.0),
