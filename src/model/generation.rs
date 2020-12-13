@@ -20,7 +20,7 @@ impl Model {
             regeneration_percent: config.regeneration_percent,
             entity_interaction_range: config.entity_interaction_range,
         };
-        let generation_choices = Config::default_generation_choices();
+        let generation_choices = Config::default_generation_choices(&resource_pack);
         let mut model = Self {
             pack_list,
             resource_pack,
@@ -153,7 +153,7 @@ impl Model {
         noises: &HashMap<BiomeParameter, Noise>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Biome {
-        *biomes
+        biomes
             .iter()
             .filter_map(|(biome, biome_gen)| {
                 let mut total_score = 0.0;
@@ -169,8 +169,9 @@ impl Model {
                 Some((biome, total_score))
             })
             .min_by_key(|(_, score)| r32(*score))
-            .unwrap_or((&Biome::Void, 0.0))
+            .unwrap()
             .0
+            .clone()
     }
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));

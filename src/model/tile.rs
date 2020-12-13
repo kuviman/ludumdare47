@@ -7,23 +7,20 @@ pub struct Tile {
     pub biome: Biome,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, Trans, Hash, PartialEq, Eq)]
-pub enum Biome {
-    Void,
-    Ocean,
-    Beach,
-    Lake,
-    Forest,
-    Hills,
-    MagicForest,
-}
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, Hash, PartialEq, Eq)]
+pub struct Biome(String);
 
 impl Biome {
+    pub fn new(name: String) -> Self {
+        Self(name)
+    }
     pub fn height(&self) -> f32 {
-        match self {
-            Self::Ocean => -1.0,
-            Self::Lake => -0.2,
-            _ => 0.2,
+        if self.0 == "Ocean" {
+            -1.0
+        } else if self.0 == "Lake" {
+            -0.2
+        } else {
+            0.2
         }
     }
 }

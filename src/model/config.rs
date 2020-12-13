@@ -36,10 +36,7 @@ impl Default for Config {
 impl Config {
     pub fn load_resource_packs() -> Result<(Vec<String>, ResourcePack), std::io::Error> {
         let mut packs = Vec::new();
-        let mut resource_pack = ResourcePack {
-            biomes: HashMap::new(),
-            parameters: HashMap::new(),
-        };
+        let mut resource_pack = ResourcePack::empty();
         for pack in std::fs::read_dir("packs/")? {
             let pack = pack?;
             packs.push(pack.file_name().to_str().unwrap().to_owned());
@@ -55,11 +52,20 @@ impl Config {
             )?))?;
 
         let biomes_path = path.path().join("server/generation-biomes.json");
-        let biomes: HashMap<Biome, BiomeGeneration> =
+        let biomes: HashMap<String, BiomeGeneration> =
             serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(biomes_path)?))?;
 
+        let mut biome_names = HashMap::with_capacity(biomes.len());
+        let mut biome_gen = HashMap::with_capacity(biomes.len());
+        for (biome_name, biome_generation) in biomes {
+            let biome = Biome::new(biome_name.clone());
+            biome_names.insert(biome_name, biome.clone());
+            biome_gen.insert(biome, biome_generation);
+        }
+
         Ok(ResourcePack {
-            biomes,
+            biome_names,
+            biomes: biome_gen,
             parameters: generation_parameters,
         })
     }
@@ -284,16 +290,24 @@ impl Config {
             },
         ]
     }
-    pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
+    pub fn default_generation_choices(
+        resource_pack: &ResourcePack,
+    ) -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
         let mut generation_choices = HashMap::new();
-        generation_choices.insert(Biome::Ocean, vec![(None, 1)]);
-        generation_choices.insert(Biome::Lake, vec![(None, 1)]);
         generation_choices.insert(
-            Biome::Beach,
+            resource_pack.get_biome("Ocean").unwrap().clone(),
+            vec![(None, 1)],
+        );
+        generation_choices.insert(
+            resource_pack.get_biome("Lake").unwrap().clone(),
+            vec![(None, 1)],
+        );
+        generation_choices.insert(
+            resource_pack.get_biome("Beach").unwrap().clone(),
             vec![(None, 200), (Some(ItemType::TreasureMark), 1)],
         );
         generation_choices.insert(
-            Biome::Forest,
+            resource_pack.get_biome("Forest").unwrap().clone(),
             vec![
                 (None, 300),
                 (Some(ItemType::Tree), 30),
@@ -301,7 +315,7 @@ impl Config {
             ],
         );
         generation_choices.insert(
-            Biome::Hills,
+            resource_pack.get_biome("Hills").unwrap().clone(),
             vec![
                 (None, 300),
                 ((Some(ItemType::Pebble)), 20),
@@ -310,7 +324,7 @@ impl Config {
             ],
         );
         generation_choices.insert(
-            Biome::MagicForest,
+            resource_pack.get_biome("MagicForest").unwrap().clone(),
             vec![
                 (None, 300),
                 ((Some(ItemType::BigMushroom)), 10),
@@ -332,13 +346,25 @@ impl Config {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Trans)]
 pub struct ResourcePack {
+    pub biome_names: HashMap<String, Biome>,
     pub biomes: HashMap<Biome, BiomeGeneration>,
     pub parameters: HashMap<BiomeParameter, NoiseParameters>,
 }
 
 impl ResourcePack {
+    pub fn empty() -> Self {
+        Self {
+            biome_names: HashMap::new(),
+            biomes: HashMap::new(),
+            parameters: HashMap::new(),
+        }
+    }
     pub fn merge(&mut self, resource_pack: ResourcePack) {
+        self.biome_names.extend(resource_pack.biome_names);
         self.biomes.extend(resource_pack.biomes);
         self.parameters.extend(resource_pack.parameters);
+    }
+    pub fn get_biome(&self, biome_name: &str) -> Option<&Biome> {
+        self.biome_names.get(biome_name)
     }
 }

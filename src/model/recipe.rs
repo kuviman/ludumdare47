@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Recipe {
     pub ingredient1: Option<ItemType>,
     pub ingredient2: Option<ItemType>,
@@ -52,7 +52,7 @@ impl Recipe {
                     )
                 }
             },
-            if let Some(biome) = self.conditions {
+            if let Some(biome) = &self.conditions {
                 format!(" (only in {:?})", biome)
             } else {
                 "".to_owned()

@@ -145,7 +145,12 @@ impl Model {
                         let mut item = self.remove_item_id(item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
-                                Some(self.get_tile(item.pos.map(|x| x as i64)).unwrap().biome),
+                                Some(
+                                    self.get_tile(item.pos.map(|x| x as i64))
+                                        .unwrap()
+                                        .biome
+                                        .clone(),
+                                ),
                                 Some(item.item_type),
                             ),
                             None => (None, None),
@@ -179,13 +184,18 @@ impl Model {
                     let ingredient1 = &mut entity.item;
                     let (conditions, ingredient2) = match self.items.get(&id) {
                         Some(item) => (
-                            Some(self.get_tile(item.pos.map(|x| x as i64)).unwrap().biome),
+                            Some(
+                                self.get_tile(item.pos.map(|x| x as i64))
+                                    .unwrap()
+                                    .biome
+                                    .clone(),
+                            ),
                             Some(item.item_type),
                         ),
                         None => (None, None),
                     };
                     let recipe = self.recipes.iter().find(|recipe| {
-                        recipe.ingredients_equal(*ingredient1, ingredient2, conditions)
+                        recipe.ingredients_equal(*ingredient1, ingredient2, conditions.clone())
                     });
                     if let Some(recipe) = recipe {
                         entity.action = Some(EntityAction::Crafting {

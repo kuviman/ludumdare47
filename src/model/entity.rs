@@ -63,7 +63,7 @@ pub struct Entity {
     pub action: Option<EntityAction>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub enum EntityAction {
     MovingTo {
         pos: Vec2<f32>,

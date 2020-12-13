@@ -584,7 +584,7 @@ impl geng::State for App {
             .find(|entity| entity.id == self.player_id)
             .unwrap();
         let data = &self.entity_positions[&entity.id];
-        if let Some(action) = entity.action {
+        if let Some(action) = &entity.action {
             match action {
                 model::EntityAction::Crafting { time_left, .. } => {
                     let text = format!("{:.1}", time_left);
