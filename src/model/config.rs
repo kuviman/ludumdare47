@@ -45,27 +45,37 @@ impl Config {
         Ok((packs, resource_pack))
     }
     fn load_resource_pack(path: std::fs::DirEntry) -> Result<ResourcePack, std::io::Error> {
+        // Load noise maps
         let parameters_path = path.path().join("server/generation-parameters.json");
         let generation_parameters: HashMap<BiomeParameter, NoiseParameters> =
-            serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(
-                parameters_path,
-            )?))?;
+            match std::fs::File::open(parameters_path) {
+                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+                Err(_) => HashMap::new(),
+            };
 
+        // Load biomes
         let biomes_path = path.path().join("server/generation-biomes.json");
-        let biomes: HashMap<String, BiomeGeneration> =
-            serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(biomes_path)?))?;
-
-        let mut biome_names = HashMap::with_capacity(biomes.len());
-        let mut biome_gen = HashMap::with_capacity(biomes.len());
-        for (biome_name, biome_generation) in biomes {
-            let biome = Biome::new(biome_name.clone());
-            biome_names.insert(biome_name, biome.clone());
-            biome_gen.insert(biome, biome_generation);
+        let mut biome_names = HashMap::new();
+        let mut biome_gen = HashMap::new();
+        match std::fs::File::open(biomes_path) {
+            Ok(file) => {
+                let biomes: HashMap<String, BiomeGeneration> =
+                    serde_json::from_reader(std::io::BufReader::new(file))?;
+                for (biome_name, biome_generation) in biomes {
+                    let biome = Biome::new(biome_name.clone());
+                    biome_names.insert(biome_name, biome.clone());
+                    biome_gen.insert(biome, biome_generation);
+                }
+            }
+            Err(_) => (),
         }
 
+        // Load recipes
         let recipes_path = path.path().join("server/recipes.json");
-        let recipes: Vec<Recipe> =
-            serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(recipes_path)?))?;
+        let recipes: Vec<Recipe> = match std::fs::File::open(recipes_path) {
+            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+            Err(_) => Vec::new(),
+        };
 
         Ok(ResourcePack {
             biome_names,
