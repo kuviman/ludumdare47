@@ -5,10 +5,12 @@ use noise::NoiseFn;
 mod camera;
 mod ez3d;
 mod light;
+mod resource_pack;
 mod tile_mesh;
 
 use camera::Camera;
 use ez3d::Ez3D;
+pub use resource_pack::ResourcePack;
 use tile_mesh::TileMesh;
 
 #[derive(geng::Assets)]
@@ -212,6 +214,7 @@ pub struct App {
     traffic_update: f32,
     traffic_text: String,
     geng: Rc<Geng>,
+    resource_pack: ResourcePack,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
     camera: Camera,
@@ -235,16 +238,18 @@ impl App {
     pub fn new(
         geng: &Rc<Geng>,
         assets: Assets,
+        resource_pack: ResourcePack,
         player_id: Id,
         view: model::PlayerView,
         mut connection: Connection,
     ) -> Self {
         let noise = noise::OpenSimplex::new();
         let light = light::Uniforms::new(&view);
-        let tile_mesh = TileMesh::new(geng, &view.tiles, &noise);
+        let tile_mesh = TileMesh::new(geng, &view.tiles, &noise, &resource_pack);
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
+            resource_pack,
             assets,
             last_tin: 0,
             last_tout: 0,
@@ -406,7 +411,12 @@ impl geng::State for App {
         ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
         self.camera_controls.draw(&mut self.camera, framebuffer);
 
-        self.tile_mesh = TileMesh::new(&self.geng, &self.view.tiles, &self.noise);
+        self.tile_mesh = TileMesh::new(
+            &self.geng,
+            &self.view.tiles,
+            &self.noise,
+            &self.resource_pack,
+        );
 
         self.ez3d.draw(
             framebuffer,

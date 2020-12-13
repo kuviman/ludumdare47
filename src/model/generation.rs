@@ -8,7 +8,7 @@ pub struct Chunk {
 
 impl Model {
     pub fn new(config: Config) -> Self {
-        let resource_pack = Config::load_resource_packs().unwrap();
+        let (pack_list, resource_pack) = Config::load_resource_packs().unwrap();
         let recipes = Config::default_recipes();
         let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
@@ -21,6 +21,7 @@ impl Model {
             entity_interaction_range: config.entity_interaction_range,
         };
         let mut model = Self {
+            pack_list,
             rules,
             score: 0,
             ticks_per_second: config.ticks_per_second,

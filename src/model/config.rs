@@ -34,15 +34,18 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn load_resource_packs() -> Result<ResourcePack, std::io::Error> {
+    pub fn load_resource_packs() -> Result<(Vec<String>, ResourcePack), std::io::Error> {
+        let mut packs = Vec::new();
         let mut resource_pack = ResourcePack {
             biomes: HashMap::new(),
             parameters: HashMap::new(),
         };
         for pack in std::fs::read_dir("packs/")? {
-            resource_pack.merge(Self::load_resource_pack(pack?)?);
+            let pack = pack?;
+            packs.push(pack.file_name().to_str().unwrap().to_owned());
+            resource_pack.merge(Self::load_resource_pack(pack)?);
         }
-        Ok(resource_pack)
+        Ok((packs, resource_pack))
     }
     fn load_resource_pack(path: std::fs::DirEntry) -> Result<ResourcePack, std::io::Error> {
         let parameters_path = path.path().join("server/generation-parameters.json");

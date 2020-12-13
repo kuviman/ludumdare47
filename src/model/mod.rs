@@ -38,6 +38,7 @@ impl Id {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
+    pub pack_list: Vec<String>,
     pub rules: Rules,
     pub score: i32,
     pub ticks_per_second: f32,

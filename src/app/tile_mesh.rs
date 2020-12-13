@@ -10,6 +10,7 @@ impl TileMesh {
         geng: &Rc<Geng>,
         tiles: &HashMap<Vec2<i64>, model::Tile>,
         noise: &dyn NoiseFn<[f64; 2]>,
+        resource_pack: &ResourcePack,
     ) -> Self {
         let mut mesh = Vec::new();
         let tiles = tiles.clone();
@@ -86,15 +87,7 @@ impl TileMesh {
                 x_height,
                 xy_height,
                 y_height,
-                match tile.biome {
-                    model::Biome::Ocean => Color::rgb(0.8, 0.8, 0.0),
-                    model::Biome::Lake => Color::rgb(0.8, 0.8, 0.0),
-                    model::Biome::Forest => Color::rgb(0.0, 0.8, 0.0),
-                    model::Biome::Hills => Color::rgb(0.7, 0.7, 0.7),
-                    model::Biome::Beach => Color::YELLOW,
-                    model::Biome::MagicForest => Color::rgb(0.3, 0.1, 0.7),
-                    _ => Color::rgb(0.2, 0.2, 0.2),
-                },
+                resource_pack.biomes[&tile.biome].color,
             );
         }
         for (&tile_pos, _) in &tiles {
