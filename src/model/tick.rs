@@ -62,27 +62,6 @@ impl Model {
 
             *self.entities.get_mut(&id).unwrap() = entity;
         }
-
-        let mut view = HashSet::new();
-        for entity in self.entities.values() {
-            Self::add_view_radius(&mut view, entity.pos, self.rules.entity_view_distance);
-        }
-        for light_source in self.items.values().filter(|item| {
-            item.item_type == ItemType::Campfire
-                || item.item_type == ItemType::Statue
-                || item.item_type == ItemType::Torch
-        }) {
-            Self::add_view_radius(
-                &mut view,
-                light_source.pos.map(|x| x as f32),
-                match light_source.item_type {
-                    ItemType::Campfire => self.rules.campfire_light,
-                    ItemType::Statue => self.rules.statue_light,
-                    ItemType::Torch => self.rules.torch_light,
-                    _ => unreachable!(),
-                },
-            );
-        }
     }
     fn collide(
         circle_pos: Vec2<f32>,
