@@ -87,34 +87,3 @@ pub struct NoiseParameters {
     pub lacunarity: f32,
     pub persistance: f32,
 }
-
-impl NoiseParameters {
-    pub fn new(
-        min_value: f32,
-        max_value: f32,
-        scale: f32,
-        octaves: usize,
-        lacunarity: f32,
-        persistance: f32,
-    ) -> Self {
-        assert!(scale > 0.0, "Noise scale must be positive");
-        assert!(octaves > 0, "There must be at least one octave");
-        assert!(lacunarity >= 1.0, "Lacunarity must be more than 1.0");
-        assert!(
-            persistance > 0.0,
-            "Persistance must be positive and less than 1.0"
-        );
-        assert!(
-            persistance <= 1.0,
-            "Persistance must be positive and less than 1.0"
-        );
-        Self {
-            min_value,
-            max_value,
-            scale,
-            octaves,
-            lacunarity,
-            persistance,
-        }
-    }
-}
