@@ -39,7 +39,7 @@ impl BiomeGeneration {
                 let noise_value = noise.get(pos);
                 (noise_value - parameter_zone.0).min(parameter_zone.1 - noise_value)
             }
-            None => 0.0,
+            None => noise.max_delta(),
         }
     }
 }
@@ -74,6 +74,9 @@ impl Noise {
         let value = value.max(-1.0).min(1.0);
         (value / 2.0 + 0.5) * (self.parameters.max_value - self.parameters.min_value)
             + self.parameters.min_value
+    }
+    pub fn max_delta(&self) -> f32 {
+        self.parameters.max_value - self.parameters.min_value
     }
 }
 
