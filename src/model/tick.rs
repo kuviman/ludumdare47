@@ -94,21 +94,6 @@ impl Model {
                 },
             );
         }
-
-        let mut extinguished_positions = Vec::new();
-        for item in self.items.values() {
-            match item.item_type {
-                ItemType::Campfire | ItemType::Torch => {
-                    if global_rng().gen_range(0.0, 1.0) < self.rules.fire_extinguish_chance {
-                        extinguished_positions.push(item.pos);
-                    }
-                }
-                _ => (),
-            }
-        }
-        for pos in extinguished_positions {
-            self.remove_item(pos, 0.001).unwrap();
-        }
     }
     fn collide(
         circle_pos: Vec2<f32>,

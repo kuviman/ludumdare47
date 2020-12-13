@@ -17,7 +17,6 @@ impl Model {
             campfire_light: config.campfire_light,
             torch_light: config.torch_light,
             statue_light: config.statue_light,
-            fire_extinguish_chance: config.fire_extinguish_chance,
             regeneration_percent: config.regeneration_percent,
             entity_interaction_range: config.entity_interaction_range,
         };
@@ -102,24 +101,6 @@ impl Model {
             Some(item)
         } else {
             None
-        }
-    }
-    pub fn remove_item(&mut self, pos: Vec2<f32>, range: f32) -> Option<Item> {
-        match self
-            .items
-            .iter_mut()
-            .find(|(_, item)| (item.pos - pos).len() <= range)
-        {
-            Some((index, _)) => {
-                let index = index.clone();
-                self.chunks
-                    .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
-                    .unwrap()
-                    .items
-                    .remove(&index);
-                self.items.remove(&index)
-            }
-            None => None,
         }
     }
     fn generate_map(config: &Config) -> HashMap<Vec2<i64>, Chunk> {
