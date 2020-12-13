@@ -87,13 +87,6 @@ impl Assets {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
-enum Rafted {
-    Not,
-    Jumping,
-    On,
-}
-
 struct EntityData {
     pos: Vec2<f32>,
     size: f32,
@@ -102,7 +95,6 @@ struct EntityData {
     rotation: f32,
     ampl: f32,
     t: f32,
-    rafted: Rafted,
 }
 
 impl EntityData {
@@ -115,33 +107,17 @@ impl EntityData {
             target_pos: entity.pos,
             ampl: 0.0,
             t: 0.0,
-            rafted: Rafted::Not,
         }
     }
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(
-        &mut self,
-        entity: &model::Entity,
-        rafted: bool,
-        delta_time: f32,
-        view: &model::PlayerView,
-    ) {
+    fn update(&mut self, entity: &model::Entity, delta_time: f32, view: &model::PlayerView) {
         self.size = entity.radius;
         self.t += delta_time * 10.0;
         if entity.pos != self.target_pos {
             self.target_pos = entity.pos;
             self.speed = (entity.pos - self.pos).len() / (2.0 / view.ticks_per_second);
-            if rafted {
-                if self.rafted == Rafted::Not {
-                    self.rafted = Rafted::Jumping;
-                } else {
-                    self.rafted = Rafted::On;
-                }
-            } else {
-                self.rafted = Rafted::Not;
-            }
         }
         let dpos = entity.pos - self.pos;
         self.pos += dpos.clamp(self.speed * delta_time);
@@ -376,19 +352,7 @@ impl geng::State for App {
 
         for entity in &self.view.entities {
             if let Some(prev) = self.entity_positions.get_mut(&entity.id) {
-                prev.update(
-                    entity,
-                    self.view
-                        .tiles
-                        .iter()
-                        .find(|&(pos, _)| *pos == entity.pos.map(|x| x as i64))
-                        .unwrap()
-                        .1
-                        .biome
-                        == model::Biome::Lake,
-                    delta_time,
-                    &self.view,
-                );
+                prev.update(entity, delta_time, &self.view);
             } else {
                 self.entity_positions
                     .insert(entity.id, EntityData::new(entity));
@@ -514,7 +478,6 @@ impl geng::State for App {
                 .get_height(pos.xy())
                 .expect("Failed to get player's height");
             pos.z += height;
-            pos.z = pos.z.max(0.0);
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
@@ -563,25 +526,6 @@ impl geng::State for App {
                     i_color: entity.colors.pants,
                 }),
             );
-            let raft_pos = match data.rafted {
-                Rafted::Not => None,
-                Rafted::Jumping => Some(data.target_pos.extend(0.0)),
-                Rafted::On => Some(pos),
-            };
-            if let Some(raft_pos) = raft_pos {
-                self.ez3d.draw(
-                    framebuffer,
-                    &self.camera,
-                    &self.light,
-                    self.assets.raft.vb(),
-                    std::iter::once(ez3d::Instance {
-                        i_pos: raft_pos,
-                        i_size: 0.5,
-                        i_rotation: -rotation,
-                        i_color: Color::WHITE,
-                    }),
-                );
-            }
             if let Some(item) = entity.item {
                 self.ez3d.draw(
                     framebuffer,
