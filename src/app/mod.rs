@@ -262,7 +262,7 @@ impl App {
     ) -> Self {
         let noise = noise::OpenSimplex::new();
         let light = light::Uniforms::new(&view);
-        let tile_mesh = TileMesh::new(geng, &view.tiles, &view.height_map, &noise);
+        let tile_mesh = TileMesh::new(geng, &view.tiles, &noise);
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
@@ -457,12 +457,7 @@ impl geng::State for App {
         ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
         self.camera_controls.draw(&mut self.camera, framebuffer);
 
-        self.tile_mesh = TileMesh::new(
-            &self.geng,
-            &self.view.tiles,
-            &self.view.height_map,
-            &self.noise,
-        );
+        self.tile_mesh = TileMesh::new(&self.geng, &self.view.tiles, &self.noise);
 
         let mut tiles_to_draw = Vec::<(Vec2<usize>, Color<f32>)>::new();
 
@@ -474,9 +469,13 @@ impl geng::State for App {
             self.black_clouds
                 .iter()
                 .map(|(&pos, cloud)| ez3d::Instance {
-                    i_pos: pos
-                        .map(|x| x as f32)
-                        .extend(self.view.height_map.get(&pos).unwrap_or(&0.0).clone()),
+                    i_pos: pos.map(|x| x as f32).extend(
+                        self.view
+                            .tiles
+                            .get(&pos)
+                            .map(|tile| tile.height)
+                            .unwrap_or(0.0),
+                    ),
                     i_rotation: cloud.rotation,
                     i_size: cloud.size,
                     i_color: Color::BLACK,

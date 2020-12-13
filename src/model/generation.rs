@@ -1,9 +1,15 @@
 use super::*;
 
+#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+pub struct Chunk {
+    pub tile_map: HashMap<Vec2<i64>, Tile>,
+    pub items: HashMap<Id, Item>,
+}
+
 impl Model {
     pub fn new(config: Config) -> Self {
         let recipes = Config::default_recipes();
-        let (tiles, height_map) = Self::generate_map(config.map_size, Config::default_biomes());
+        let chunks = Self::generate_map(&config);
         let rules = Rules {
             entity_movement_speed: config.player_movement_speed,
             entity_day_view_distance: config.player_day_view_distance,
@@ -19,9 +25,8 @@ impl Model {
             rules,
             score: 0,
             ticks_per_second: config.ticks_per_second,
-            size: config.map_size,
-            tiles,
-            height_map,
+            chunk_size: config.chunk_size,
+            chunks,
             entities: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
@@ -33,11 +38,13 @@ impl Model {
             generation_choices: Config::default_generation_choices(),
             sounds: HashMap::new(),
         };
-        for y in 0..model.size.y {
-            for x in 0..model.size.x {
-                let pos = vec2(x as i64, y as i64);
-                if model.is_empty_tile(pos) {
-                    model.generate_tile(pos);
+        for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
+            for y in 0..model.chunk_size.y as i64 {
+                for x in 0..model.chunk_size.x as i64 {
+                    let pos = Self::local_to_global_pos(model.chunk_size, chunk_pos, vec2(x, y));
+                    if model.is_empty_tile(pos) {
+                        model.generate_tile(pos);
+                    }
                 }
             }
         }
@@ -76,7 +83,26 @@ impl Model {
             size: item_type.size(),
             item_type,
         };
-        self.items.insert(Id::new(), item);
+        let id = Id::new();
+        self.items.insert(id, item.clone());
+        self.chunks
+            .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
+            .unwrap()
+            .items
+            .insert(id, item);
+    }
+    pub fn remove_item_id(&mut self, id: Id) -> Option<Item> {
+        let item = self.items.remove(&id);
+        if let Some(item) = item {
+            self.chunks
+                .get_mut(&self.get_chunk_pos(item.pos.map(|x| x as i64)))
+                .unwrap()
+                .items
+                .remove(&id);
+            Some(item)
+        } else {
+            None
+        }
     }
     pub fn remove_item(&mut self, pos: Vec2<f32>, range: f32) -> Option<Item> {
         match self
@@ -86,88 +112,60 @@ impl Model {
         {
             Some((index, _)) => {
                 let index = index.clone();
+                self.chunks
+                    .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
+                    .unwrap()
+                    .items
+                    .remove(&index);
                 self.items.remove(&index)
             }
             None => None,
         }
     }
-    fn generate_map(
-        map_size: Vec2<usize>,
-        biomes: HashMap<Biome, BiomeGeneration>,
-    ) -> (HashMap<Vec2<i64>, Tile>, HashMap<Vec2<i64>, f32>) {
+    fn generate_map(config: &Config) -> HashMap<Vec2<i64>, Chunk> {
         let mut noises = HashMap::new();
-        for (biome, noise_parameters) in Config::default_parameters() {
-            let noise = OpenSimplex::new().set_seed(global_rng().gen());
+        for (biome_parameter, parameters) in Config::default_parameters() {
             noises.insert(
-                biome,
+                biome_parameter,
                 Noise {
-                    noise: Box::new(noise),
-                    parameters: noise_parameters,
+                    noise: Box::new(OpenSimplex::new().set_seed(global_rng().gen())),
+                    parameters,
                 },
             );
         }
 
-        let mut tiles_height_map = HashMap::new();
-        let mut tiles = HashMap::new();
-        for y in 0..map_size.y as i64 {
-            for x in 0..map_size.x as i64 {
-                let pos = vec2(x, y);
-                let biome = Self::generate_biome(pos, &noises, &biomes);
+        let mut chunks = HashMap::new();
+        let gen_y = config.initial_generation_size.y as i64 / 2;
+        let gen_x = config.initial_generation_size.x as i64 / 2;
+        for y in -gen_y..gen_y + 1 {
+            for x in -gen_x..gen_x + 1 {
+                chunks.insert(
+                    vec2(x, y),
+                    Self::generate_chunk(config, vec2(x, y), &noises, &Config::default_biomes()),
+                );
+            }
+        }
+        chunks
+    }
+    fn generate_chunk(
+        config: &Config,
+        chunk_pos: Vec2<i64>,
+        noises: &HashMap<BiomeParameter, Noise>,
+        biomes: &HashMap<Biome, BiomeGeneration>,
+    ) -> Chunk {
+        let mut tile_map = HashMap::new();
+        for y in 0..config.chunk_size.y as i64 {
+            for x in 0..config.chunk_size.x as i64 {
+                let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y));
+                let biome = Self::generate_biome(pos, noises, biomes);
                 let height = biome.height();
-                tiles_height_map.insert(pos, height);
-                tiles.insert(pos, Tile { pos, height, biome });
+                tile_map.insert(vec2(x, y), Tile { pos, height, biome });
             }
         }
-        let mut height_map =
-            HashMap::with_capacity(tiles_height_map.len() + map_size.x + map_size.y + 1);
-        for y in 1..map_size.y as i64 {
-            for x in 1..map_size.x as i64 {
-                let height = (tiles_height_map[&vec2(x, y)]
-                    + tiles_height_map[&vec2(x - 1, y)]
-                    + tiles_height_map[&vec2(x, y - 1)]
-                    + tiles_height_map[&vec2(x - 1, y - 1)])
-                    / 4.0;
-                height_map.insert(vec2(x, y), height);
-            }
+        Chunk {
+            tile_map,
+            items: HashMap::new(),
         }
-        for y in 1..map_size.y as i64 {
-            // Right
-            let height = (tiles_height_map[&vec2(map_size.x as i64 - 1, y)]
-                + tiles_height_map[&vec2(map_size.x as i64 - 1, y - 1)])
-                / 2.0;
-            height_map.insert(vec2(map_size.x as i64, y), height);
-            // Left
-            let height = (tiles_height_map[&vec2(0, y)] + tiles_height_map[&vec2(0, y - 1)]) / 2.0;
-            height_map.insert(vec2(0, y), height);
-        }
-        for x in 1..map_size.x as i64 {
-            // Top
-            let height = (tiles_height_map[&vec2(x, map_size.y as i64 - 1)]
-                + tiles_height_map[&vec2(x - 1, map_size.y as i64 - 1)])
-                / 2.0;
-            height_map.insert(vec2(x, map_size.y as i64), height);
-            // Bottom
-            let height = (tiles_height_map[&vec2(x, 0)] + tiles_height_map[&vec2(x - 1, 0)]) / 2.0;
-            height_map.insert(vec2(x, 0), height);
-        }
-        // Top-right
-        height_map.insert(
-            vec2(map_size.x as i64, map_size.y as i64),
-            tiles_height_map[&vec2(map_size.x as i64 - 1, map_size.y as i64 - 1)],
-        );
-        // Top-left
-        height_map.insert(
-            vec2(0, map_size.y as i64),
-            tiles_height_map[&vec2(0, map_size.y as i64 - 1)],
-        );
-        // Bottom-right
-        height_map.insert(
-            vec2(map_size.x as i64, 0),
-            tiles_height_map[&vec2(map_size.x as i64 - 1, 0)],
-        );
-        // Bottom-left
-        height_map.insert(vec2(0, 0), tiles_height_map[&vec2(0, 0)]);
-        (tiles, height_map)
     }
     fn generate_biome(
         pos: Vec2<i64>,
@@ -193,9 +191,35 @@ impl Model {
             .unwrap_or((&Biome::Void, 0.0))
             .0
     }
+    pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
+        let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
+        match self.chunks.get(&chunk_pos) {
+            Some(chunk) => {
+                let tile_pos = vec2(
+                    pos.x - chunk_pos.x * self.chunk_size.x as i64,
+                    pos.y - chunk_pos.y * self.chunk_size.y as i64,
+                );
+                Some(&chunk.tile_map[&tile_pos])
+            }
+            None => None,
+        }
+    }
+    pub fn get_chunk_pos(&self, pos: Vec2<i64>) -> Vec2<i64> {
+        let x = if pos.x >= 0 {
+            pos.x / self.chunk_size.x as i64
+        } else {
+            (pos.x + 1) / self.chunk_size.x as i64 - 1
+        };
+        let y = if pos.y >= 0 {
+            pos.y / self.chunk_size.y as i64
+        } else {
+            (pos.y + 1) / self.chunk_size.y as i64 - 1
+        };
+        vec2(x, y)
+    }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
-        let choice = self.generation_choices[&self.tiles.get(&pos).unwrap().biome]
+        let choice = self.generation_choices[&self.get_tile(pos).unwrap().biome]
             .choose_weighted(&mut rng, |item| item.1)
             .unwrap()
             .0;
@@ -204,16 +228,19 @@ impl Model {
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
-        self.tiles.get(&pos).unwrap().biome != Biome::Lake && self.is_empty_tile(pos)
+        self.get_tile(pos).unwrap().biome != Biome::Lake && self.is_empty_tile(pos)
     }
     fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<f32>> {
         let mut positions = vec![];
-        for y in 0..self.size.y as i64 {
-            for x in 0..self.size.x as i64 {
-                let pos = vec2(x, y);
-                if self.is_spawnable_tile(pos) && self.tiles.get(&pos).unwrap().biome == ground_type
-                {
-                    positions.push(vec2(x as f32, y as f32));
+        for (&chunk_pos, _) in &self.chunks {
+            for y in 0..self.chunk_size.y as i64 {
+                for x in 0..self.chunk_size.x as i64 {
+                    let pos = Self::local_to_global_pos(self.chunk_size, chunk_pos, vec2(x, y));
+                    if self.is_spawnable_tile(pos)
+                        && self.get_tile(pos).unwrap().biome == ground_type
+                    {
+                        positions.push(pos.map(|x| x as f32));
+                    }
                 }
             }
         }
@@ -223,5 +250,15 @@ impl Model {
         } else {
             None
         }
+    }
+    pub fn local_to_global_pos(
+        chunk_size: Vec2<usize>,
+        chunk_pos: Vec2<i64>,
+        pos: Vec2<i64>,
+    ) -> Vec2<i64> {
+        vec2(
+            chunk_pos.x * chunk_size.x as i64 + pos.x,
+            chunk_pos.y * chunk_size.y as i64 + pos.y,
+        )
     }
 }

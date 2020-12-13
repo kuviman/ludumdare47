@@ -41,9 +41,8 @@ pub struct Model {
     pub rules: Rules,
     pub score: i32,
     pub ticks_per_second: f32,
-    pub height_map: HashMap<Vec2<i64>, f32>,
-    pub size: Vec2<usize>,
-    pub tiles: HashMap<Vec2<i64>, Tile>,
+    pub chunk_size: Vec2<usize>,
+    pub chunks: HashMap<Vec2<i64>, Chunk>,
     pub entities: HashMap<Id, Entity>,
     pub items: HashMap<Id, Item>,
     pub current_time: usize,
@@ -85,42 +84,34 @@ impl Model {
             Message::Ping => {}
             Message::Goto { pos } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
-                if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
-                    entity.action = Some(EntityAction::MovingTo {
-                        pos,
-                        finish_action: None,
-                    });
-                }
+                entity.action = Some(EntityAction::MovingTo {
+                    pos,
+                    finish_action: None,
+                });
             }
             Message::Interact { id } => {
-                let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
-                    if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
-                        entity.action = Some(EntityAction::MovingTo {
-                            pos: item.pos,
-                            finish_action: Some(MomentAction::Interact { id }),
-                        });
-                    }
+                    let mut entity = self.entities.get_mut(&player_id).unwrap();
+                    entity.action = Some(EntityAction::MovingTo {
+                        pos: item.pos,
+                        finish_action: Some(MomentAction::Interact { id }),
+                    });
                 }
             }
             Message::Drop { pos } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
-                if pos.x < self.size.x as f32 && pos.y < self.size.y as f32 {
-                    entity.action = Some(EntityAction::MovingTo {
-                        pos,
-                        finish_action: Some(MomentAction::Drop { pos }),
-                    });
-                }
+                entity.action = Some(EntityAction::MovingTo {
+                    pos,
+                    finish_action: Some(MomentAction::Drop { pos }),
+                });
             }
             Message::PickUp { id } => {
                 let mut entity = self.entities.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
-                    if item.pos.x < self.size.x as f32 && item.pos.y < self.size.y as f32 {
-                        entity.action = Some(EntityAction::MovingTo {
-                            pos: item.pos,
-                            finish_action: Some(MomentAction::PickUp { id }),
-                        });
-                    }
+                    entity.action = Some(EntityAction::MovingTo {
+                        pos: item.pos,
+                        finish_action: Some(MomentAction::PickUp { id }),
+                    });
                 }
             }
             Message::SayHi => {
