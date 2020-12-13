@@ -2,10 +2,6 @@ use super::*;
 
 impl Model {
     pub fn tick(&mut self) {
-        self.current_time += 1;
-        if self.current_time >= self.day_length + self.night_length {
-            self.current_time = 0;
-        }
         let ids: Vec<Id> = self.entities.keys().copied().collect();
         for id in ids {
             let mut entity = self.entities.get(&id).unwrap().clone();
@@ -64,19 +60,12 @@ impl Model {
                 }
             }
 
-            entity.view_range =
-                self.calc_view_range()
-                    .max(if let Some(ItemType::Torch) = entity.item {
-                        self.rules.torch_light
-                    } else {
-                        0.0
-                    });
             *self.entities.get_mut(&id).unwrap() = entity;
         }
 
         let mut view = HashSet::new();
         for entity in self.entities.values() {
-            Self::add_view_radius(&mut view, entity.pos, entity.view_range);
+            Self::add_view_radius(&mut view, entity.pos, self.rules.entity_view_distance);
         }
         for light_source in self.items.values().filter(|item| {
             item.item_type == ItemType::Campfire
