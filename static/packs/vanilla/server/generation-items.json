@@ -1,0 +1,44 @@
+{
+  "Beach": [
+    {
+      "item_type": null,
+      "weight": 200
+    },
+    {
+      "item_type": "TreasureMark",
+      "weight": 1
+    }
+  ],
+  "Forest": [
+    {
+      "item_type": null,
+      "weight": 300
+    },
+    {
+      "item_type": "Tree",
+      "weight": 30
+    },
+    {
+      "item_type": "Stick",
+      "weight": 10
+    }
+  ],
+  "Hills": [
+    {
+      "item_type": null,
+      "weight": 300
+    },
+    {
+      "item_type": "Pebble",
+      "weight": 20
+    },
+    {
+      "item_type": "Rock",
+      "weight": 10
+    },
+    {
+      "item_type": "GoldRock",
+      "weight": 1
+    }
+  ]
+}

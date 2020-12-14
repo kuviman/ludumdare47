@@ -19,7 +19,6 @@ impl Model {
             regeneration_percent: config.regeneration_percent,
             entity_interaction_range: config.entity_interaction_range,
         };
-        let generation_choices = Config::default_generation_choices(&resource_pack);
         let mut model = Self {
             pack_list,
             resource_pack,
@@ -33,7 +32,6 @@ impl Model {
             current_time: 0,
             scores_map: Config::default_scores_map(),
             sound_distance: config.sound_distance,
-            generation_choices,
             sounds: HashMap::new(),
         };
         for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
@@ -199,10 +197,18 @@ impl Model {
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
-        let choice = self.generation_choices[&self.get_tile(pos).unwrap().biome]
-            .choose_weighted(&mut rng, |item| item.1)
-            .unwrap()
-            .0;
+        let choice = match self
+            .resource_pack
+            .item_generation
+            .get(&self.get_tile(pos).unwrap().biome)
+        {
+            Some(gen) => {
+                gen.choose_weighted(&mut rng, |item| item.weight)
+                    .unwrap()
+                    .item_type
+            }
+            None => None,
+        };
         if let Some(item_type) = choice {
             self.spawn_item(item_type, pos.map(|x| x as f32));
         }

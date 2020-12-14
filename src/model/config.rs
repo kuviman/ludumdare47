@@ -77,55 +77,21 @@ impl Config {
             Err(_) => Vec::new(),
         };
 
+        // Load items generation
+        let items_gen_path = path.path().join("server/generation-items.json");
+        let items_gen: HashMap<Biome, Vec<ItemGeneration>> =
+            match std::fs::File::open(items_gen_path) {
+                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+                Err(_) => HashMap::new(),
+            };
+
         Ok(ResourcePack {
             biome_names,
             biomes: biome_gen,
             parameters: generation_parameters,
+            item_generation: items_gen,
             recipes,
         })
-    }
-    pub fn default_generation_choices(
-        resource_pack: &ResourcePack,
-    ) -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
-        let mut generation_choices = HashMap::new();
-        generation_choices.insert(
-            resource_pack.get_biome("Ocean").unwrap().clone(),
-            vec![(None, 1)],
-        );
-        generation_choices.insert(
-            resource_pack.get_biome("Lake").unwrap().clone(),
-            vec![(None, 1)],
-        );
-        generation_choices.insert(
-            resource_pack.get_biome("Beach").unwrap().clone(),
-            vec![(None, 200), (Some(ItemType::TreasureMark), 1)],
-        );
-        generation_choices.insert(
-            resource_pack.get_biome("Forest").unwrap().clone(),
-            vec![
-                (None, 300),
-                (Some(ItemType::Tree), 30),
-                (Some(ItemType::Stick), 10),
-            ],
-        );
-        generation_choices.insert(
-            resource_pack.get_biome("Hills").unwrap().clone(),
-            vec![
-                (None, 300),
-                ((Some(ItemType::Pebble)), 20),
-                ((Some(ItemType::Rock)), 10),
-                ((Some(ItemType::GoldRock)), 1),
-            ],
-        );
-        generation_choices.insert(
-            resource_pack.get_biome("MagicForest").unwrap().clone(),
-            vec![
-                (None, 300),
-                ((Some(ItemType::BigMushroom)), 10),
-                ((Some(ItemType::MagicCrystal)), 1),
-            ],
-        );
-        generation_choices
     }
     pub fn default_scores_map() -> HashMap<ItemType, i32> {
         let mut scores_map = HashMap::new();
@@ -143,6 +109,7 @@ pub struct ResourcePack {
     pub biome_names: HashMap<String, Biome>,
     pub biomes: HashMap<Biome, BiomeGeneration>,
     pub parameters: HashMap<BiomeParameter, NoiseParameters>,
+    pub item_generation: HashMap<Biome, Vec<ItemGeneration>>,
     pub recipes: Vec<Recipe>,
 }
 
@@ -152,6 +119,7 @@ impl ResourcePack {
             biome_names: HashMap::new(),
             biomes: HashMap::new(),
             parameters: HashMap::new(),
+            item_generation: HashMap::new(),
             recipes: Vec::new(),
         }
     }
@@ -159,6 +127,7 @@ impl ResourcePack {
         self.biome_names.extend(resource_pack.biome_names);
         self.biomes.extend(resource_pack.biomes);
         self.parameters.extend(resource_pack.parameters);
+        self.item_generation.extend(resource_pack.item_generation);
         self.recipes.extend(resource_pack.recipes);
     }
     pub fn get_biome(&self, biome_name: &str) -> Option<&Biome> {

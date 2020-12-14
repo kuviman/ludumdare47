@@ -50,7 +50,6 @@ pub struct Model {
     pub current_time: usize,
     pub scores_map: HashMap<ItemType, i32>,
     pub sound_distance: f32,
-    generation_choices: HashMap<Biome, Vec<(Option<ItemType>, usize)>>,
     sounds: HashMap<Id, Vec<Sound>>,
 }
 

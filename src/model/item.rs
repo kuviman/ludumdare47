@@ -67,3 +67,9 @@ pub enum ItemType {
     BigMushroom,
     Statue,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
+pub struct ItemGeneration {
+    pub item_type: Option<ItemType>,
+    pub weight: usize,
+}
