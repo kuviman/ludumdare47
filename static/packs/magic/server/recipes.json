@@ -1,0 +1,10 @@
+[
+  {
+    "ingredient1": "GoldPickaxe",
+    "ingredient2": "MagicCrystal",
+    "result1": "GoldPickaxe",
+    "result2": "CrystalShard",
+    "conditions": null,
+    "craft_time": 1.0
+  }
+]

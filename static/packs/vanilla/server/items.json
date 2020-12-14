@@ -1,0 +1,97 @@
+{
+  "Pebble": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "SharpStone": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Stick": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Axe": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "DoubleStick": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Log": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Planks": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Torch": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Shovel": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Pickaxe": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "GoldPickaxe": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "GoldNugget": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "TreasureMark": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": false
+  },
+  "TreasureChest": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "Tree": {
+    "size": 0.5,
+    "traversable": false,
+    "pickable": false
+  },
+  "Campfire": {
+    "size": 0.5,
+    "traversable": false,
+    "pickable": false
+  },
+  "Rock": {
+    "size": 0.5,
+    "traversable": false,
+    "pickable": false
+  },
+  "GoldRock": {
+    "size": 0.5,
+    "traversable": false,
+    "pickable": false
+  },
+  "Statue": {
+    "size": 0.5,
+    "traversable": false,
+    "pickable": false
+  }
+}

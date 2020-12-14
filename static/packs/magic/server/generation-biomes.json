@@ -1,0 +1,16 @@
+{
+    "MagicForest": {
+        "collidable": false,
+        "spawnable": true,
+        "parameters": {
+            "Height": [
+                0.2,
+                0.5
+            ],
+            "Magic": [
+                0.8,
+                1.0
+            ]
+        }
+    }
+}

@@ -8,8 +8,8 @@ pub struct Chunk {
 
 impl Model {
     pub fn new(config: Config) -> Self {
-        let recipes = Config::default_recipes();
-        let chunks = Self::generate_map(&config);
+        let (pack_list, resource_pack) = Config::load_resource_packs().unwrap();
+        let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
             entity_movement_speed: config.player_movement_speed,
             entity_view_distance: config.view_distance,
@@ -20,6 +20,8 @@ impl Model {
             entity_interaction_range: config.entity_interaction_range,
         };
         let mut model = Self {
+            pack_list,
+            resource_pack,
             rules,
             score: 0,
             ticks_per_second: config.ticks_per_second,
@@ -28,10 +30,7 @@ impl Model {
             entities: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
-            recipes,
-            scores_map: Config::default_scores_map(),
             sound_distance: config.sound_distance,
-            generation_choices: Config::default_generation_choices(),
             sounds: HashMap::new(),
         };
         for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
@@ -44,16 +43,11 @@ impl Model {
                 }
             }
         }
-        if let Some(pos) = model.get_spawnable_pos(Biome::Forest) {
-            model.spawn_item(ItemType::Statue, pos);
-        } else {
-            error!("Did not find a position for a statue");
-        }
         model
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos(Biome::Forest) {
+        if let Some(pos) = self.get_spawnable_pos() {
             let entity = Entity {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
@@ -75,7 +69,7 @@ impl Model {
     pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<f32>) {
         let item = Item {
             pos,
-            size: item_type.size(),
+            size: self.resource_pack.items[&item_type].size,
             item_type,
         };
         let id = Id::new();
@@ -99,14 +93,14 @@ impl Model {
             None
         }
     }
-    fn generate_map(config: &Config) -> HashMap<Vec2<i64>, Chunk> {
+    fn generate_map(config: &Config, resource_pack: &ResourcePack) -> HashMap<Vec2<i64>, Chunk> {
         let mut noises = HashMap::new();
-        for (biome_parameter, parameters) in Config::default_parameters() {
+        for (&biome_parameter, parameters) in &resource_pack.parameters {
             noises.insert(
                 biome_parameter,
                 Noise {
                     noise: Box::new(OpenSimplex::new().set_seed(global_rng().gen())),
-                    parameters,
+                    parameters: parameters.clone(),
                 },
             );
         }
@@ -118,7 +112,7 @@ impl Model {
             for x in -gen_x..gen_x + 1 {
                 chunks.insert(
                     vec2(x, y),
-                    Self::generate_chunk(config, vec2(x, y), &noises, &Config::default_biomes()),
+                    Self::generate_chunk(config, vec2(x, y), &noises, &resource_pack.biomes),
                 );
             }
         }
@@ -149,7 +143,7 @@ impl Model {
         noises: &HashMap<BiomeParameter, Noise>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Biome {
-        *biomes
+        biomes
             .iter()
             .filter_map(|(biome, biome_gen)| {
                 let mut total_score = 0.0;
@@ -165,8 +159,9 @@ impl Model {
                 Some((biome, total_score))
             })
             .min_by_key(|(_, score)| r32(*score))
-            .unwrap_or((&Biome::Void, 0.0))
+            .unwrap()
             .0
+            .clone()
     }
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
@@ -196,26 +191,33 @@ impl Model {
     }
     pub fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
-        let choice = self.generation_choices[&self.get_tile(pos).unwrap().biome]
-            .choose_weighted(&mut rng, |item| item.1)
-            .unwrap()
-            .0;
+        let choice = match self
+            .resource_pack
+            .item_generation
+            .get(&self.get_tile(pos).unwrap().biome)
+        {
+            Some(gen) => gen
+                .choose_weighted(&mut rng, |item| item.weight)
+                .unwrap()
+                .item_type
+                .clone(),
+            None => None,
+        };
         if let Some(item_type) = choice {
             self.spawn_item(item_type, pos.map(|x| x as f32));
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
-        self.get_tile(pos).unwrap().biome != Biome::Lake && self.is_empty_tile(pos)
+        self.resource_pack.biomes[&self.get_tile(pos).unwrap().biome].spawnable
+            && self.is_empty_tile(pos)
     }
-    fn get_spawnable_pos(&self, ground_type: Biome) -> Option<Vec2<f32>> {
+    fn get_spawnable_pos(&self) -> Option<Vec2<f32>> {
         let mut positions = vec![];
         for (&chunk_pos, _) in &self.chunks {
             for y in 0..self.chunk_size.y as i64 {
                 for x in 0..self.chunk_size.x as i64 {
                     let pos = Self::local_to_global_pos(self.chunk_size, chunk_pos, vec2(x, y));
-                    if self.is_spawnable_tile(pos)
-                        && self.get_tile(pos).unwrap().biome == ground_type
-                    {
+                    if self.is_spawnable_tile(pos) {
                         positions.push(pos.map(|x| x as f32));
                     }
                 }

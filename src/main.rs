@@ -15,6 +15,7 @@ pub type ClientMessage = model::Message;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ServerMessage {
     PlayerId(Id),
+    PackList(Vec<String>),
     View(model::PlayerView),
 }
 
@@ -103,7 +104,7 @@ fn main() {
                     let geng = geng.clone();
                     let addr = format!("{}://{}", option_env!("WSS").unwrap_or("ws"), addr);
                     async move {
-                        let assets = geng::LoadAsset::load(&geng, ".")
+                        let assets: app::Assets = geng::LoadAsset::load(&geng, ".")
                             .await
                             .expect("Failed to load assets");
                         let connection = geng::net::client::connect(&addr).await;
@@ -113,11 +114,19 @@ fn main() {
                             _ => unreachable!(),
                         };
                         let (message, connection) = connection.into_future().await;
+                        let pack_list = match message {
+                            Some(ServerMessage::PackList(pack_list)) => pack_list,
+                            _ => unreachable!(),
+                        };
+                        let resource_pack = app::ResourcePack::load_all(geng.clone(), pack_list)
+                            .await
+                            .expect("Failed to load resource packs");
+                        let (message, connection) = connection.into_future().await;
                         let view = match message {
                             Some(ServerMessage::View(view)) => view,
                             _ => unreachable!(),
                         };
-                        App::new(&geng, assets, player_id, view, connection)
+                        App::new(&geng, assets, resource_pack, player_id, view, connection)
                     }
                 },
                 |app| app,

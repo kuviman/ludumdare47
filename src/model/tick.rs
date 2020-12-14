@@ -9,7 +9,7 @@ impl Model {
 
             // Collide with items
             for item in self.items.values() {
-                if !item.item_type.is_traversable() {
+                if !self.resource_pack.items[&item.item_type].traversable {
                     let dir = entity.pos - item.pos;
                     let distance = dir.len();
                     if distance <= entity.radius + item.size {
@@ -44,15 +44,18 @@ impl Model {
                 for y in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
                     let pos = vec2(x, y) + entity.pos.map(|x| x as i64);
                     if let Some((normal, penetration)) = match self.get_tile(pos) {
-                        Some(tile) => match tile.biome {
-                            Biome::Lake | Biome::Ocean => Self::collide(
-                                entity.pos,
-                                entity.radius,
-                                tile.pos.map(|x| x as f32),
-                                1.0,
-                            ),
-                            _ => None,
-                        },
+                        Some(tile) => {
+                            if self.resource_pack.biomes[&tile.biome].collidable {
+                                Self::collide(
+                                    entity.pos,
+                                    entity.radius,
+                                    tile.pos.map(|x| x as f32),
+                                    1.0,
+                                )
+                            } else {
+                                None
+                            }
+                        }
                         None => None,
                     } {
                         entity.pos += normal * penetration;
@@ -142,8 +145,13 @@ impl Model {
                         let mut item = self.remove_item_id(item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
-                                Some(self.get_tile(item.pos.map(|x| x as i64)).unwrap().biome),
-                                Some(item.item_type),
+                                Some(
+                                    self.get_tile(item.pos.map(|x| x as i64))
+                                        .unwrap()
+                                        .biome
+                                        .clone(),
+                                ),
+                                Some(item.item_type.clone()),
                             ),
                             None => (None, None),
                         };
@@ -176,13 +184,22 @@ impl Model {
                     let ingredient1 = &mut entity.item;
                     let (conditions, ingredient2) = match self.items.get(&id) {
                         Some(item) => (
-                            Some(self.get_tile(item.pos.map(|x| x as i64)).unwrap().biome),
-                            Some(item.item_type),
+                            Some(
+                                self.get_tile(item.pos.map(|x| x as i64))
+                                    .unwrap()
+                                    .biome
+                                    .clone(),
+                            ),
+                            Some(item.item_type.clone()),
                         ),
                         None => (None, None),
                     };
-                    let recipe = self.recipes.iter().find(|recipe| {
-                        recipe.ingredients_equal(*ingredient1, ingredient2, conditions)
+                    let recipe = self.resource_pack.recipes.iter().find(|recipe| {
+                        recipe.ingredients_equal(
+                            ingredient1.clone(),
+                            ingredient2.clone(),
+                            conditions.clone(),
+                        )
                     });
                     if let Some(recipe) = recipe {
                         entity.action = Some(EntityAction::Crafting {
@@ -190,14 +207,6 @@ impl Model {
                             recipe: recipe.clone(),
                             time_left: recipe.craft_time,
                         });
-                    } else if let Some(ItemType::Statue) = ingredient2 {
-                        if let Some(item) = ingredient1.take() {
-                            self.score += match self.scores_map.get(&item) {
-                                Some(score) => *score,
-                                None => 0,
-                            };
-                            self.play_sound(Sound::StatueGift, self.sound_distance, entity.pos);
-                        }
                     }
                 }
                 MomentAction::Drop { pos } => {
@@ -211,12 +220,12 @@ impl Model {
                     let hand_item = &mut entity.item;
                     let mut item = self.items.remove(&id);
                     let ground_item = match &item {
-                        Some(item) => Some(item.item_type),
+                        Some(item) => Some(item.item_type.clone()),
                         None => None,
                     };
                     if let None = hand_item {
                         if let Some(item_type) = ground_item {
-                            if item_type.is_pickable() {
+                            if self.resource_pack.items[&item_type].pickable {
                                 item.take();
                                 *hand_item = Some(item_type);
                                 self.play_sound(Sound::PickUp, self.sound_distance, entity.pos);

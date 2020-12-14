@@ -7,50 +7,44 @@ pub struct Tile {
     pub biome: Biome,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, Trans, Hash, PartialEq, Eq)]
-pub enum Biome {
-    Void,
-    Ocean,
-    Beach,
-    Lake,
-    Forest,
-    Hills,
-    MagicForest,
-}
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, Hash, PartialEq, Eq)]
+pub struct Biome(String);
 
 impl Biome {
+    pub fn new(name: String) -> Self {
+        Self(name)
+    }
     pub fn height(&self) -> f32 {
-        match self {
-            Self::Ocean => -1.0,
-            Self::Lake => -0.2,
-            _ => 0.2,
+        if self.0 == "Ocean" {
+            -1.0
+        } else if self.0 == "Lake" {
+            -0.2
+        } else {
+            0.2
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
 pub struct BiomeGeneration {
-    pub offset: f32,
+    pub collidable: bool,
+    pub spawnable: bool,
     pub parameters: HashMap<BiomeParameter, (f32, f32)>,
 }
 
 impl BiomeGeneration {
-    pub fn new(offset: f32, parameters: HashMap<BiomeParameter, (f32, f32)>) -> Self {
-        // TODO: check every parameter to be in range -1..1 and offset to be in range 0..1
-        Self { offset, parameters }
-    }
     pub fn get_distance(&self, pos: Vec2<f32>, parameter: &BiomeParameter, noise: &Noise) -> f32 {
         match self.parameters.get(parameter) {
             Some(parameter_zone) => {
                 let noise_value = noise.get(pos);
                 (noise_value - parameter_zone.0).min(parameter_zone.1 - noise_value)
             }
-            None => 0.0,
+            None => noise.max_delta(),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize, Trans)]
 pub enum BiomeParameter {
     Height,
     Magic,
@@ -81,9 +75,12 @@ impl Noise {
         (value / 2.0 + 0.5) * (self.parameters.max_value - self.parameters.min_value)
             + self.parameters.min_value
     }
+    pub fn max_delta(&self) -> f32 {
+        self.parameters.max_value - self.parameters.min_value
+    }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Trans)]
 pub struct NoiseParameters {
     pub min_value: f32,
     pub max_value: f32,
@@ -91,35 +88,4 @@ pub struct NoiseParameters {
     pub octaves: usize,
     pub lacunarity: f32,
     pub persistance: f32,
-}
-
-impl NoiseParameters {
-    pub fn new(
-        min_value: f32,
-        max_value: f32,
-        scale: f32,
-        octaves: usize,
-        lacunarity: f32,
-        persistance: f32,
-    ) -> Self {
-        assert!(scale > 0.0, "Noise scale must be positive");
-        assert!(octaves > 0, "There must be at least one octave");
-        assert!(lacunarity >= 1.0, "Lacunarity must be more than 1.0");
-        assert!(
-            persistance > 0.0,
-            "Persistance must be positive and less than 1.0"
-        );
-        assert!(
-            persistance <= 1.0,
-            "Persistance must be positive and less than 1.0"
-        );
-        Self {
-            min_value,
-            max_value,
-            scale,
-            octaves,
-            lacunarity,
-            persistance,
-        }
-    }
 }

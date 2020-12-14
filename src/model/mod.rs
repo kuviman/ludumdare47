@@ -38,6 +38,8 @@ impl Id {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
+    pub pack_list: Vec<String>,
+    pub resource_pack: ResourcePack,
     pub rules: Rules,
     pub score: i32,
     pub ticks_per_second: f32,
@@ -46,10 +48,7 @@ pub struct Model {
     pub entities: HashMap<Id, Entity>,
     pub items: HashMap<Id, Item>,
     pub current_time: usize,
-    pub recipes: Vec<Recipe>,
-    pub scores_map: HashMap<ItemType, i32>,
     pub sound_distance: f32,
-    generation_choices: HashMap<Biome, Vec<(Option<ItemType>, usize)>>,
     sounds: HashMap<Id, Vec<Sound>>,
 }
 

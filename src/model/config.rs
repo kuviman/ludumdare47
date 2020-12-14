@@ -34,341 +34,102 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn default_recipes() -> Vec<Recipe> {
-        use ItemType::*;
-        vec![
-            Recipe {
-                ingredient1: Some(Pebble),
-                ingredient2: Some(Pebble),
-                result1: Some(SharpStone),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Pebble),
-                ingredient2: Some(Rock),
-                result1: Some(SharpStone),
-                result2: Some(Rock),
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(Pebble),
-                result1: Some(Shovel),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Pebble),
-                ingredient2: Some(Stick),
-                result1: Some(Shovel),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(SharpStone),
-                result1: Some(Axe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(SharpStone),
-                ingredient2: Some(Stick),
-                result1: Some(Axe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Axe),
-                ingredient2: Some(SharpStone),
-                result1: Some(Pickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(SharpStone),
-                ingredient2: Some(Axe),
-                result1: Some(Pickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.1,
-            },
-            Recipe {
-                ingredient1: Some(Pickaxe),
-                ingredient2: Some(Rock),
-                result1: Some(Pickaxe),
-                result2: Some(SharpStone),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(Pickaxe),
-                ingredient2: Some(GoldRock),
-                result1: Some(Pickaxe),
-                result2: Some(GoldNugget),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(GoldNugget),
-                result1: Some(GoldPickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(GoldNugget),
-                ingredient2: Some(Stick),
-                result1: Some(GoldPickaxe),
-                result2: None,
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(Stick),
-                result1: None,
-                result2: Some(DoubleStick),
-                conditions: None,
-                craft_time: 0.01,
-            },
-            Recipe {
-                ingredient1: Some(Axe),
-                ingredient2: Some(Tree),
-                result1: Some(Axe),
-                result2: Some(Log),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Axe),
-                ingredient2: Some(Log),
-                result1: Some(Axe),
-                result2: Some(Planks),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Log),
-                ingredient2: Some(DoubleStick),
-                result1: None,
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Log),
-                ingredient2: Some(Planks),
-                result1: None,
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Torch),
-                ingredient2: Some(Log),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Torch),
-                ingredient2: Some(Planks),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(Torch),
-                ingredient2: Some(DoubleStick),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(DoubleStick),
-                ingredient2: Some(Log),
-                result1: None,
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.5,
-            },
-            Recipe {
-                ingredient1: Some(DoubleStick),
-                ingredient2: None,
-                result1: Some(Stick),
-                result2: Some(Stick),
-                conditions: None,
-                craft_time: 0.01,
-            },
-            Recipe {
-                ingredient1: Some(Stick),
-                ingredient2: Some(Campfire),
-                result1: Some(Torch),
-                result2: Some(Campfire),
-                conditions: None,
-                craft_time: 0.01,
-            },
-            Recipe {
-                ingredient1: Some(GoldPickaxe),
-                ingredient2: Some(MagicCrystal),
-                result1: Some(GoldPickaxe),
-                result2: Some(CrystalShard),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(GoldPickaxe),
-                ingredient2: Some(Rock),
-                result1: Some(GoldPickaxe),
-                result2: Some(SharpStone),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(GoldPickaxe),
-                ingredient2: Some(GoldRock),
-                result1: Some(GoldPickaxe),
-                result2: Some(GoldNugget),
-                conditions: None,
-                craft_time: 1.0,
-            },
-            Recipe {
-                ingredient1: Some(Shovel),
-                ingredient2: Some(TreasureMark),
-                result1: Some(Shovel),
-                result2: Some(TreasureChest),
-                conditions: None,
-                craft_time: 0.5,
-            },
-        ]
+    pub fn load_resource_packs() -> Result<(Vec<String>, ResourcePack), std::io::Error> {
+        let mut packs = Vec::new();
+        let mut resource_pack = ResourcePack::empty();
+        for pack in std::fs::read_dir("packs/")? {
+            let pack = pack?;
+            packs.push(pack.file_name().to_str().unwrap().to_owned());
+            resource_pack.merge(Self::load_resource_pack(pack)?);
+        }
+        Ok((packs, resource_pack))
     }
-    pub fn default_parameters() -> HashMap<BiomeParameter, NoiseParameters> {
-        let mut map = HashMap::new();
-        map.insert(
-            BiomeParameter::Height,
-            NoiseParameters::new(-1.0, 1.0, 100.0, 3, 2.0, 0.5),
-        );
-        map.insert(
-            BiomeParameter::Magic,
-            NoiseParameters::new(0.0, 1.0, 50.0, 1, 1.0, 1.0),
-        );
-        map.insert(
-            BiomeParameter::Humidity,
-            NoiseParameters::new(0.0, 1.0, 50.0, 1, 1.0, 1.0),
-        );
-        map
-    }
-    pub fn default_biomes() -> HashMap<Biome, BiomeGeneration> {
-        use Biome::*;
+    fn load_resource_pack(path: std::fs::DirEntry) -> Result<ResourcePack, std::io::Error> {
+        // Load noise maps
+        let parameters_path = path.path().join("server/generation-parameters.json");
+        let generation_parameters: HashMap<BiomeParameter, NoiseParameters> =
+            match std::fs::File::open(parameters_path) {
+                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+                Err(_) => HashMap::new(),
+            };
 
-        let mut biomes = HashMap::new();
-        biomes.insert(
-            Ocean,
-            BiomeGeneration::new(0.0, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (-1.0, -0.3));
-                map
-            }),
-        );
-        biomes.insert(
-            Beach,
-            BiomeGeneration::new(0.2, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (-0.3, -0.2));
-                map
-            }),
-        );
-        biomes.insert(
-            Forest,
-            BiomeGeneration::new(0.0, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (-0.2, 0.6));
-                map
-            }),
-        );
-        biomes.insert(
-            Lake,
-            BiomeGeneration::new(0.1, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (0.2, 0.5));
-                map.insert(BiomeParameter::Humidity, (0.9, 1.0));
-                map
-            }),
-        );
-        biomes.insert(
-            MagicForest,
-            BiomeGeneration::new(0.1, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (0.2, 0.5));
-                map.insert(BiomeParameter::Magic, (0.8, 1.0));
-                map
-            }),
-        );
-        biomes.insert(
-            Hills,
-            BiomeGeneration::new(0.0, {
-                let mut map = HashMap::new();
-                map.insert(BiomeParameter::Height, (0.6, 1.0));
-                map
-            }),
-        );
-        biomes
+        // Load biomes
+        let biomes_path = path.path().join("server/generation-biomes.json");
+        let mut biome_names = HashMap::new();
+        let mut biome_gen = HashMap::new();
+        match std::fs::File::open(biomes_path) {
+            Ok(file) => {
+                let biomes: HashMap<String, BiomeGeneration> =
+                    serde_json::from_reader(std::io::BufReader::new(file))?;
+                for (biome_name, biome_generation) in biomes {
+                    let biome = Biome::new(biome_name.clone());
+                    biome_names.insert(biome_name, biome.clone());
+                    biome_gen.insert(biome, biome_generation);
+                }
+            }
+            Err(_) => (),
+        }
+
+        // Load items
+        let items_path = path.path().join("server/items.json");
+        let items: HashMap<ItemType, ItemParameters> = match std::fs::File::open(items_path) {
+            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+            Err(_) => HashMap::new(),
+        };
+
+        // Load items generation
+        let items_gen_path = path.path().join("server/generation-items.json");
+        let items_gen: HashMap<Biome, Vec<ItemGeneration>> =
+            match std::fs::File::open(items_gen_path) {
+                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+                Err(_) => HashMap::new(),
+            };
+
+        // Load recipes
+        let recipes_path = path.path().join("server/recipes.json");
+        let recipes: Vec<Recipe> = match std::fs::File::open(recipes_path) {
+            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+            Err(_) => Vec::new(),
+        };
+
+        Ok(ResourcePack {
+            biome_names,
+            biomes: biome_gen,
+            parameters: generation_parameters,
+            item_generation: items_gen,
+            recipes,
+            items,
+        })
     }
-    pub fn default_generation_choices() -> HashMap<Biome, Vec<(Option<ItemType>, usize)>> {
-        let mut generation_choices = HashMap::new();
-        generation_choices.insert(Biome::Ocean, vec![(None, 1)]);
-        generation_choices.insert(Biome::Lake, vec![(None, 1)]);
-        generation_choices.insert(
-            Biome::Beach,
-            vec![(None, 200), (Some(ItemType::TreasureMark), 1)],
-        );
-        generation_choices.insert(
-            Biome::Forest,
-            vec![
-                (None, 300),
-                (Some(ItemType::Tree), 30),
-                (Some(ItemType::Stick), 10),
-            ],
-        );
-        generation_choices.insert(
-            Biome::Hills,
-            vec![
-                (None, 300),
-                ((Some(ItemType::Pebble)), 20),
-                ((Some(ItemType::Rock)), 10),
-                ((Some(ItemType::GoldRock)), 1),
-            ],
-        );
-        generation_choices.insert(
-            Biome::MagicForest,
-            vec![
-                (None, 300),
-                ((Some(ItemType::BigMushroom)), 10),
-                ((Some(ItemType::MagicCrystal)), 1),
-            ],
-        );
-        generation_choices
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
+pub struct ResourcePack {
+    pub biome_names: HashMap<String, Biome>,
+    pub biomes: HashMap<Biome, BiomeGeneration>,
+    pub parameters: HashMap<BiomeParameter, NoiseParameters>,
+    pub items: HashMap<ItemType, ItemParameters>,
+    pub item_generation: HashMap<Biome, Vec<ItemGeneration>>,
+    pub recipes: Vec<Recipe>,
+}
+
+impl ResourcePack {
+    pub fn empty() -> Self {
+        Self {
+            biome_names: HashMap::new(),
+            biomes: HashMap::new(),
+            parameters: HashMap::new(),
+            items: HashMap::new(),
+            item_generation: HashMap::new(),
+            recipes: Vec::new(),
+        }
     }
-    pub fn default_scores_map() -> HashMap<ItemType, i32> {
-        let mut scores_map = HashMap::new();
-        scores_map.insert(ItemType::TreasureChest, 5);
-        scores_map.insert(ItemType::CrystalShard, 10);
-        scores_map.insert(ItemType::GoldNugget, 5);
-        scores_map.insert(ItemType::Stick, -1);
-        scores_map.insert(ItemType::Pebble, -1);
-        scores_map
+    pub fn merge(&mut self, resource_pack: ResourcePack) {
+        self.biome_names.extend(resource_pack.biome_names);
+        self.biomes.extend(resource_pack.biomes);
+        self.parameters.extend(resource_pack.parameters);
+        self.items.extend(resource_pack.items);
+        self.item_generation.extend(resource_pack.item_generation);
+        self.recipes.extend(resource_pack.recipes);
     }
 }

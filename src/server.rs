@@ -38,6 +38,7 @@ impl geng::net::server::App for ServerApp {
         let mut model = self.model.lock().unwrap();
         let player_id = model.new_player();
         sender.send(ServerMessage::PlayerId(player_id));
+        sender.send(ServerMessage::PackList(model.pack_list.clone()));
         sender.send(ServerMessage::View(model.get_view(player_id)));
         Client {
             server_model: self.model.clone(),

@@ -5,10 +5,12 @@ use noise::NoiseFn;
 mod camera;
 mod ez3d;
 mod light;
+mod resource_pack;
 mod tile_mesh;
 
 use camera::Camera;
 use ez3d::Ez3D;
+pub use resource_pack::ResourcePack;
 use tile_mesh::TileMesh;
 
 #[derive(geng::Assets)]
@@ -23,30 +25,7 @@ pub struct PlayerAssets {
 pub struct Assets {
     #[asset(path = "music.ogg")]
     music: geng::Sound,
-    tree: ez3d::Obj,
-    pebble: ez3d::Obj,
-    stick: ez3d::Obj,
     player: PlayerAssets,
-    axe: ez3d::Obj,
-    campfire: ez3d::Obj,
-    double_stick: ez3d::Obj,
-    log: ez3d::Obj,
-    planks: ez3d::Obj,
-    raft: ez3d::Obj,
-    torch: ez3d::Obj,
-    gold_nugget: ez3d::Obj,
-    gold_pickaxe: ez3d::Obj,
-    gold_rock: ez3d::Obj,
-    big_mushroom: ez3d::Obj,
-    pickaxe: ez3d::Obj,
-    rock: ez3d::Obj,
-    sharp_stone: ez3d::Obj,
-    shovel: ez3d::Obj,
-    magic_crystal: ez3d::Obj,
-    crystal_shard: ez3d::Obj,
-    statue: ez3d::Obj,
-    treasure_mark: ez3d::Obj,
-    treasure_chest: ez3d::Obj,
     craft: geng::Sound,
     pickup: geng::Sound,
     walk: geng::Sound,
@@ -54,35 +33,6 @@ pub struct Assets {
     hi: geng::Sound,
     hello: geng::Sound,
     heyo: geng::Sound,
-}
-
-impl Assets {
-    fn item(&self, item: model::ItemType) -> &ez3d::Obj {
-        match item {
-            model::ItemType::Axe => &self.axe,
-            model::ItemType::DoubleStick => &self.double_stick,
-            model::ItemType::Log => &self.log,
-            model::ItemType::Pebble => &self.pebble,
-            model::ItemType::Planks => &self.planks,
-            model::ItemType::Stick => &self.stick,
-            model::ItemType::Torch => &self.torch,
-            model::ItemType::GoldNugget => &self.gold_nugget,
-            model::ItemType::GoldPickaxe => &self.gold_pickaxe,
-            model::ItemType::SharpStone => &self.sharp_stone,
-            model::ItemType::Shovel => &self.shovel,
-            model::ItemType::CrystalShard => &self.crystal_shard,
-            model::ItemType::Pickaxe => &self.pickaxe,
-            model::ItemType::TreasureMark => &self.treasure_mark,
-            model::ItemType::TreasureChest => &self.treasure_chest,
-            model::ItemType::Tree => &self.tree,
-            model::ItemType::Campfire => &self.campfire,
-            model::ItemType::Rock => &self.rock,
-            model::ItemType::GoldRock => &self.gold_rock,
-            model::ItemType::MagicCrystal => &self.magic_crystal,
-            model::ItemType::BigMushroom => &self.big_mushroom,
-            model::ItemType::Statue => &self.statue,
-        }
-    }
 }
 
 struct EntityData {
@@ -188,6 +138,7 @@ pub struct App {
     traffic_update: f32,
     traffic_text: String,
     geng: Rc<Geng>,
+    resource_pack: ResourcePack,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
     camera: Camera,
@@ -211,16 +162,18 @@ impl App {
     pub fn new(
         geng: &Rc<Geng>,
         assets: Assets,
+        resource_pack: ResourcePack,
         player_id: Id,
         view: model::PlayerView,
         mut connection: Connection,
     ) -> Self {
         let noise = noise::OpenSimplex::new();
         let light = light::Uniforms::new(&view);
-        let tile_mesh = TileMesh::new(geng, &view.tiles, &noise);
+        let tile_mesh = TileMesh::new(geng, &view.tiles, &noise, &resource_pack);
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
+            resource_pack,
             assets,
             last_tin: 0,
             last_tout: 0,
@@ -370,7 +323,12 @@ impl geng::State for App {
         ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
         self.camera_controls.draw(&mut self.camera, framebuffer);
 
-        self.tile_mesh = TileMesh::new(&self.geng, &self.view.tiles, &self.noise);
+        self.tile_mesh = TileMesh::new(
+            &self.geng,
+            &self.view.tiles,
+            &self.noise,
+            &self.resource_pack,
+        );
 
         self.ez3d.draw(
             framebuffer,
@@ -437,7 +395,7 @@ impl geng::State for App {
             let height = self.tile_mesh.get_height(pos).unwrap();
             let pos = pos.extend(height);
             instances
-                .entry(item.item_type)
+                .entry(item.item_type.clone())
                 .or_default()
                 .push(ez3d::Instance {
                     i_pos: pos,
@@ -447,7 +405,7 @@ impl geng::State for App {
                 });
         }
         for (item_type, instances) in instances {
-            let obj = self.assets.item(item_type);
+            let obj = &self.resource_pack.items[&item_type].model;
             self.ez3d.draw(
                 framebuffer,
                 &self.camera,
@@ -516,12 +474,12 @@ impl geng::State for App {
                     i_color: entity.colors.pants,
                 }),
             );
-            if let Some(item) = entity.item {
+            if let Some(item) = &entity.item {
                 self.ez3d.draw(
                     framebuffer,
                     &self.camera,
                     &self.light,
-                    self.assets.item(item).vb(),
+                    self.resource_pack.items[item].model.vb(),
                     std::iter::once(ez3d::Instance {
                         i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
                         i_size: 0.5,
@@ -551,7 +509,7 @@ impl geng::State for App {
                     "Player"
                 }
                 .to_owned();
-                if let Some(item) = entity.item {
+                if let Some(item) = &entity.item {
                     text = format!("{}, holding {:?}", text, item);
                 }
                 let pos = data.pos;
@@ -574,7 +532,7 @@ impl geng::State for App {
             .find(|entity| entity.id == self.player_id)
             .unwrap();
         let data = &self.entity_positions[&entity.id];
-        if let Some(action) = entity.action {
+        if let Some(action) = &entity.action {
             match action {
                 model::EntityAction::Crafting { time_left, .. } => {
                     let text = format!("{:.1}", time_left);

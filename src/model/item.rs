@@ -7,63 +7,27 @@ pub struct Item {
     pub item_type: ItemType,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Hash)]
+pub struct ItemType(String);
+
 impl ItemType {
+    pub fn from_string(name: String) -> Self {
+        Self(name)
+    }
     pub fn to_string(&self) -> String {
         format!("{:?}", self)
     }
-    pub fn is_traversable(&self) -> bool {
-        use ItemType::*;
-        match self {
-            Pebble | SharpStone | Stick | Axe | DoubleStick | Log | Planks | Torch | Shovel
-            | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureMark | TreasureChest => {
-                true
-            }
-            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => false,
-        }
-    }
-    pub fn is_pickable(&self) -> bool {
-        use ItemType::*;
-        match self {
-            Pebble | SharpStone | Stick | Axe | DoubleStick | Log | Planks | Torch | Shovel
-            | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureChest => true,
-            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue
-            | TreasureMark => false,
-        }
-    }
-    pub fn size(&self) -> f32 {
-        use ItemType::*;
-        match self {
-            Pebble | SharpStone | Stick | Axe | DoubleStick | Log | Planks | Torch | Shovel
-            | Pickaxe | GoldPickaxe | GoldNugget | CrystalShard | TreasureMark | TreasureChest => {
-                0.5
-            }
-            Tree | Campfire | Rock | GoldRock | MagicCrystal | BigMushroom | Statue => 0.5,
-        }
-    }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Copy, Hash)]
-pub enum ItemType {
-    Pebble,
-    SharpStone,
-    Stick,
-    Axe,
-    DoubleStick,
-    Log,
-    Planks,
-    Torch,
-    Shovel,
-    Pickaxe,
-    GoldPickaxe,
-    GoldNugget,
-    CrystalShard,
-    TreasureMark,
-    TreasureChest,
-    Tree,
-    Campfire,
-    Rock,
-    GoldRock,
-    MagicCrystal,
-    BigMushroom,
-    Statue,
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Trans)]
+pub struct ItemParameters {
+    pub size: f32,
+    pub traversable: bool,
+    pub pickable: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
+pub struct ItemGeneration {
+    pub item_type: Option<ItemType>,
+    pub weight: usize,
 }

@@ -1,0 +1,56 @@
+{
+    "Ocean": {
+        "collidable": true,
+        "spawnable": false,
+        "parameters": {
+            "Height": [
+                -1.0,
+                -0.3
+            ]
+        }
+    },
+    "Beach": {
+        "collidable": false,
+        "spawnable": true,
+        "parameters": {
+            "Height": [
+                -0.3,
+                -0.2
+            ]
+        }
+    },
+    "Forest": {
+        "collidable": false,
+        "spawnable": true,
+        "parameters": {
+            "Height": [
+                -0.2,
+                0.6
+            ]
+        }
+    },
+    "Lake": {
+        "collidable": true,
+        "spawnable": false,
+        "parameters": {
+            "Height": [
+                0.2,
+                0.5
+            ],
+            "Humidity": [
+                0.9,
+                1.0
+            ]
+        }
+    },
+    "Hills": {
+        "collidable": false,
+        "spawnable": true,
+        "parameters": {
+            "Height": [
+                0.6,
+                1.0
+            ]
+        }
+    }
+}
