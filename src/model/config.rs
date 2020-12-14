@@ -70,11 +70,11 @@ impl Config {
             Err(_) => (),
         }
 
-        // Load recipes
-        let recipes_path = path.path().join("server/recipes.json");
-        let recipes: Vec<Recipe> = match std::fs::File::open(recipes_path) {
+        // Load items
+        let items_path = path.path().join("server/items.json");
+        let items: HashMap<ItemType, ItemParameters> = match std::fs::File::open(items_path) {
             Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-            Err(_) => Vec::new(),
+            Err(_) => HashMap::new(),
         };
 
         // Load items generation
@@ -85,22 +85,21 @@ impl Config {
                 Err(_) => HashMap::new(),
             };
 
+        // Load recipes
+        let recipes_path = path.path().join("server/recipes.json");
+        let recipes: Vec<Recipe> = match std::fs::File::open(recipes_path) {
+            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+            Err(_) => Vec::new(),
+        };
+
         Ok(ResourcePack {
             biome_names,
             biomes: biome_gen,
             parameters: generation_parameters,
             item_generation: items_gen,
             recipes,
+            items,
         })
-    }
-    pub fn default_scores_map() -> HashMap<ItemType, i32> {
-        let mut scores_map = HashMap::new();
-        scores_map.insert(ItemType::TreasureChest, 5);
-        scores_map.insert(ItemType::CrystalShard, 10);
-        scores_map.insert(ItemType::GoldNugget, 5);
-        scores_map.insert(ItemType::Stick, -1);
-        scores_map.insert(ItemType::Pebble, -1);
-        scores_map
     }
 }
 
@@ -109,6 +108,7 @@ pub struct ResourcePack {
     pub biome_names: HashMap<String, Biome>,
     pub biomes: HashMap<Biome, BiomeGeneration>,
     pub parameters: HashMap<BiomeParameter, NoiseParameters>,
+    pub items: HashMap<ItemType, ItemParameters>,
     pub item_generation: HashMap<Biome, Vec<ItemGeneration>>,
     pub recipes: Vec<Recipe>,
 }
@@ -119,6 +119,7 @@ impl ResourcePack {
             biome_names: HashMap::new(),
             biomes: HashMap::new(),
             parameters: HashMap::new(),
+            items: HashMap::new(),
             item_generation: HashMap::new(),
             recipes: Vec::new(),
         }
@@ -127,10 +128,8 @@ impl ResourcePack {
         self.biome_names.extend(resource_pack.biome_names);
         self.biomes.extend(resource_pack.biomes);
         self.parameters.extend(resource_pack.parameters);
+        self.items.extend(resource_pack.items);
         self.item_generation.extend(resource_pack.item_generation);
         self.recipes.extend(resource_pack.recipes);
-    }
-    pub fn get_biome(&self, biome_name: &str) -> Option<&Biome> {
-        self.biome_names.get(biome_name)
     }
 }

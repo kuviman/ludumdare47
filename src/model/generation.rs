@@ -30,7 +30,6 @@ impl Model {
             entities: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
-            scores_map: Config::default_scores_map(),
             sound_distance: config.sound_distance,
             sounds: HashMap::new(),
         };
@@ -43,11 +42,6 @@ impl Model {
                     }
                 }
             }
-        }
-        if let Some(pos) = model.get_spawnable_pos() {
-            model.spawn_item(ItemType::Statue, pos);
-        } else {
-            error!("Did not find a position for a statue");
         }
         model
     }
@@ -75,7 +69,7 @@ impl Model {
     pub fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<f32>) {
         let item = Item {
             pos,
-            size: item_type.size(),
+            size: self.resource_pack.items[&item_type].size,
             item_type,
         };
         let id = Id::new();
@@ -202,11 +196,11 @@ impl Model {
             .item_generation
             .get(&self.get_tile(pos).unwrap().biome)
         {
-            Some(gen) => {
-                gen.choose_weighted(&mut rng, |item| item.weight)
-                    .unwrap()
-                    .item_type
-            }
+            Some(gen) => gen
+                .choose_weighted(&mut rng, |item| item.weight)
+                .unwrap()
+                .item_type
+                .clone(),
             None => None,
         };
         if let Some(item_type) = choice {

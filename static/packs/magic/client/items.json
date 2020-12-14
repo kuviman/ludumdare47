@@ -1,0 +1,11 @@
+{
+  "CrystalShard": {
+    "model": "crystal_shard.obj"
+  },
+  "MagicCrystal": {
+    "model": "magic_crystal.obj"
+  },
+  "BigMushroom": {
+    "model": "big_mushroom.obj"
+  }
+}

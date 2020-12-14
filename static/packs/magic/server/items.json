@@ -1,0 +1,17 @@
+{
+  "CrystalShard": {
+    "size": 0.5,
+    "traversable": true,
+    "pickable": true
+  },
+  "MagicCrystal": {
+    "size": 0.5,
+    "traversable": false,
+    "pickable": false
+  },
+  "BigMushroom": {
+    "size": 0.5,
+    "traversable": false,
+    "pickable": false
+  }
+}

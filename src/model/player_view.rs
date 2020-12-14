@@ -19,28 +19,6 @@ impl Model {
         let entity = self.entities.get(&player_id).unwrap();
         let mut view = HashSet::new();
         Self::add_view_radius(&mut view, entity.pos, self.rules.entity_view_distance);
-        for light_source in self.items.values().filter(|item| {
-            item.item_type == ItemType::Campfire
-                || item.item_type == ItemType::Statue
-                || item.item_type == ItemType::Torch
-        }) {
-            Self::add_view_radius(
-                &mut view,
-                light_source.pos.map(|x| x as f32),
-                match light_source.item_type {
-                    ItemType::Campfire => self.rules.campfire_light,
-                    ItemType::Statue => self.rules.statue_light,
-                    ItemType::Torch => self.rules.torch_light,
-                    _ => unreachable!(),
-                },
-            );
-        }
-        for entity_torch in self.entities.values().filter(|entity| match entity.item {
-            Some(item) => item == ItemType::Torch,
-            _ => false,
-        }) {
-            Self::add_view_radius(&mut view, entity_torch.pos, self.rules.torch_light);
-        }
 
         let vision = PlayerView {
             players_online: self.entities.len(),
