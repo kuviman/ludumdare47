@@ -1,6 +1,6 @@
 # Blender v2.83.0 OBJ File: ''
 # www.blender.org
-mtllib crystal.mtl
+mtllib magic_crystal.mtl
 o Cube_Cube.010
 v -0.275082 -0.004686 0.275082
 v -0.237240 0.178110 0.109531
