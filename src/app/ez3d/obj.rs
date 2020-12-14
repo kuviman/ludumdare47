@@ -11,15 +11,16 @@ impl Obj {
 }
 
 impl geng::LoadAsset for Obj {
-    const DEFAULT_EXT: Option<&'static str> = None;
+    const DEFAULT_EXT: Option<&'static str> = Some("obj");
     fn load(geng: &Rc<Geng>, path: &str) -> geng::AssetFuture<Self> {
         let geng = geng.clone();
         let path = path.to_owned();
         Box::pin(async move {
-            let obj_source =
-                <String as geng::LoadAsset>::load(&geng, &format!("{}.obj", path)).await?;
-            let mtl_source =
-                <String as geng::LoadAsset>::load(&geng, &format!("{}.mtl", path)).await?;
+            let dir = match path.rfind('/') {
+                Some(index) => &path[..index],
+                None => ".",
+            };
+            let obj_source = <String as geng::LoadAsset>::load(&geng, &path).await?;
             let mut v = Vec::new();
             let mut vn = Vec::new();
             let mut vt = Vec::new();
@@ -40,7 +41,36 @@ impl geng::LoadAsset for Obj {
             }
             let mut material = Material::new();
             let mut materials = HashMap::<String, Material>::new();
-            for line in mtl_source.lines().chain(obj_source.lines()) {
+            for line in obj_source.lines() {
+                if line.starts_with("mtllib ") {
+                    let mut parts = line.split_whitespace();
+                    parts.next();
+                    let mtl_source = <String as geng::LoadAsset>::load(
+                        &geng,
+                        &format!("{}/{}", dir, parts.next().unwrap()),
+                    )
+                    .await?;
+                    for line in mtl_source.lines() {
+                        if line.starts_with("newmtl ") {
+                            current_material = line[6..].trim().to_owned();
+                            materials.insert(current_material.clone(), Material::new());
+                        } else if line.starts_with("Kd ") {
+                            let mut parts = line.split_whitespace();
+                            parts.next();
+                            materials.get_mut(&current_material).unwrap().color.r =
+                                parts.next().unwrap().parse().unwrap();
+                            materials.get_mut(&current_material).unwrap().color.g =
+                                parts.next().unwrap().parse().unwrap();
+                            materials.get_mut(&current_material).unwrap().color.b =
+                                parts.next().unwrap().parse().unwrap();
+                        } else if line.starts_with("Ke ") {
+                            let mut parts = line.split_whitespace();
+                            parts.next();
+                            materials.get_mut(&current_material).unwrap().emission =
+                                parts.next().unwrap().parse().unwrap();
+                        }
+                    }
+                }
                 if line.starts_with("v ") {
                     let mut parts = line.split_whitespace();
                     parts.next();
@@ -89,23 +119,6 @@ impl geng::LoadAsset for Obj {
                     }
                 } else if line.starts_with("usemtl ") {
                     material = materials[line[6..].trim()].clone();
-                } else if line.starts_with("newmtl ") {
-                    current_material = line[6..].trim().to_owned();
-                    materials.insert(current_material.clone(), Material::new());
-                } else if line.starts_with("Kd ") {
-                    let mut parts = line.split_whitespace();
-                    parts.next();
-                    materials.get_mut(&current_material).unwrap().color.r =
-                        parts.next().unwrap().parse().unwrap();
-                    materials.get_mut(&current_material).unwrap().color.g =
-                        parts.next().unwrap().parse().unwrap();
-                    materials.get_mut(&current_material).unwrap().color.b =
-                        parts.next().unwrap().parse().unwrap();
-                } else if line.starts_with("Ke ") {
-                    let mut parts = line.split_whitespace();
-                    parts.next();
-                    materials.get_mut(&current_material).unwrap().emission =
-                        parts.next().unwrap().parse().unwrap();
                 }
             }
             for vertex in &mut mesh {
