@@ -23,6 +23,11 @@ jobs:
           cargo geng build --release --target wasm32-unknown-unknown --index-file game.html
           mkdir -p artifacts && mv target/geng artifacts/web
 
+      - name: Build Internal Docs
+        run: |
+          cargo doc --all --document-private-items --all-features
+          mv target/doc artifacts/web/code-doc
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
