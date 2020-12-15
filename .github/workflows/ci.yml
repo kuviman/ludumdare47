@@ -20,7 +20,7 @@ jobs:
 
       - name: Build Web
         run: |
-          cargo geng build --release --target wasm32-unknown-unknown
+          cargo geng build --release --target wasm32-unknown-unknown --index-file game.html
           mkdir -p artifacts && mv target/geng artifacts/web
 
       - name: Upload artifacts
