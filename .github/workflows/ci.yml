@@ -82,6 +82,7 @@ jobs:
 
             [Service]
             Type=simple
+            WorkingDirectory=/home/${{ secrets.SSH_USERNAME }}/island/server
             ExecStart=/bin/bash -c "chmod +x ~/island/server/island && ~/island/server/island --addr 127.0.0.1:7887 --no-client"
             Restart=always
             RestartSec=10
