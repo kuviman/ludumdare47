@@ -14,15 +14,6 @@ impl Biome {
     pub fn new(name: String) -> Self {
         Self(name)
     }
-    pub fn height(&self) -> f32 {
-        if self.0 == "Ocean" {
-            -1.0
-        } else if self.0 == "Lake" {
-            -0.2
-        } else {
-            0.2
-        }
-    }
 }
 
 impl Display for Biome {

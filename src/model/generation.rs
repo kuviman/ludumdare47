@@ -129,7 +129,7 @@ impl Model {
             for x in 0..config.chunk_size.x as i64 {
                 let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y));
                 let biome = Self::generate_biome(pos, noises, biomes);
-                let height = biome.height();
+                let height = noises[&BiomeParameter::Height].get(pos.map(|x| x as f32));
                 tile_map.insert(vec2(x, y), Tile { pos, height, biome });
             }
         }
