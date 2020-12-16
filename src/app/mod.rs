@@ -222,7 +222,7 @@ impl App {
         radius: f32,
         color: Color<f32>,
     ) {
-        let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+        let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap_or(0.0));
         self.ez3d.draw_with(
             framebuffer,
             &self.camera,
