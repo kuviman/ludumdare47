@@ -392,7 +392,7 @@ impl geng::State for App {
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
         for (_, item) in &self.view.items {
             let pos = item.pos;
-            let height = self.tile_mesh.get_height(pos).unwrap();
+            let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
             let pos = pos.extend(height);
             instances
                 .entry(item.item_type.clone())

@@ -107,14 +107,11 @@ impl TileMesh {
         }
     }
     pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
-        // TODO: actually use mesh to determine height
-        let pos_f = pos.map(|x| x.fract());
-        let pos = pos.map(|x| x as i64);
-        if let Some(tile) = self.tiles.get(&pos) {
-            Some(tile.height)
-        } else {
-            None
-        }
+        self.intersect(camera::Ray {
+            from: pos.extend(0.0),
+            dir: vec3(0.0, 0.0, -1.0),
+        })
+        .map(|pos| pos.z)
     }
     pub fn intersect(&self, ray: camera::Ray) -> Option<Vec3<f32>> {
         let mut result: Option<(f32, Vec3<f32>)> = None;
