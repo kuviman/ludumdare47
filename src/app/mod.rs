@@ -492,7 +492,7 @@ impl geng::State for App {
         if let Some(item) = selected_item {
             let text = item.item_type.to_string();
             let pos = item.pos;
-            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap_or(0.0));
             self.geng.default_font().draw_aligned(
                 framebuffer,
                 &text,
