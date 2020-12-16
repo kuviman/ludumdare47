@@ -25,6 +25,12 @@ impl Biome {
     }
 }
 
+impl Display for Biome {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Trans)]
 pub struct BiomeGeneration {
     pub collidable: bool,

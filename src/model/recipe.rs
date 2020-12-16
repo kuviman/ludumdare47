@@ -59,7 +59,7 @@ impl Recipe {
                 }
             },
             if let Some(biome) = &self.conditions {
-                format!(" (only in {:?})", biome)
+                format!(" (only in {})", biome)
             } else {
                 "".to_owned()
             }

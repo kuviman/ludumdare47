@@ -14,8 +14,11 @@ impl ItemType {
     pub fn from_string(name: String) -> Self {
         Self(name)
     }
-    pub fn to_string(&self) -> String {
-        format!("{:?}", self)
+}
+
+impl Display for ItemType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

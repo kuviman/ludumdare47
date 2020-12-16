@@ -510,7 +510,7 @@ impl geng::State for App {
                 }
                 .to_owned();
                 if let Some(item) = &entity.item {
-                    text = format!("{}, holding {:?}", text, item);
+                    text = format!("{}, holding {}", text, item);
                 }
                 let pos = data.pos;
                 let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
