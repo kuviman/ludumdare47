@@ -25,7 +25,7 @@ jobs:
 
       - name: Build Internal Docs
         run: |
-          cargo doc --all --document-private-items --all-features
+          cargo doc --no-deps --document-private-items --all-features
           mv target/doc artifacts/web/code-doc
 
       - name: Upload artifacts
