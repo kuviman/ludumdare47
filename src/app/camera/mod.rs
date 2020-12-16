@@ -6,7 +6,7 @@ pub use controls::*;
 
 #[derive(Debug, Clone)]
 pub struct Camera {
-    pub center: Vec2<f32>,
+    pub center: Vec3<f32>,
     pub rotation: f32,
     pub attack: f32,
     pub distance: f32,
@@ -21,7 +21,7 @@ pub struct Ray {
 impl Camera {
     pub fn new() -> Self {
         Self {
-            center: vec2(0.0, 0.0),
+            center: vec3(0.0, 0.0, 0.0),
             distance: 10.0,
             rotation: 1.0,
             attack: 1.0,
@@ -32,7 +32,7 @@ impl Camera {
         Mat4::translate(vec3(0.0, 0.0, -self.distance))
             * Mat4::rotate_x(self.attack - f32::PI / 2.0)
             * Mat4::rotate_z(self.rotation)
-            * Mat4::translate(-self.center.extend(0.0))
+            * Mat4::translate(-self.center)
     }
     fn projection_matrix(&self, framebuffer_size: Vec2<usize>) -> Mat4<f32> {
         if self.perspective {
@@ -71,10 +71,6 @@ impl Camera {
             from: p1,
             dir: p2 - p1,
         }
-    }
-    pub fn screen_to_world(&self, framebuffer_size: Vec2<usize>, pos: Vec2<f32>) -> Vec2<f32> {
-        let ray = self.pixel_ray(framebuffer_size, pos);
-        (ray.from - ray.dir * (ray.from.z / ray.dir.z)).xy()
     }
     pub fn world_to_screen(&self, framebuffer_size: Vec2<usize>, pos: Vec3<f32>) -> Vec2<f32> {
         let pos = (self.projection_matrix(framebuffer_size) * self.view_matrix()) * pos.extend(1.0);

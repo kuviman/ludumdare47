@@ -311,7 +311,9 @@ impl geng::State for App {
             move |&id, _| view.entities.iter().find(|e| e.id == id).is_some()
         });
 
-        self.camera.center += (self.entity_positions.get(&self.player_id).unwrap().pos
+        let player_pos = self.entity_positions.get(&self.player_id).unwrap().pos;
+        self.camera.center += (player_pos
+            .extend(self.tile_mesh.get_height(player_pos).unwrap_or(0.0))
             - self.camera.center)
             * (delta_time * 5.0).min(1.0);
         self.camera_controls.update(&mut self.camera, delta_time);

@@ -4,7 +4,6 @@ pub struct Controls {
     geng: Rc<Geng>,
     framebuffer_size: Vec2<usize>,
     previous_mouse: Vec2<f32>,
-    moving: bool,
     rotating: Option<Vec2<f32>>,
 }
 
@@ -16,7 +15,6 @@ impl Controls {
             geng: geng.clone(),
             framebuffer_size: vec2(1, 1),
             previous_mouse: vec2(0.0, 0.0),
-            moving: false,
             rotating: None,
         }
     }
@@ -37,18 +35,12 @@ impl Controls {
                     {
                         self.rotating = Some(self.previous_mouse);
                     }
-                    geng::MouseButton::Right => self.moving = true,
                     geng::MouseButton::Middle => self.rotating = Some(self.previous_mouse),
                     _ => {}
                 }
             }
             geng::Event::MouseMove { position } => {
                 let position = position.map(|x| x as f32);
-                if self.moving {
-                    let p1 = camera.screen_to_world(self.framebuffer_size, self.previous_mouse);
-                    let p2 = camera.screen_to_world(self.framebuffer_size, position);
-                    camera.center += p1 - p2;
-                }
                 if self.rotating.is_some() {
                     camera.rotation +=
                         2.0 * (position.x - self.previous_mouse.x) / self.framebuffer_size.y as f32;
@@ -63,7 +55,6 @@ impl Controls {
             }
             geng::Event::MouseUp { button, .. } => match button {
                 geng::MouseButton::Right | geng::MouseButton::Middle => {
-                    self.moving = false;
                     self.rotating = None;
                 }
                 _ => {}
