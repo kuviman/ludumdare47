@@ -11,13 +11,13 @@ impl Model {
         let (pack_list, resource_pack) = Config::load_resource_packs().unwrap();
         let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
-            entity_movement_speed: config.player_movement_speed,
-            entity_view_distance: config.view_distance,
+            player_movement_speed: config.player_movement_speed,
+            player_view_distance: config.view_distance,
             campfire_light: config.campfire_light,
             torch_light: config.torch_light,
             statue_light: config.statue_light,
             regeneration_percent: config.regeneration_percent,
-            entity_interaction_range: config.entity_interaction_range,
+            player_interaction_range: config.player_interaction_range,
         };
         let mut model = Self {
             pack_list,
@@ -27,7 +27,7 @@ impl Model {
             ticks_per_second: config.ticks_per_second,
             chunk_size: config.chunk_size,
             chunks,
-            entities: HashMap::new(),
+            players: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
             sound_distance: config.sound_distance,
@@ -48,18 +48,18 @@ impl Model {
     pub fn new_player(&mut self) -> Id {
         let player_id;
         if let Some(pos) = self.get_spawnable_pos() {
-            let entity = Entity {
+            let player = Player {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
                 radius: 0.5,
-                interaction_range: self.rules.entity_interaction_range,
+                interaction_range: self.rules.player_interaction_range,
                 item: None,
-                colors: EntityColors::new(),
+                colors: PlayerColors::new(),
                 action: None,
             };
-            player_id = entity.id;
-            self.sounds.insert(entity.id, vec![]);
-            self.entities.insert(entity.id, entity);
+            player_id = player.id;
+            self.sounds.insert(player.id, vec![]);
+            self.players.insert(player.id, player);
         } else {
             error!("Did not find spawnable position");
             player_id = Id::new(); // TODO

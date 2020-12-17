@@ -2,53 +2,53 @@ use super::*;
 
 impl Model {
     pub fn tick(&mut self) {
-        let ids: Vec<Id> = self.entities.keys().copied().collect();
+        let ids: Vec<Id> = self.players.keys().copied().collect();
         for id in ids {
-            let mut entity = self.entities.get(&id).unwrap().clone();
-            self.entity_action(&mut entity);
+            let mut player = self.players.get(&id).unwrap().clone();
+            self.player_action(&mut player);
 
             // Collide with items
             for item in self.items.values() {
                 if !self.resource_pack.items[&item.item_type].traversable {
-                    let dir = entity.pos - item.pos;
+                    let dir = player.pos - item.pos;
                     let distance = dir.len();
-                    if distance <= entity.radius + item.size {
-                        let penetration = entity.radius + item.size - distance;
+                    if distance <= player.radius + item.size {
+                        let penetration = player.radius + item.size - distance;
                         let normal = dir / distance;
-                        entity.pos += normal * penetration;
+                        player.pos += normal * penetration;
                     }
                 }
             }
 
-            // Collide with entities
-            if let Some((normal, penetration)) = self.entities.values().find_map(|e| {
-                if e.id == entity.id {
+            // Collide with players
+            if let Some((normal, penetration)) = self.players.values().find_map(|e| {
+                if e.id == player.id {
                     return None;
                 }
 
-                let dir = entity.pos - e.pos;
+                let dir = player.pos - e.pos;
                 let distance = dir.len();
-                if distance <= entity.radius {
-                    let penetration = entity.radius + e.radius - distance;
+                if distance <= player.radius {
+                    let penetration = player.radius + e.radius - distance;
                     let normal = dir / distance;
                     Some((normal, penetration))
                 } else {
                     None
                 }
             }) {
-                entity.pos += normal * penetration;
+                player.pos += normal * penetration;
             }
 
             // Collide with tiles
-            for x in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
-                for y in (-entity.radius.ceil() as i64)..(entity.radius.ceil() as i64 + 1) {
-                    let pos = vec2(x, y) + entity.pos.map(|x| x as i64);
+            for x in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
+                for y in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
+                    let pos = vec2(x, y) + player.pos.map(|x| x as i64);
                     if let Some((normal, penetration)) = match self.get_tile(pos) {
                         Some(tile) => {
                             if self.resource_pack.biomes[&tile.biome].collidable {
                                 Self::collide(
-                                    entity.pos,
-                                    entity.radius,
+                                    player.pos,
+                                    player.radius,
                                     tile.pos.map(|x| x as f32),
                                     1.0,
                                 )
@@ -58,12 +58,12 @@ impl Model {
                         }
                         None => None,
                     } {
-                        entity.pos += normal * penetration;
+                        player.pos += normal * penetration;
                     }
                 }
             }
 
-            *self.entities.get_mut(&id).unwrap() = entity;
+            *self.players.get_mut(&id).unwrap() = player;
         }
     }
     fn collide(
@@ -117,31 +117,31 @@ impl Model {
             None
         }
     }
-    fn entity_action(&mut self, entity: &mut Entity) {
-        if let Some(action) = entity.action.take() {
+    fn player_action(&mut self, player: &mut Player) {
+        if let Some(action) = player.action.take() {
             match action {
-                EntityAction::MovingTo { pos, finish_action } => {
-                    let finished = (entity.pos - pos).len() <= entity.interaction_range
-                        && self.finish_action(entity, finish_action)
-                        || (entity.pos - pos).len()
-                            <= self.rules.entity_movement_speed / self.ticks_per_second;
+                PlayerAction::MovingTo { pos, finish_action } => {
+                    let finished = (player.pos - pos).len() <= player.interaction_range
+                        && self.finish_action(player, finish_action)
+                        || (player.pos - pos).len()
+                            <= self.rules.player_movement_speed / self.ticks_per_second;
                     if !finished {
-                        let dir = pos - entity.pos;
+                        let dir = pos - player.pos;
                         let dir = dir / dir.len();
-                        let new_pos = entity.pos
-                            + dir * self.rules.entity_movement_speed / self.ticks_per_second;
-                        entity.pos = new_pos;
-                        entity.action = Some(EntityAction::MovingTo { pos, finish_action });
+                        let new_pos = player.pos
+                            + dir * self.rules.player_movement_speed / self.ticks_per_second;
+                        player.pos = new_pos;
+                        player.action = Some(PlayerAction::MovingTo { pos, finish_action });
                     }
                 }
-                EntityAction::Crafting {
+                PlayerAction::Crafting {
                     item_id,
                     recipe,
                     time_left,
                 } => {
                     let time_left = time_left - 1.0 / self.ticks_per_second;
                     if time_left <= 0.0 {
-                        let hand_item = &mut entity.item;
+                        let hand_item = &mut player.item;
                         let mut item = self.remove_item_id(item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
@@ -162,12 +162,12 @@ impl Model {
                                     self.spawn_item(item_type, item.pos);
                                 }
                             }
-                            self.play_sound(Sound::Craft, self.sound_distance, entity.pos);
+                            self.play_sound(Sound::Craft, self.sound_distance, player.pos);
                         } else if let Some(item) = item {
                             self.spawn_item(item.item_type, item.pos);
                         }
                     } else {
-                        entity.action = Some(EntityAction::Crafting {
+                        player.action = Some(PlayerAction::Crafting {
                             item_id,
                             recipe,
                             time_left,
@@ -177,11 +177,11 @@ impl Model {
             }
         }
     }
-    fn finish_action(&mut self, entity: &mut Entity, finish_action: Option<MomentAction>) -> bool {
+    fn finish_action(&mut self, player: &mut Player, finish_action: Option<MomentAction>) -> bool {
         if let Some(finish_action) = finish_action {
             match finish_action {
                 MomentAction::Interact { id } => {
-                    let ingredient1 = &mut entity.item;
+                    let ingredient1 = &mut player.item;
                     let (conditions, ingredient2) = match self.items.get(&id) {
                         Some(item) => (
                             Some(
@@ -202,7 +202,7 @@ impl Model {
                         )
                     });
                     if let Some(recipe) = recipe {
-                        entity.action = Some(EntityAction::Crafting {
+                        player.action = Some(PlayerAction::Crafting {
                             item_id: id,
                             recipe: recipe.clone(),
                             time_left: recipe.craft_time,
@@ -210,14 +210,14 @@ impl Model {
                     }
                 }
                 MomentAction::Drop { pos } => {
-                    let hand_item = &mut entity.item;
+                    let hand_item = &mut player.item;
                     if let Some(item_type) = hand_item.take() {
                         self.spawn_item(item_type, pos);
                         self.play_sound(Sound::PutDown, self.sound_distance, pos);
                     }
                 }
                 MomentAction::PickUp { id } => {
-                    let hand_item = &mut entity.item;
+                    let hand_item = &mut player.item;
                     let mut item = self.items.remove(&id);
                     let ground_item = match &item {
                         Some(item) => Some(item.item_type.clone()),
@@ -228,7 +228,7 @@ impl Model {
                             if self.resource_pack.items[&item_type].pickable {
                                 item.take();
                                 *hand_item = Some(item_type);
-                                self.play_sound(Sound::PickUp, self.sound_distance, entity.pos);
+                                self.play_sound(Sound::PickUp, self.sound_distance, player.pos);
                             }
                         }
                     }

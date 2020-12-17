@@ -1,13 +1,13 @@
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub struct EntityColors {
+pub struct PlayerColors {
     pub skin: Color<f32>,
     pub shirt: Color<f32>,
     pub pants: Color<f32>,
 }
 
-impl EntityColors {
+impl PlayerColors {
     pub fn new() -> Self {
         fn hsv(h: f32, s: f32, v: f32) -> Color<f32> {
             let mut h = h;
@@ -53,18 +53,18 @@ impl EntityColors {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub struct Entity {
+pub struct Player {
     pub id: Id,
     pub pos: Vec2<f32>,
     pub radius: f32,
     pub interaction_range: f32,
     pub item: Option<ItemType>,
-    pub colors: EntityColors,
-    pub action: Option<EntityAction>,
+    pub colors: PlayerColors,
+    pub action: Option<PlayerAction>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub enum EntityAction {
+pub enum PlayerAction {
     MovingTo {
         pos: Vec2<f32>,
         finish_action: Option<MomentAction>,

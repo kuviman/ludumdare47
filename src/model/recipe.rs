@@ -27,7 +27,7 @@ impl Recipe {
     pub fn is_relevant(&self, player_id: Id, view: &PlayerView) -> bool {
         self.ingredient1.as_ref()
             == view
-                .entities
+                .players
                 .iter()
                 .find(|p| p.id == player_id)
                 .and_then(|p| p.item.as_ref())

@@ -36,7 +36,7 @@ pub struct Assets {
     heyo: geng::Sound,
 }
 
-struct EntityData {
+struct PlayerData {
     pos: Vec2<f32>,
     size: f32,
     target_pos: Vec2<f32>,
@@ -46,14 +46,14 @@ struct EntityData {
     t: f32,
 }
 
-impl EntityData {
-    fn new(entity: &model::Entity) -> Self {
+impl PlayerData {
+    fn new(player: &model::Player) -> Self {
         Self {
-            pos: entity.pos,
-            size: entity.radius,
+            pos: player.pos,
+            size: player.radius,
             speed: 0.0,
             rotation: 0.0,
-            target_pos: entity.pos,
+            target_pos: player.pos,
             ampl: 0.0,
             t: 0.0,
         }
@@ -61,14 +61,14 @@ impl EntityData {
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(&mut self, entity: &model::Entity, delta_time: f32, view: &model::PlayerView) {
-        self.size = entity.radius;
+    fn update(&mut self, player: &model::Player, delta_time: f32, view: &model::PlayerView) {
+        self.size = player.radius;
         self.t += delta_time * 10.0;
-        if entity.pos != self.target_pos {
-            self.target_pos = entity.pos;
-            self.speed = (entity.pos - self.pos).len() / (2.0 / view.ticks_per_second);
+        if player.pos != self.target_pos {
+            self.target_pos = player.pos;
+            self.speed = (player.pos - self.pos).len() / (2.0 / view.ticks_per_second);
         }
-        let dpos = entity.pos - self.pos;
+        let dpos = player.pos - self.pos;
         self.pos += dpos.clamp(self.speed * delta_time);
         if dpos.len() > 1e-9 {
             self.rotation = dpos.arg();
@@ -149,7 +149,7 @@ pub struct App {
     tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
     light: light::Uniforms,
-    entity_positions: HashMap<Id, EntityData>,
+    player_positions: HashMap<Id, PlayerData>,
     music: Option<geng::SoundEffect>,
     walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
@@ -201,7 +201,7 @@ impl App {
             }),
             noise,
             light,
-            entity_positions: HashMap::new(),
+            player_positions: HashMap::new(),
             show_help: true,
             music: None,
             walk_sound: None,
@@ -247,7 +247,7 @@ impl geng::State for App {
         }
         if let Some(sound) = &mut self.walk_sound {
             sound.set_volume(
-                self.ui_state.volume() * self.entity_positions[&self.player_id].ampl as f64,
+                self.ui_state.volume() * self.player_positions[&self.player_id].ampl as f64,
             );
         }
         let delta_time = delta_time as f32;
@@ -283,20 +283,20 @@ impl geng::State for App {
             self.connection.send(ClientMessage::Ping);
         }
 
-        for entity in &self.view.entities {
-            if let Some(prev) = self.entity_positions.get_mut(&entity.id) {
-                prev.update(entity, delta_time, &self.view);
+        for player in &self.view.players {
+            if let Some(prev) = self.player_positions.get_mut(&player.id) {
+                prev.update(player, delta_time, &self.view);
             } else {
-                self.entity_positions
-                    .insert(entity.id, EntityData::new(entity));
+                self.player_positions
+                    .insert(player.id, PlayerData::new(player));
             }
         }
-        self.entity_positions.retain({
+        self.player_positions.retain({
             let view = &self.view;
-            move |&id, _| view.entities.iter().find(|e| e.id == id).is_some()
+            move |&id, _| view.players.iter().find(|e| e.id == id).is_some()
         });
 
-        let player_pos = self.entity_positions.get(&self.player_id).unwrap().pos;
+        let player_pos = self.player_positions.get(&self.player_id).unwrap().pos;
         self.camera.center += (player_pos
             .extend(self.tile_mesh.get_height(player_pos).unwrap_or(0.0))
             - self.camera.center)
@@ -338,8 +338,8 @@ impl geng::State for App {
             ))
             .map(|pos| pos.xy());
         let mut selected_item = None;
-        let mut selected_entity = None;
-        if let Some(data) = self.entity_positions.get(&self.player_id) {
+        let mut selected_player = None;
+        if let Some(data) = self.player_positions.get(&self.player_id) {
             self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
         }
         if let Some(pos) = selected_pos {
@@ -356,23 +356,23 @@ impl geng::State for App {
                     Color::rgba(1.0, 1.0, 1.0, 0.5),
                 );
                 selected_item = Some(item);
-            } else if let Some(entity) = self
+            } else if let Some(player) = self
                 .view
-                .entities
+                .players
                 .iter()
                 .find(|e| (e.pos - pos).len() <= e.radius)
             {
-                if let Some(data) = self.entity_positions.get(&entity.id) {
-                    if entity.id != self.player_id {
+                if let Some(data) = self.player_positions.get(&player.id) {
+                    if player.id != self.player_id {
                         self.draw_circle(
                             framebuffer,
                             data.pos,
-                            entity.radius,
+                            player.radius,
                             Color::rgba(1.0, 1.0, 1.0, 0.5),
                         );
                     }
                 }
-                selected_entity = Some(entity);
+                selected_player = Some(player);
             }
         }
 
@@ -401,11 +401,11 @@ impl geng::State for App {
                 instances.into_iter(),
             );
         }
-        for entity in &self.view.entities {
+        for player in &self.view.players {
             let data = self
-                .entity_positions
-                .entry(entity.id)
-                .or_insert(EntityData::new(entity));
+                .player_positions
+                .entry(player.id)
+                .or_insert(PlayerData::new(player));
             let mut pos = data.pos.extend(data.step());
             let rotation = data.rotation;
             let height = self
@@ -434,7 +434,7 @@ impl geng::State for App {
                     i_pos: pos,
                     i_size: 0.5,
                     i_rotation: -rotation,
-                    i_color: entity.colors.skin,
+                    i_color: player.colors.skin,
                 }),
             );
             self.ez3d.draw(
@@ -446,7 +446,7 @@ impl geng::State for App {
                     i_pos: pos,
                     i_size: 0.5,
                     i_rotation: -rotation,
-                    i_color: entity.colors.shirt,
+                    i_color: player.colors.shirt,
                 }),
             );
             self.ez3d.draw(
@@ -458,10 +458,10 @@ impl geng::State for App {
                     i_pos: pos,
                     i_size: 0.5,
                     i_rotation: -rotation,
-                    i_color: entity.colors.pants,
+                    i_color: player.colors.pants,
                 }),
             );
-            if let Some(item) = &entity.item {
+            if let Some(item) = &player.item {
                 self.ez3d.draw(
                     framebuffer,
                     &self.camera,
@@ -488,15 +488,15 @@ impl geng::State for App {
                 32.0,
                 Color::WHITE,
             );
-        } else if let Some(entity) = selected_entity {
-            if let Some(data) = self.entity_positions.get(&entity.id) {
-                let mut text = if entity.id == self.player_id {
+        } else if let Some(player) = selected_player {
+            if let Some(data) = self.player_positions.get(&player.id) {
+                let mut text = if player.id == self.player_id {
                     "Me"
                 } else {
                     "Player"
                 }
                 .to_owned();
-                if let Some(item) = &entity.item {
+                if let Some(item) = &player.item {
                     text = format!("{}, holding {}", text, item);
                 }
                 let pos = data.pos;
@@ -512,16 +512,16 @@ impl geng::State for App {
             }
         }
 
-        let entity = self
+        let player = self
             .view
-            .entities
+            .players
             .iter()
-            .find(|entity| entity.id == self.player_id)
+            .find(|player| player.id == self.player_id)
             .unwrap();
-        let data = &self.entity_positions[&entity.id];
-        if let Some(action) = &entity.action {
+        let data = &self.player_positions[&player.id];
+        if let Some(action) = &player.action {
             match action {
-                model::EntityAction::Crafting { time_left, .. } => {
+                model::PlayerAction::Crafting { time_left, .. } => {
                     let text = format!("{:.1}", time_left);
                     let pos = data.pos;
                     let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());

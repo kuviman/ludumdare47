@@ -12,7 +12,7 @@ pub struct Config {
     pub torch_light: f32,
     pub statue_light: f32,
     pub sound_distance: f32,
-    pub entity_interaction_range: f32,
+    pub player_interaction_range: f32,
 }
 
 impl Default for Config {
@@ -28,7 +28,7 @@ impl Default for Config {
             torch_light: 5.0,
             statue_light: 10.0,
             sound_distance: 5.0,
-            entity_interaction_range: 1.5,
+            player_interaction_range: 1.5,
         }
     }
 }
