@@ -133,7 +133,6 @@ impl UiState {
 }
 
 pub struct App {
-    show_help: bool,
     traffic_counter: traffic::Counter,
     geng: Rc<Geng>,
     resource_pack: ResourcePack,
@@ -202,7 +201,6 @@ impl App {
             noise,
             light,
             player_positions: HashMap::new(),
-            show_help: true,
             music: None,
             walk_sound: None,
             ui_state: UiState::new(geng),
@@ -560,31 +558,13 @@ impl geng::State for App {
             32.0,
             Color::WHITE,
         );
-        if self.show_help {
-            let mut y = 32.0;
-            let mut text = |text: &str| {
-                self.geng
-                    .default_font()
-                    .draw(framebuffer, text, vec2(32.0, y), 24.0, Color::WHITE);
-                y += 24.0;
-            };
-            let mut found = false;
-            for recipe in &self.view.recipes {
-                if recipe.is_relevant(self.player_id, &self.view) {
-                    found = true;
-                    text(&format!("    {}", recipe.to_string()));
-                }
-            }
-            if !found {
-                text("    No recipes available");
-            }
-            text("RECIPES:");
-            text("    F to toggle fullscreen");
-            text("    Right Mouse Button to interact");
-            text("    Left Mouse Button to move");
-            text("    H to toggle help");
-            text(self.traffic_counter.text());
-        }
+        self.geng.default_font().draw(
+            framebuffer,
+            self.traffic_counter.text(),
+            vec2(32.0, 32.0),
+            24.0,
+            Color::WHITE,
+        );
         self.ui_controller
             .draw(&mut self.ui_state.ui(), framebuffer);
     }
@@ -661,7 +641,6 @@ impl geng::State for App {
                 self.connection.send(ClientMessage::SayHi)
             }
             geng::Event::KeyDown { key: geng::Key::F } => self.geng.window().toggle_fullscreen(),
-            geng::Event::KeyDown { key: geng::Key::H } => self.show_help = !self.show_help,
             _ => {}
         }
         self.camera_controls.handle_event(&mut self.camera, &event);
