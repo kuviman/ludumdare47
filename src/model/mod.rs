@@ -48,7 +48,6 @@ pub struct Model {
     pub players: HashMap<Id, Player>,
     pub items: HashMap<Id, Item>,
     pub current_time: usize,
-    pub sound_distance: f32,
     sounds: HashMap<Id, Vec<Sound>>,
 }
 
@@ -113,7 +112,7 @@ impl Model {
             }
             Message::SayHi => {
                 let pos = self.players.get(&player_id).unwrap().pos;
-                self.play_sound(Sound::Hello, self.sound_distance, pos);
+                self.play_sound(Sound::Hello, pos);
             }
         }
     }
@@ -127,7 +126,8 @@ impl Model {
                 .values()
                 .any(|player| pos == player.pos.map(|x| x as i64))
     }
-    fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<f32>) {
+    fn play_sound(&mut self, sound: Sound, pos: Vec2<f32>) {
+        let range = self.rules.sound_distance;
         for (id, player_pos) in self.players.iter().map(|(id, player)| (id, player.pos)) {
             let dx = pos.x - player_pos.x;
             let dy = pos.y - player_pos.y;

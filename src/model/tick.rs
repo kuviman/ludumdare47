@@ -162,7 +162,7 @@ impl Model {
                                     self.spawn_item(item_type, item.pos);
                                 }
                             }
-                            self.play_sound(Sound::Craft, self.sound_distance, player.pos);
+                            self.play_sound(Sound::Craft, player.pos);
                         } else if let Some(item) = item {
                             self.spawn_item(item.item_type, item.pos);
                         }
@@ -213,7 +213,7 @@ impl Model {
                     let hand_item = &mut player.item;
                     if let Some(item_type) = hand_item.take() {
                         self.spawn_item(item_type, pos);
-                        self.play_sound(Sound::PutDown, self.sound_distance, pos);
+                        self.play_sound(Sound::PutDown, pos);
                     }
                 }
                 MomentAction::PickUp { id } => {
@@ -228,7 +228,7 @@ impl Model {
                             if self.resource_pack.items[&item_type].pickable {
                                 item.take();
                                 *hand_item = Some(item_type);
-                                self.play_sound(Sound::PickUp, self.sound_distance, player.pos);
+                                self.play_sound(Sound::PickUp, player.pos);
                             }
                         }
                     }

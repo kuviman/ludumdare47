@@ -9,4 +9,5 @@ pub struct Rules {
     pub regeneration_percent: f32,
     pub statue_light: f32,
     pub player_interaction_range: f32,
+    pub sound_distance: f32,
 }

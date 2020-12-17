@@ -18,6 +18,7 @@ impl Model {
             statue_light: config.statue_light,
             regeneration_percent: config.regeneration_percent,
             player_interaction_range: config.player_interaction_range,
+            sound_distance: config.sound_distance,
         };
         let mut model = Self {
             pack_list,
@@ -30,7 +31,6 @@ impl Model {
             players: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
-            sound_distance: config.sound_distance,
             sounds: HashMap::new(),
         };
         for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
