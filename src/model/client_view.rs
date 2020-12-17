@@ -1,7 +1,7 @@
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub struct PlayerView {
+pub struct ClientView {
     pub players_online: usize,
     pub player_movement_speed: f32,
     pub score: i32,
@@ -15,12 +15,12 @@ pub struct PlayerView {
 }
 
 impl Model {
-    pub fn get_view(&mut self, player_id: Id) -> PlayerView {
+    pub fn get_view(&mut self, player_id: Id) -> ClientView {
         let player = self.players.get(&player_id).unwrap();
         let mut view = HashSet::new();
-        Self::add_view_radius(&mut view, player.pos, self.rules.player_view_distance);
+        Self::add_view_radius(&mut view, player.pos, self.rules.client_view_distance);
 
-        let vision = PlayerView {
+        let vision = ClientView {
             players_online: self.players.len(),
             player_movement_speed: self.rules.player_movement_speed,
             score: self.score,

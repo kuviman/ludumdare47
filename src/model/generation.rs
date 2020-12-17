@@ -12,7 +12,7 @@ impl Model {
         let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
             player_movement_speed: config.player_movement_speed,
-            player_view_distance: config.view_distance,
+            client_view_distance: config.view_distance,
             campfire_light: config.campfire_light,
             torch_light: config.torch_light,
             statue_light: config.statue_light,

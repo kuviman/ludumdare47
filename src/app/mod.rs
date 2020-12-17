@@ -61,7 +61,7 @@ impl PlayerData {
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(&mut self, player: &model::Player, delta_time: f32, view: &model::PlayerView) {
+    fn update(&mut self, player: &model::Player, delta_time: f32, view: &model::ClientView) {
         self.size = player.radius;
         self.t += delta_time * 10.0;
         if player.pos != self.target_pos {
@@ -145,7 +145,7 @@ pub struct App {
     circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
-    view: model::PlayerView,
+    view: model::ClientView,
     tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
     light: light::Uniforms,
@@ -162,7 +162,7 @@ impl App {
         assets: Assets,
         resource_pack: ResourcePack,
         player_id: Id,
-        view: model::PlayerView,
+        view: model::ClientView,
         mut connection: Connection,
     ) -> Self {
         let noise = noise::OpenSimplex::new();

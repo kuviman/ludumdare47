@@ -16,7 +16,7 @@ pub type ClientMessage = model::Message;
 pub enum ServerMessage {
     PlayerId(Id),
     PackList(Vec<String>),
-    View(model::PlayerView),
+    View(model::ClientView),
 }
 
 type Connection = geng::net::client::Connection<ServerMessage, ClientMessage>;

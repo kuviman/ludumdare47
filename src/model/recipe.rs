@@ -24,7 +24,7 @@ impl Recipe {
                 _ => conditions == self.conditions,
             }
     }
-    pub fn is_relevant(&self, player_id: Id, view: &PlayerView) -> bool {
+    pub fn is_relevant(&self, player_id: Id, view: &ClientView) -> bool {
         self.ingredient1.as_ref()
             == view
                 .players

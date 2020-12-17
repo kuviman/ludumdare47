@@ -1,22 +1,22 @@
 use super::*;
 use noise::{NoiseFn, OpenSimplex, Seedable};
 
+mod client_view;
 mod config;
 mod generation;
 mod item;
 mod player;
-mod player_view;
 mod recipe;
 mod rules;
 mod tick;
 mod tile;
 mod vision;
 
+pub use client_view::*;
 pub use config::*;
 pub use generation::*;
 pub use item::*;
 pub use player::*;
-pub use player_view::*;
 pub use recipe::*;
 pub use rules::*;
 pub use tick::*;
