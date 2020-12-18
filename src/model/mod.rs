@@ -57,7 +57,7 @@ pub struct Model {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {
-    Ping,
+    RequestUpdate,
     Goto { pos: Vec2<f32> },
     Interact { id: Id },
     Drop { pos: Vec2<f32> },
@@ -81,7 +81,7 @@ impl Model {
     }
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         match message {
-            Message::Ping => {}
+            Message::RequestUpdate => {}
             Message::Goto { pos } => {
                 let mut player = self.players.get_mut(&player_id).unwrap();
                 player.action = Some(PlayerAction::MovingTo {

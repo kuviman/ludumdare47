@@ -168,7 +168,7 @@ impl App {
         let ez3d = &ez3d;
         let light = light::Uniforms::new(&view);
         let tile_mesh = TileMesh::new(geng, ez3d, resource_pack);
-        connection.send(ClientMessage::Ping);
+        connection.send(ClientMessage::RequestUpdate);
         Self {
             geng: geng.clone(),
             resource_pack: resource_pack.clone(),
@@ -250,11 +250,11 @@ impl geng::State for App {
 
         self.traffic_counter.update(delta_time, &self.connection);
 
-        let mut got_message = false;
+        let mut request_update = false;
         for message in self.connection.new_messages() {
-            got_message = true;
             match message {
-                ServerMessage::View(view) => {
+                ServerMessage::Update(view) => {
+                    request_update = true;
                     for sound in &view.sounds {
                         let sound = match sound {
                             model::Sound::Craft => &self.assets.craft,
@@ -276,8 +276,8 @@ impl geng::State for App {
                 _ => unreachable!(),
             }
         }
-        if got_message {
-            self.connection.send(ClientMessage::Ping);
+        if request_update {
+            self.connection.send(ClientMessage::RequestUpdate);
         }
 
         for player in &self.view.players {
