@@ -4,7 +4,6 @@ use super::*;
 pub struct ClientView {
     pub players_online: usize,
     pub player_movement_speed: f32,
-    pub score: i32,
     pub current_time: usize,
     pub ticks_per_second: f32,
     pub tiles: HashMap<Vec2<i64>, Tile>,
@@ -23,7 +22,6 @@ impl Model {
         let vision = ClientView {
             players_online: self.players.len(),
             player_movement_speed: self.rules.player_movement_speed,
-            score: self.score,
             ticks_per_second: self.ticks_per_second,
             current_time: self.current_time,
             tiles: {

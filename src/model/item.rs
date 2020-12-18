@@ -10,12 +10,6 @@ pub struct Item {
 #[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Hash)]
 pub struct ItemType(String);
 
-impl ItemType {
-    pub fn from_string(name: String) -> Self {
-        Self(name)
-    }
-}
-
 impl Display for ItemType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)

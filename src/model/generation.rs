@@ -1,14 +1,9 @@
 use super::*;
-
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub struct Chunk {
-    pub tile_map: HashMap<Vec2<i64>, Tile>,
-    pub items: HashMap<Id, Item>,
-}
+use noise::{OpenSimplex, Seedable};
 
 impl Model {
     pub fn new(config: Config) -> Self {
-        let (pack_list, resource_pack) = Config::load_resource_packs().unwrap();
+        let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
         let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
             player_movement_speed: config.player_movement_speed,
@@ -18,19 +13,18 @@ impl Model {
             statue_light: config.statue_light,
             regeneration_percent: config.regeneration_percent,
             player_interaction_range: config.player_interaction_range,
+            sound_distance: config.sound_distance,
         };
         let mut model = Self {
             pack_list,
             resource_pack,
             rules,
-            score: 0,
             ticks_per_second: config.ticks_per_second,
             chunk_size: config.chunk_size,
             chunks,
             players: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
-            sound_distance: config.sound_distance,
             sounds: HashMap::new(),
         };
         for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
@@ -95,10 +89,10 @@ impl Model {
     }
     fn generate_map(config: &Config, resource_pack: &ResourcePack) -> HashMap<Vec2<i64>, Chunk> {
         let mut noises = HashMap::new();
-        for (&biome_parameter, parameters) in &resource_pack.parameters {
+        for (biome_parameter, parameters) in &resource_pack.parameters {
             noises.insert(
-                biome_parameter,
-                Noise {
+                biome_parameter.clone(),
+                GenerationNoise {
                     noise: Box::new(OpenSimplex::new().set_seed(global_rng().gen())),
                     parameters: parameters.clone(),
                 },
@@ -121,7 +115,7 @@ impl Model {
     fn generate_chunk(
         config: &Config,
         chunk_pos: Vec2<i64>,
-        noises: &HashMap<BiomeParameter, Noise>,
+        noises: &HashMap<GenerationParameter, GenerationNoise>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Chunk {
         let mut tile_map = HashMap::new();
@@ -129,7 +123,8 @@ impl Model {
             for x in 0..config.chunk_size.x as i64 {
                 let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y));
                 let biome = Self::generate_biome(pos, noises, biomes);
-                let height = noises[&BiomeParameter::Height].get(pos.map(|x| x as f32));
+                let height =
+                    noises[&GenerationParameter("Height".to_owned())].get(pos.map(|x| x as f32));
                 tile_map.insert(vec2(x, y), Tile { pos, height, biome });
             }
         }
@@ -140,7 +135,7 @@ impl Model {
     }
     fn generate_biome(
         pos: Vec2<i64>,
-        noises: &HashMap<BiomeParameter, Noise>,
+        noises: &HashMap<GenerationParameter, GenerationNoise>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Biome {
         biomes
@@ -163,33 +158,7 @@ impl Model {
             .0
             .clone()
     }
-    pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
-        let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
-        match self.chunks.get(&chunk_pos) {
-            Some(chunk) => {
-                let tile_pos = vec2(
-                    pos.x - chunk_pos.x * self.chunk_size.x as i64,
-                    pos.y - chunk_pos.y * self.chunk_size.y as i64,
-                );
-                Some(&chunk.tile_map[&tile_pos])
-            }
-            None => None,
-        }
-    }
-    pub fn get_chunk_pos(&self, pos: Vec2<i64>) -> Vec2<i64> {
-        let x = if pos.x >= 0 {
-            pos.x / self.chunk_size.x as i64
-        } else {
-            (pos.x + 1) / self.chunk_size.x as i64 - 1
-        };
-        let y = if pos.y >= 0 {
-            pos.y / self.chunk_size.y as i64
-        } else {
-            (pos.y + 1) / self.chunk_size.y as i64 - 1
-        };
-        vec2(x, y)
-    }
-    pub fn generate_tile(&mut self, pos: Vec2<i64>) {
+    fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
         let choice = match self
             .resource_pack
@@ -205,6 +174,19 @@ impl Model {
         };
         if let Some(item_type) = choice {
             self.spawn_item(item_type, pos.map(|x| x as f32));
+        }
+    }
+    pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
+        let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
+        match self.chunks.get(&chunk_pos) {
+            Some(chunk) => {
+                let tile_pos = vec2(
+                    pos.x - chunk_pos.x * self.chunk_size.x as i64,
+                    pos.y - chunk_pos.y * self.chunk_size.y as i64,
+                );
+                Some(&chunk.tile_map[&tile_pos])
+            }
+            None => None,
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
@@ -230,14 +212,31 @@ impl Model {
             None
         }
     }
-    pub fn local_to_global_pos(
-        chunk_size: Vec2<usize>,
-        chunk_pos: Vec2<i64>,
-        pos: Vec2<i64>,
-    ) -> Vec2<i64> {
-        vec2(
-            chunk_pos.x * chunk_size.x as i64 + pos.x,
-            chunk_pos.y * chunk_size.y as i64 + pos.y,
-        )
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
+pub struct BiomeGeneration {
+    pub collidable: bool,
+    pub spawnable: bool,
+    pub parameters: HashMap<GenerationParameter, (f32, f32)>,
+}
+
+impl BiomeGeneration {
+    pub fn get_distance(
+        &self,
+        pos: Vec2<f32>,
+        parameter: &GenerationParameter,
+        noise: &GenerationNoise,
+    ) -> f32 {
+        match self.parameters.get(parameter) {
+            Some(parameter_zone) => {
+                let noise_value = noise.get(pos);
+                (noise_value - parameter_zone.0).min(parameter_zone.1 - noise_value)
+            }
+            None => noise.max_delta(),
+        }
     }
 }
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Trans)]
+pub struct GenerationParameter(String);

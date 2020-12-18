@@ -1,23 +1,28 @@
 use super::*;
-use noise::{NoiseFn, OpenSimplex, Seedable};
 
+mod chunk;
 mod client_view;
 mod config;
 mod generation;
+mod generation_noise;
 mod item;
 mod player;
 mod recipe;
+mod resource_pack;
 mod rules;
 mod tick;
 mod tile;
 mod vision;
 
+pub use chunk::*;
 pub use client_view::*;
 pub use config::*;
 pub use generation::*;
+pub use generation_noise::*;
 pub use item::*;
 pub use player::*;
 pub use recipe::*;
+pub use resource_pack::*;
 pub use rules::*;
 pub use tick::*;
 pub use tile::*;
@@ -41,14 +46,12 @@ pub struct Model {
     pub pack_list: Vec<String>,
     pub resource_pack: ResourcePack,
     pub rules: Rules,
-    pub score: i32,
     pub ticks_per_second: f32,
     pub chunk_size: Vec2<usize>,
     pub chunks: HashMap<Vec2<i64>, Chunk>,
     pub players: HashMap<Id, Player>,
     pub items: HashMap<Id, Item>,
     pub current_time: usize,
-    pub sound_distance: f32,
     sounds: HashMap<Id, Vec<Sound>>,
 }
 
@@ -113,7 +116,7 @@ impl Model {
             }
             Message::SayHi => {
                 let pos = self.players.get(&player_id).unwrap().pos;
-                self.play_sound(Sound::Hello, self.sound_distance, pos);
+                self.play_sound(Sound::Hello, pos);
             }
         }
     }
@@ -127,7 +130,8 @@ impl Model {
                 .values()
                 .any(|player| pos == player.pos.map(|x| x as i64))
     }
-    fn play_sound(&mut self, sound: Sound, range: f32, pos: Vec2<f32>) {
+    fn play_sound(&mut self, sound: Sound, pos: Vec2<f32>) {
+        let range = self.rules.sound_distance;
         for (id, player_pos) in self.players.iter().map(|(id, player)| (id, player.pos)) {
             let dx = pos.x - player_pos.x;
             let dy = pos.y - player_pos.y;
