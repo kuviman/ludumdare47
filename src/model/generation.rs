@@ -3,7 +3,7 @@ use noise::{OpenSimplex, Seedable};
 
 impl Model {
     pub fn new(config: Config) -> Self {
-        let (pack_list, resource_pack) = Config::load_resource_packs().unwrap();
+        let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
         let chunks = Self::generate_map(&config, &resource_pack);
         let rules = Rules {
             player_movement_speed: config.player_movement_speed,
