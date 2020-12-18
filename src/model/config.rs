@@ -47,7 +47,7 @@ impl Config {
     fn load_resource_pack(path: std::fs::DirEntry) -> Result<ResourcePack, std::io::Error> {
         // Load noise maps
         let parameters_path = path.path().join("server/generation-parameters.json");
-        let generation_parameters: HashMap<BiomeParameter, NoiseParameters> =
+        let generation_parameters: HashMap<GenerationParameter, NoiseParameters> =
             match std::fs::File::open(parameters_path) {
                 Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
                 Err(_) => HashMap::new(),
@@ -107,7 +107,7 @@ impl Config {
 pub struct ResourcePack {
     pub biome_names: HashMap<String, Biome>,
     pub biomes: HashMap<Biome, BiomeGeneration>,
-    pub parameters: HashMap<BiomeParameter, NoiseParameters>,
+    pub parameters: HashMap<GenerationParameter, NoiseParameters>,
     pub items: HashMap<ItemType, ItemParameters>,
     pub item_generation: HashMap<Biome, Vec<ItemGeneration>>,
     pub recipes: Vec<Recipe>,

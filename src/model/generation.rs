@@ -1,4 +1,5 @@
 use super::*;
+use noise::{OpenSimplex, Seedable};
 
 impl Model {
     pub fn new(config: Config) -> Self {
@@ -89,10 +90,10 @@ impl Model {
     }
     fn generate_map(config: &Config, resource_pack: &ResourcePack) -> HashMap<Vec2<i64>, Chunk> {
         let mut noises = HashMap::new();
-        for (&biome_parameter, parameters) in &resource_pack.parameters {
+        for (biome_parameter, parameters) in &resource_pack.parameters {
             noises.insert(
-                biome_parameter,
-                Noise {
+                biome_parameter.clone(),
+                GenerationNoise {
                     noise: Box::new(OpenSimplex::new().set_seed(global_rng().gen())),
                     parameters: parameters.clone(),
                 },
@@ -115,7 +116,7 @@ impl Model {
     fn generate_chunk(
         config: &Config,
         chunk_pos: Vec2<i64>,
-        noises: &HashMap<BiomeParameter, Noise>,
+        noises: &HashMap<GenerationParameter, GenerationNoise>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Chunk {
         let mut tile_map = HashMap::new();
@@ -123,7 +124,8 @@ impl Model {
             for x in 0..config.chunk_size.x as i64 {
                 let pos = Self::local_to_global_pos(config.chunk_size, chunk_pos, vec2(x, y));
                 let biome = Self::generate_biome(pos, noises, biomes);
-                let height = noises[&BiomeParameter::Height].get(pos.map(|x| x as f32));
+                let height =
+                    noises[&GenerationParameter("Height".to_owned())].get(pos.map(|x| x as f32));
                 tile_map.insert(vec2(x, y), Tile { pos, height, biome });
             }
         }
@@ -134,7 +136,7 @@ impl Model {
     }
     fn generate_biome(
         pos: Vec2<i64>,
-        noises: &HashMap<BiomeParameter, Noise>,
+        noises: &HashMap<GenerationParameter, GenerationNoise>,
         biomes: &HashMap<Biome, BiomeGeneration>,
     ) -> Biome {
         biomes
@@ -217,11 +219,16 @@ impl Model {
 pub struct BiomeGeneration {
     pub collidable: bool,
     pub spawnable: bool,
-    pub parameters: HashMap<BiomeParameter, (f32, f32)>,
+    pub parameters: HashMap<GenerationParameter, (f32, f32)>,
 }
 
 impl BiomeGeneration {
-    pub fn get_distance(&self, pos: Vec2<f32>, parameter: &BiomeParameter, noise: &Noise) -> f32 {
+    pub fn get_distance(
+        &self,
+        pos: Vec2<f32>,
+        parameter: &GenerationParameter,
+        noise: &GenerationNoise,
+    ) -> f32 {
         match self.parameters.get(parameter) {
             Some(parameter_zone) => {
                 let noise_value = noise.get(pos);
@@ -232,48 +239,5 @@ impl BiomeGeneration {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize, Trans)]
-pub enum BiomeParameter {
-    Height,
-    Magic,
-    Humidity,
-}
-
-pub struct Noise {
-    pub noise: Box<dyn NoiseFn<[f64; 2]> + Sync + Send>,
-    pub parameters: NoiseParameters,
-}
-
-impl Noise {
-    pub fn get(&self, pos: Vec2<f32>) -> f32 {
-        let mut frequency = 1.0;
-        let mut amplitude = 1.0;
-        let mut value = 0.0;
-        for _ in 0..self.parameters.octaves {
-            value += self.noise.get([
-                pos.x as f64 / self.parameters.scale as f64 * frequency as f64,
-                pos.y as f64 / self.parameters.scale as f64 * frequency as f64,
-            ]) as f32
-                / 0.544
-                * amplitude;
-            frequency *= self.parameters.lacunarity;
-            amplitude *= self.parameters.persistance;
-        }
-        let value = value.max(-1.0).min(1.0);
-        (value / 2.0 + 0.5) * (self.parameters.max_value - self.parameters.min_value)
-            + self.parameters.min_value
-    }
-    pub fn max_delta(&self) -> f32 {
-        self.parameters.max_value - self.parameters.min_value
-    }
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Trans)]
-pub struct NoiseParameters {
-    pub min_value: f32,
-    pub max_value: f32,
-    pub scale: f32,
-    pub octaves: usize,
-    pub lacunarity: f32,
-    pub persistance: f32,
-}
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Trans)]
+pub struct GenerationParameter(String);

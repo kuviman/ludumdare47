@@ -1,10 +1,10 @@
 use super::*;
-use noise::{NoiseFn, OpenSimplex, Seedable};
 
 mod chunk;
 mod client_view;
 mod config;
 mod generation;
+mod generation_noise;
 mod item;
 mod player;
 mod recipe;
@@ -17,6 +17,7 @@ pub use chunk::*;
 pub use client_view::*;
 pub use config::*;
 pub use generation::*;
+pub use generation_noise::*;
 pub use item::*;
 pub use player::*;
 pub use recipe::*;
