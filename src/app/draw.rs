@@ -37,7 +37,7 @@ impl App {
             .map(|pos| pos.xy());
         let mut selected_item = None;
         let mut selected_player = None;
-        if let Some(data) = self.player_positions.get(&self.player_id) {
+        if let Some(data) = self.players.get(&self.player_id) {
             self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
         }
         if let Some(pos) = selected_pos {
@@ -60,7 +60,7 @@ impl App {
                 .iter()
                 .find(|e| (e.pos - pos).len() <= e.radius)
             {
-                if let Some(data) = self.player_positions.get(&player.id) {
+                if let Some(data) = self.players.get(&player.id) {
                     if player.id != self.player_id {
                         self.draw_circle(
                             framebuffer,
@@ -101,7 +101,7 @@ impl App {
         }
         for player in &self.view.players {
             let data = self
-                .player_positions
+                .players
                 .entry(player.id)
                 .or_insert(PlayerData::new(player));
             let mut pos = data.pos.extend(data.step());
@@ -187,7 +187,7 @@ impl App {
                 Color::WHITE,
             );
         } else if let Some(player) = selected_player {
-            if let Some(data) = self.player_positions.get(&player.id) {
+            if let Some(data) = self.players.get(&player.id) {
                 let mut text = if player.id == self.player_id {
                     "Me"
                 } else {
@@ -216,7 +216,7 @@ impl App {
             .iter()
             .find(|player| player.id == self.player_id)
             .unwrap();
-        let data = &self.player_positions[&player.id];
+        let data = &self.players[&player.id];
         if let Some(action) = &player.action {
             match action {
                 model::PlayerAction::Crafting { time_left, .. } => {

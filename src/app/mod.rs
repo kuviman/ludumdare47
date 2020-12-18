@@ -149,7 +149,7 @@ pub struct App {
     tile_mesh: TileMesh,
     noise: noise::OpenSimplex,
     light: light::Uniforms,
-    player_positions: HashMap<Id, PlayerData>,
+    players: HashMap<Id, PlayerData>,
     music: Option<geng::SoundEffect>,
     walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
@@ -201,7 +201,7 @@ impl App {
             }),
             noise,
             light,
-            player_positions: HashMap::new(),
+            players: HashMap::new(),
             music: None,
             walk_sound: None,
             ui_state: UiState::new(geng),
@@ -245,9 +245,7 @@ impl geng::State for App {
             music.set_volume(self.ui_state.volume() * 0.3);
         }
         if let Some(sound) = &mut self.walk_sound {
-            sound.set_volume(
-                self.ui_state.volume() * self.player_positions[&self.player_id].ampl as f64,
-            );
+            sound.set_volume(self.ui_state.volume() * self.players[&self.player_id].ampl as f64);
         }
         let delta_time = delta_time as f32;
 
@@ -283,19 +281,18 @@ impl geng::State for App {
         }
 
         for player in &self.view.players {
-            if let Some(prev) = self.player_positions.get_mut(&player.id) {
+            if let Some(prev) = self.players.get_mut(&player.id) {
                 prev.update(player, delta_time, &self.view);
             } else {
-                self.player_positions
-                    .insert(player.id, PlayerData::new(player));
+                self.players.insert(player.id, PlayerData::new(player));
             }
         }
-        self.player_positions.retain({
+        self.players.retain({
             let view = &self.view;
             move |&id, _| view.players.iter().find(|e| e.id == id).is_some()
         });
 
-        let player_pos = self.player_positions.get(&self.player_id).unwrap().pos;
+        let player_pos = self.players.get(&self.player_id).unwrap().pos;
         self.camera.center += (player_pos
             .extend(self.tile_mesh.get_height(player_pos).unwrap_or(0.0))
             - self.camera.center)
