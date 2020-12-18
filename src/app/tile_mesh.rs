@@ -1,19 +1,28 @@
 use super::*;
 
 pub struct TileMesh {
+    ez3d: Rc<Ez3D>,
+    noise: noise::OpenSimplex,
     pub tiles: HashMap<Vec2<i64>, model::Tile>,
     pub mesh: ugli::VertexBuffer<ez3d::Vertex>,
+    resource_pack: Rc<ResourcePack>,
 }
 
 impl TileMesh {
-    pub fn new(
-        geng: &Rc<Geng>,
-        tiles: &HashMap<Vec2<i64>, model::Tile>,
-        noise: &dyn NoiseFn<[f64; 2]>,
-        resource_pack: &ResourcePack,
-    ) -> Self {
-        let mut mesh = Vec::new();
-        let tiles = tiles.clone();
+    pub fn new(geng: &Rc<Geng>, ez3d: &Rc<Ez3D>, resource_pack: &Rc<ResourcePack>) -> Self {
+        Self {
+            ez3d: ez3d.clone(),
+            noise: noise::OpenSimplex::new(),
+            tiles: HashMap::new(),
+            mesh: ugli::VertexBuffer::new_static(geng.ugli(), Vec::new()),
+            resource_pack: resource_pack.clone(),
+        }
+    }
+    pub fn update(&mut self, tiles: &HashMap<Vec2<i64>, model::Tile>) {
+        self.tiles = tiles.clone();
+        let noise = &self.noise;
+        let mesh = &mut self.mesh;
+        mesh.clear();
         let mut append_quad =
             |pos: Vec2<i64>, h00: f32, h10: f32, h11: f32, h01: f32, a_color: Color<f32>| {
                 let p = |p: Vec2<i64>, h: f32| {
@@ -64,7 +73,7 @@ impl TileMesh {
                     a_color,
                 });
             };
-        for (&tile_pos, tile) in &tiles {
+        for (&tile_pos, tile) in tiles {
             let x_height = if let Some(tile_x) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y)) {
                 tile_x.height
             } else {
@@ -87,10 +96,10 @@ impl TileMesh {
                 x_height,
                 xy_height,
                 y_height,
-                resource_pack.biomes[&tile.biome].color,
+                self.resource_pack.biomes[&tile.biome].color,
             );
         }
-        for (&tile_pos, _) in &tiles {
+        for (&tile_pos, _) in tiles {
             append_quad(
                 tile_pos,
                 0.0,
@@ -100,11 +109,26 @@ impl TileMesh {
                 Color::rgba(0.0, 0.5, 1.0, 0.5),
             );
         }
-        ez3d::calc_normals(&mut mesh);
-        Self {
-            tiles,
-            mesh: ugli::VertexBuffer::new_dynamic(geng.ugli(), mesh),
-        }
+        ez3d::calc_normals(&mut self.mesh);
+    }
+    pub fn draw(
+        &self,
+        framebuffer: &mut ugli::Framebuffer,
+        camera: &Camera,
+        light: &light::Uniforms,
+    ) {
+        self.ez3d.draw(
+            framebuffer,
+            camera,
+            light,
+            &self.mesh,
+            std::iter::once(ez3d::Instance {
+                i_pos: vec3(0.0, 0.0, 0.0),
+                i_rotation: 0.0,
+                i_size: 1.0,
+                i_color: Color::WHITE,
+            }),
+        );
     }
     pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
         self.intersect(camera::Ray {

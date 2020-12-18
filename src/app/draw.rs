@@ -8,25 +8,7 @@ impl App {
         ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
         self.camera_controls.draw(&mut self.camera, framebuffer);
 
-        self.tile_mesh = TileMesh::new(
-            &self.geng,
-            &self.view.tiles,
-            &self.noise,
-            &self.resource_pack,
-        );
-
-        self.ez3d.draw(
-            framebuffer,
-            &self.camera,
-            &self.light,
-            &self.tile_mesh.mesh,
-            std::iter::once(ez3d::Instance {
-                i_pos: vec3(0.0, 0.0, 0.0),
-                i_rotation: 0.0,
-                i_size: 1.0,
-                i_color: Color::WHITE,
-            }),
-        );
+        self.tile_mesh.draw(framebuffer, &self.camera, &self.light);
 
         let selected_pos = self
             .tile_mesh
@@ -85,7 +67,7 @@ impl App {
                 .push(ez3d::Instance {
                     i_pos: pos,
                     i_size: 0.5,
-                    i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32 * f32::PI,
+                    i_rotation: 0.0,
                     i_color: Color::WHITE,
                 });
         }
@@ -106,10 +88,7 @@ impl App {
                 .or_insert(PlayerData::new(player));
             let mut pos = data.pos.extend(data.step());
             let rotation = data.rotation;
-            let height = self
-                .tile_mesh
-                .get_height(pos.xy())
-                .expect("Failed to get player's height");
+            let height = self.tile_mesh.get_height(pos.xy()).unwrap_or(0.0);
             pos.z += height;
             self.ez3d.draw(
                 framebuffer,

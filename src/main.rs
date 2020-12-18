@@ -126,7 +126,14 @@ fn main() {
                             Some(ServerMessage::View(view)) => view,
                             _ => unreachable!(),
                         };
-                        App::new(&geng, assets, resource_pack, player_id, view, connection)
+                        App::new(
+                            &geng,
+                            assets,
+                            &Rc::new(resource_pack),
+                            player_id,
+                            view,
+                            connection,
+                        )
                     }
                 },
                 |app| app,

@@ -136,18 +136,17 @@ impl UiState {
 pub struct App {
     traffic_counter: traffic::Counter,
     geng: Rc<Geng>,
-    resource_pack: ResourcePack,
+    resource_pack: Rc<ResourcePack>,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
     camera: Camera,
     camera_controls: camera::Controls,
-    ez3d: Ez3D,
+    ez3d: Rc<Ez3D>,
     circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
     view: model::ClientView,
     tile_mesh: TileMesh,
-    noise: noise::OpenSimplex,
     light: light::Uniforms,
     players: HashMap<Id, PlayerData>,
     music: Option<geng::SoundEffect>,
@@ -160,24 +159,25 @@ impl App {
     pub fn new(
         geng: &Rc<Geng>,
         assets: Assets,
-        resource_pack: ResourcePack,
+        resource_pack: &Rc<ResourcePack>,
         player_id: Id,
         view: model::ClientView,
         mut connection: Connection,
     ) -> Self {
-        let noise = noise::OpenSimplex::new();
+        let ez3d = Rc::new(Ez3D::new(geng));
+        let ez3d = &ez3d;
         let light = light::Uniforms::new(&view);
-        let tile_mesh = TileMesh::new(geng, &view.tiles, &noise, &resource_pack);
+        let tile_mesh = TileMesh::new(geng, ez3d, resource_pack);
         connection.send(ClientMessage::Ping);
         Self {
             geng: geng.clone(),
-            resource_pack,
+            resource_pack: resource_pack.clone(),
             assets,
             traffic_counter: traffic::Counter::new(),
             framebuffer_size: vec2(1, 1),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
-            ez3d: Ez3D::new(geng),
+            ez3d: ez3d.clone(),
             connection,
             player_id,
             view,
@@ -199,7 +199,6 @@ impl App {
                     })
                     .collect()
             }),
-            noise,
             light,
             players: HashMap::new(),
             music: None,
@@ -272,6 +271,7 @@ impl geng::State for App {
                         sound.play();
                     }
                     self.view = view;
+                    self.tile_mesh.update(&self.view.tiles);
                 }
                 _ => unreachable!(),
             }
