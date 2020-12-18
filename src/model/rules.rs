@@ -11,4 +11,5 @@ pub struct Rules {
     pub player_interaction_range: f32,
     pub sound_distance: f32,
     pub generation_distance: usize,
+    pub spawn_area: usize,
 }

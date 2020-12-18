@@ -14,6 +14,7 @@ impl Model {
             player_interaction_range: config.player_interaction_range,
             sound_distance: config.sound_distance,
             generation_distance: config.generation_distance,
+            spawn_area: config.spawn_area,
         };
         let mut model = Self {
             pack_list,
@@ -33,7 +34,7 @@ impl Model {
     }
     pub fn new_player(&mut self) -> Id {
         let player_id;
-        if let Some(pos) = self.get_spawnable_pos() {
+        if let Some(pos) = self.get_spawnable_pos(vec2(0, 0), self.rules.spawn_area) {
             let player = Player {
                 id: Id::new(),
                 pos: pos.map(|x| x as f32),
@@ -192,14 +193,28 @@ impl Model {
         self.resource_pack.biomes[&self.get_tile(pos).unwrap().biome].spawnable
             && self.is_empty_tile(pos)
     }
-    fn get_spawnable_pos(&self) -> Option<Vec2<f32>> {
+    fn get_spawnable_pos(
+        &self,
+        origin_chunk_pos: Vec2<i64>,
+        chunk_search_range: usize,
+    ) -> Option<Vec2<i64>> {
         let mut positions = vec![];
-        for (&chunk_pos, _) in &self.chunks {
+        let mut chunks = Vec::with_capacity(chunk_search_range * chunk_search_range * 4);
+        let chunk_search_range = chunk_search_range as i64;
+        for y in -chunk_search_range..chunk_search_range + 1 {
+            for x in -chunk_search_range..chunk_search_range + 1 {
+                let pos = vec2(x, y) + origin_chunk_pos;
+                if let Some(_) = self.chunks.get(&pos) {
+                    chunks.push(pos);
+                }
+            }
+        }
+        for chunk_pos in chunks {
             for y in 0..self.chunk_size.y as i64 {
                 for x in 0..self.chunk_size.x as i64 {
                     let pos = Self::local_to_global_pos(self.chunk_size, chunk_pos, vec2(x, y));
                     if self.is_spawnable_tile(pos) {
-                        positions.push(pos.map(|x| x as f32));
+                        positions.push(pos);
                     }
                 }
             }
