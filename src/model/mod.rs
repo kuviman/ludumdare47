@@ -46,7 +46,6 @@ pub struct Model {
     pub pack_list: Vec<String>,
     pub resource_pack: ResourcePack,
     pub rules: Rules,
-    pub score: i32,
     pub ticks_per_second: f32,
     pub chunk_size: Vec2<usize>,
     pub chunks: HashMap<Vec2<i64>, Chunk>,

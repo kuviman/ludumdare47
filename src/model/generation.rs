@@ -19,7 +19,6 @@ impl Model {
             pack_list,
             resource_pack,
             rules,
-            score: 0,
             ticks_per_second: config.ticks_per_second,
             chunk_size: config.chunk_size,
             chunks,
