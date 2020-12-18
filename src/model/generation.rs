@@ -1,11 +1,5 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
-pub struct Chunk {
-    pub tile_map: HashMap<Vec2<i64>, Tile>,
-    pub items: HashMap<Id, Item>,
-}
-
 impl Model {
     pub fn new(config: Config) -> Self {
         let (pack_list, resource_pack) = Config::load_resource_packs().unwrap();
@@ -163,33 +157,7 @@ impl Model {
             .0
             .clone()
     }
-    pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
-        let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
-        match self.chunks.get(&chunk_pos) {
-            Some(chunk) => {
-                let tile_pos = vec2(
-                    pos.x - chunk_pos.x * self.chunk_size.x as i64,
-                    pos.y - chunk_pos.y * self.chunk_size.y as i64,
-                );
-                Some(&chunk.tile_map[&tile_pos])
-            }
-            None => None,
-        }
-    }
-    pub fn get_chunk_pos(&self, pos: Vec2<i64>) -> Vec2<i64> {
-        let x = if pos.x >= 0 {
-            pos.x / self.chunk_size.x as i64
-        } else {
-            (pos.x + 1) / self.chunk_size.x as i64 - 1
-        };
-        let y = if pos.y >= 0 {
-            pos.y / self.chunk_size.y as i64
-        } else {
-            (pos.y + 1) / self.chunk_size.y as i64 - 1
-        };
-        vec2(x, y)
-    }
-    pub fn generate_tile(&mut self, pos: Vec2<i64>) {
+    fn generate_tile(&mut self, pos: Vec2<i64>) {
         let mut rng = global_rng();
         let choice = match self
             .resource_pack
@@ -205,6 +173,19 @@ impl Model {
         };
         if let Some(item_type) = choice {
             self.spawn_item(item_type, pos.map(|x| x as f32));
+        }
+    }
+    pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
+        let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
+        match self.chunks.get(&chunk_pos) {
+            Some(chunk) => {
+                let tile_pos = vec2(
+                    pos.x - chunk_pos.x * self.chunk_size.x as i64,
+                    pos.y - chunk_pos.y * self.chunk_size.y as i64,
+                );
+                Some(&chunk.tile_map[&tile_pos])
+            }
+            None => None,
         }
     }
     fn is_spawnable_tile(&self, pos: Vec2<i64>) -> bool {
@@ -229,15 +210,5 @@ impl Model {
         } else {
             None
         }
-    }
-    pub fn local_to_global_pos(
-        chunk_size: Vec2<usize>,
-        chunk_pos: Vec2<i64>,
-        pos: Vec2<i64>,
-    ) -> Vec2<i64> {
-        vec2(
-            chunk_pos.x * chunk_size.x as i64 + pos.x,
-            chunk_pos.y * chunk_size.y as i64 + pos.y,
-        )
     }
 }

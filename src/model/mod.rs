@@ -1,6 +1,7 @@
 use super::*;
 use noise::{NoiseFn, OpenSimplex, Seedable};
 
+mod chunk;
 mod client_view;
 mod config;
 mod generation;
@@ -12,6 +13,7 @@ mod tick;
 mod tile;
 mod vision;
 
+pub use chunk::*;
 pub use client_view::*;
 pub use config::*;
 pub use generation::*;
