@@ -5,6 +5,7 @@ impl Model {
         let ids: Vec<Id> = self.players.keys().copied().collect();
         for id in ids {
             let mut player = self.players.get(&id).unwrap().clone();
+            self.generate_chunks_at(self.get_chunk_pos(player.pos.map(|x| x as i64)));
             self.player_action(&mut player);
 
             // Collide with items

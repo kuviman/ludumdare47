@@ -13,6 +13,7 @@ impl Model {
             regeneration_percent: config.regeneration_percent,
             player_interaction_range: config.player_interaction_range,
             sound_distance: config.sound_distance,
+            generation_distance: config.generation_distance,
         };
         let mut model = Self {
             pack_list,
@@ -27,7 +28,7 @@ impl Model {
             current_time: 0,
             sounds: HashMap::new(),
         };
-        model.generate_map(config.initial_generation_size);
+        model.generate_chunks_at(vec2(0, 0));
         model
     }
     pub fn new_player(&mut self) -> Id {
@@ -93,12 +94,17 @@ impl Model {
         }
         noises
     }
-    fn generate_map(&mut self, initial_generation_size: Vec2<i64>) {
-        let gen_y = initial_generation_size.y as i64 / 2;
-        let gen_x = initial_generation_size.x as i64 / 2;
-        for y in -gen_y..gen_y + 1 {
-            for x in -gen_x..gen_x + 1 {
-                self.generate_chunk(vec2(x, y));
+    pub fn generate_chunks_at(&mut self, origin_chunk_pos: Vec2<i64>) {
+        self.generate_chunks_range(origin_chunk_pos, self.rules.generation_distance);
+    }
+    fn generate_chunks_range(&mut self, origin_chunk_pos: Vec2<i64>, generation_distance: usize) {
+        let gen_dist = generation_distance as i64;
+        for y in -gen_dist..gen_dist + 1 {
+            for x in -gen_dist..gen_dist + 1 {
+                let chunk_pos = vec2(x, y) + origin_chunk_pos;
+                if !self.chunks.contains_key(&chunk_pos) {
+                    self.generate_chunk(chunk_pos);
+                }
             }
         }
     }
