@@ -61,6 +61,7 @@ pub struct Player {
     pub item: Option<ItemType>,
     pub colors: PlayerColors,
     pub action: Option<PlayerAction>,
+    pub load_area: AABB<f32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Trans)]

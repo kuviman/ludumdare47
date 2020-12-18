@@ -189,29 +189,31 @@ impl App {
             }
         }
 
-        let player = self
+        if let Some(player) = self
             .view
             .players
             .iter()
             .find(|player| player.id == self.player_id)
-            .unwrap();
-        let data = &self.players[&player.id];
-        if let Some(action) = &player.action {
-            match action {
-                model::PlayerAction::Crafting { time_left, .. } => {
-                    let text = format!("{:.1}", time_left);
-                    let pos = data.pos;
-                    let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
-                    self.geng.default_font().draw_aligned(
-                        framebuffer,
-                        &text,
-                        self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 50.0),
-                        0.5,
-                        32.0,
-                        Color::WHITE,
-                    );
+        {
+            let data = &self.players[&player.id];
+            if let Some(action) = &player.action {
+                match action {
+                    model::PlayerAction::Crafting { time_left, .. } => {
+                        let text = format!("{:.1}", time_left);
+                        let pos = data.pos;
+                        let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+                        self.geng.default_font().draw_aligned(
+                            framebuffer,
+                            &text,
+                            self.camera.world_to_screen(self.framebuffer_size, pos)
+                                + vec2(0.0, 50.0),
+                            0.5,
+                            32.0,
+                            Color::WHITE,
+                        );
+                    }
+                    _ => (),
                 }
-                _ => (),
             }
         }
         self.geng.default_font().draw_aligned(

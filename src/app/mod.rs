@@ -168,7 +168,7 @@ impl App {
         let ez3d = &ez3d;
         let light = light::Uniforms::new(&view);
         let tile_mesh = TileMesh::new(geng, ez3d, resource_pack);
-        connection.send(ClientMessage::RequestUpdate);
+        connection.send(ClientMessage::RequestUpdate { load_area: None });
         Self {
             geng: geng.clone(),
             resource_pack: resource_pack.clone(),
@@ -276,9 +276,6 @@ impl geng::State for App {
                 _ => unreachable!(),
             }
         }
-        if request_update {
-            self.connection.send(ClientMessage::RequestUpdate);
-        }
 
         for player in &self.view.players {
             if let Some(prev) = self.players.get_mut(&player.id) {
@@ -287,6 +284,18 @@ impl geng::State for App {
                 self.players.insert(player.id, PlayerData::new(player));
             }
         }
+
+        if request_update {
+            let player = self.players.get(&self.player_id).unwrap();
+            let load_radius = self.camera.distance;
+            self.connection.send(ClientMessage::RequestUpdate {
+                load_area: Some(AABB::from_corners(
+                    player.pos - vec2(load_radius, load_radius),
+                    player.pos + vec2(load_radius, load_radius),
+                )),
+            });
+        }
+
         self.players.retain({
             let view = &self.view;
             move |&id, _| view.players.iter().find(|e| e.id == id).is_some()

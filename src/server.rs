@@ -18,13 +18,12 @@ impl Drop for Client {
 impl geng::net::Receiver<ClientMessage> for Client {
     fn handle(&mut self, message: ClientMessage) {
         let mut server_model = self.server_model.lock().unwrap();
-        if let ClientMessage::RequestUpdate = &message {
+        if let ClientMessage::RequestUpdate { .. } = &message {
             // TODO: Diff?
             self.sender
                 .send(ServerMessage::Update(server_model.get_view(self.player_id)));
-        } else {
-            server_model.handle_message(self.player_id, message);
         }
+        server_model.handle_message(self.player_id, message);
     }
 }
 struct ServerApp {

@@ -16,8 +16,6 @@ pub struct ClientView {
 impl Model {
     pub fn get_view(&mut self, player_id: Id) -> ClientView {
         let player = self.players.get(&player_id).unwrap();
-        let mut view = HashSet::new();
-        Self::add_view_radius(&mut view, player.pos, self.rules.client_view_distance);
 
         let vision = ClientView {
             players_online: self.players.len(),
@@ -26,7 +24,7 @@ impl Model {
             current_time: self.current_time,
             tiles: {
                 let mut tiles = HashMap::new();
-                for &pos in &view {
+                for pos in player.load_area.map(|x| x as i64).points() {
                     if let Some(tile) = self.get_tile(pos) {
                         tiles.insert(pos, tile.clone());
                     }
@@ -35,14 +33,16 @@ impl Model {
             },
             players: self
                 .players
-                .iter()
-                .filter(|(_, player)| view.contains(&player.pos.map(|x| x as i64)))
-                .map(|(_, player)| player.clone())
+                .values()
+                .filter(|other_player| {
+                    player.id == other_player.id || player.load_area.contains(other_player.pos)
+                })
+                .cloned()
                 .collect(),
             items: self
                 .items
                 .iter()
-                .filter(|(_, item)| view.contains(&item.pos.map(|x| x as i64)))
+                .filter(|(_, item)| player.load_area.contains(item.pos))
                 .map(|(id, item)| (id.clone(), item.clone()))
                 .collect(),
             recipes: self.resource_pack.recipes.clone(),
