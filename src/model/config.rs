@@ -4,7 +4,7 @@ use super::*;
 pub struct Config {
     pub ticks_per_second: f32,
     pub chunk_size: Vec2<usize>,
-    pub initial_generation_size: Vec2<usize>,
+    pub initial_generation_size: Vec2<i64>,
     pub player_movement_speed: f32,
     pub view_distance: f32,
     pub regeneration_percent: f32,
