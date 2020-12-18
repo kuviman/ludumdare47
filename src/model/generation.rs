@@ -28,16 +28,6 @@ impl Model {
             sounds: HashMap::new(),
         };
         model.generate_map(config.initial_generation_size);
-        for chunk_pos in model.chunks.keys().copied().collect::<Vec<Vec2<i64>>>() {
-            for y in 0..model.chunk_size.y as i64 {
-                for x in 0..model.chunk_size.x as i64 {
-                    let pos = Self::local_to_global_pos(model.chunk_size, chunk_pos, vec2(x, y));
-                    if model.is_empty_tile(pos) {
-                        model.generate_tile(pos);
-                    }
-                }
-            }
-        }
         model
     }
     pub fn new_player(&mut self) -> Id {
@@ -130,6 +120,14 @@ impl Model {
                 items: HashMap::new(),
             },
         );
+        for y in 0..self.chunk_size.y as i64 {
+            for x in 0..self.chunk_size.x as i64 {
+                let pos = Self::local_to_global_pos(self.chunk_size, chunk_pos, vec2(x, y));
+                if self.is_empty_tile(pos) {
+                    self.generate_tile(pos);
+                }
+            }
+        }
     }
     fn generate_biome(&self, pos: Vec2<i64>) -> Biome {
         self.resource_pack
