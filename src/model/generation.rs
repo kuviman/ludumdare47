@@ -43,6 +43,7 @@ impl Model {
                 item: None,
                 colors: PlayerColors::new(),
                 action: None,
+                load_area: AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0)),
             };
             player_id = player.id;
             self.sounds.insert(player.id, vec![]);

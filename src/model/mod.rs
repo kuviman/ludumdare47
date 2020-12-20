@@ -12,7 +12,6 @@ mod resource_pack;
 mod rules;
 mod tick;
 mod tile;
-mod vision;
 
 pub use chunk::*;
 pub use client_view::*;
@@ -26,7 +25,6 @@ pub use resource_pack::*;
 pub use rules::*;
 pub use tick::*;
 pub use tile::*;
-pub use vision::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq, Copy, Trans)]
 pub struct Id(usize);
@@ -57,7 +55,7 @@ pub struct Model {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {
-    Ping,
+    RequestUpdate { load_area: Option<AABB<f32>> },
     Goto { pos: Vec2<f32> },
     Interact { id: Id },
     Drop { pos: Vec2<f32> },
@@ -80,10 +78,14 @@ impl Model {
         self.sounds.remove(&player_id);
     }
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
+        let player = self.players.get_mut(&player_id).unwrap();
         match message {
-            Message::Ping => {}
+            Message::RequestUpdate { load_area } => {
+                if let Some(load_area) = load_area {
+                    player.load_area = load_area;
+                }
+            }
             Message::Goto { pos } => {
-                let mut player = self.players.get_mut(&player_id).unwrap();
                 player.action = Some(PlayerAction::MovingTo {
                     pos,
                     finish_action: None,
@@ -91,7 +93,6 @@ impl Model {
             }
             Message::Interact { id } => {
                 if let Some(item) = self.items.get(&id) {
-                    let mut player = self.players.get_mut(&player_id).unwrap();
                     player.action = Some(PlayerAction::MovingTo {
                         pos: item.pos,
                         finish_action: Some(MomentAction::Interact { id }),
@@ -99,14 +100,12 @@ impl Model {
                 }
             }
             Message::Drop { pos } => {
-                let mut player = self.players.get_mut(&player_id).unwrap();
                 player.action = Some(PlayerAction::MovingTo {
                     pos,
                     finish_action: Some(MomentAction::Drop { pos }),
                 });
             }
             Message::PickUp { id } => {
-                let mut player = self.players.get_mut(&player_id).unwrap();
                 if let Some(item) = self.items.get(&id) {
                     player.action = Some(PlayerAction::MovingTo {
                         pos: item.pos,
@@ -115,7 +114,7 @@ impl Model {
                 }
             }
             Message::SayHi => {
-                let pos = self.players.get(&player_id).unwrap().pos;
+                let pos = player.pos;
                 self.play_sound(Sound::Hello, pos);
             }
         }

@@ -3,6 +3,7 @@ use super::*;
 use noise::NoiseFn;
 
 mod camera;
+mod draw;
 mod ez3d;
 mod light;
 mod resource_pack;
@@ -135,20 +136,19 @@ impl UiState {
 pub struct App {
     traffic_counter: traffic::Counter,
     geng: Rc<Geng>,
-    resource_pack: ResourcePack,
+    resource_pack: Rc<ResourcePack>,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
     camera: Camera,
     camera_controls: camera::Controls,
-    ez3d: Ez3D,
+    ez3d: Rc<Ez3D>,
     circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
     view: model::ClientView,
     tile_mesh: TileMesh,
-    noise: noise::OpenSimplex,
     light: light::Uniforms,
-    player_positions: HashMap<Id, PlayerData>,
+    players: HashMap<Id, PlayerData>,
     music: Option<geng::SoundEffect>,
     walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
@@ -159,24 +159,25 @@ impl App {
     pub fn new(
         geng: &Rc<Geng>,
         assets: Assets,
-        resource_pack: ResourcePack,
+        resource_pack: &Rc<ResourcePack>,
         player_id: Id,
         view: model::ClientView,
         mut connection: Connection,
     ) -> Self {
-        let noise = noise::OpenSimplex::new();
+        let ez3d = Rc::new(Ez3D::new(geng));
+        let ez3d = &ez3d;
         let light = light::Uniforms::new(&view);
-        let tile_mesh = TileMesh::new(geng, &view.tiles, &noise, &resource_pack);
-        connection.send(ClientMessage::Ping);
+        let tile_mesh = TileMesh::new(geng, ez3d, resource_pack);
+        connection.send(ClientMessage::RequestUpdate { load_area: None });
         Self {
             geng: geng.clone(),
-            resource_pack,
+            resource_pack: resource_pack.clone(),
             assets,
             traffic_counter: traffic::Counter::new(),
             framebuffer_size: vec2(1, 1),
             camera: Camera::new(),
             camera_controls: camera::Controls::new(geng),
-            ez3d: Ez3D::new(geng),
+            ez3d: ez3d.clone(),
             connection,
             player_id,
             view,
@@ -198,9 +199,8 @@ impl App {
                     })
                     .collect()
             }),
-            noise,
             light,
-            player_positions: HashMap::new(),
+            players: HashMap::new(),
             music: None,
             walk_sound: None,
             ui_state: UiState::new(geng),
@@ -244,19 +244,17 @@ impl geng::State for App {
             music.set_volume(self.ui_state.volume() * 0.3);
         }
         if let Some(sound) = &mut self.walk_sound {
-            sound.set_volume(
-                self.ui_state.volume() * self.player_positions[&self.player_id].ampl as f64,
-            );
+            sound.set_volume(self.ui_state.volume() * self.players[&self.player_id].ampl as f64);
         }
         let delta_time = delta_time as f32;
 
         self.traffic_counter.update(delta_time, &self.connection);
 
-        let mut got_message = false;
+        let mut request_update = false;
         for message in self.connection.new_messages() {
-            got_message = true;
             match message {
-                ServerMessage::View(view) => {
+                ServerMessage::Update(view) => {
+                    request_update = true;
                     for sound in &view.sounds {
                         let sound = match sound {
                             model::Sound::Craft => &self.assets.craft,
@@ -273,28 +271,37 @@ impl geng::State for App {
                         sound.play();
                     }
                     self.view = view;
+                    self.tile_mesh.update(&self.view.tiles);
                 }
                 _ => unreachable!(),
             }
         }
-        if got_message {
-            self.connection.send(ClientMessage::Ping);
-        }
 
         for player in &self.view.players {
-            if let Some(prev) = self.player_positions.get_mut(&player.id) {
+            if let Some(prev) = self.players.get_mut(&player.id) {
                 prev.update(player, delta_time, &self.view);
             } else {
-                self.player_positions
-                    .insert(player.id, PlayerData::new(player));
+                self.players.insert(player.id, PlayerData::new(player));
             }
         }
-        self.player_positions.retain({
+
+        if request_update {
+            let player = self.players.get(&self.player_id).unwrap();
+            let load_radius = self.camera.distance;
+            self.connection.send(ClientMessage::RequestUpdate {
+                load_area: Some(AABB::from_corners(
+                    player.pos - vec2(load_radius, load_radius),
+                    player.pos + vec2(load_radius, load_radius),
+                )),
+            });
+        }
+
+        self.players.retain({
             let view = &self.view;
             move |&id, _| view.players.iter().find(|e| e.id == id).is_some()
         });
 
-        let player_pos = self.player_positions.get(&self.player_id).unwrap().pos;
+        let player_pos = self.players.get(&self.player_id).unwrap().pos;
         self.camera.center += (player_pos
             .extend(self.tile_mesh.get_height(player_pos).unwrap_or(0.0))
             - self.camera.center)
@@ -302,260 +309,7 @@ impl geng::State for App {
         self.camera_controls.update(&mut self.camera, delta_time);
     }
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
-        self.framebuffer_size = framebuffer.size();
-        self.light = light::Uniforms::new(&self.view);
-
-        ugli::clear(framebuffer, Some(Color::BLACK), Some(1.0));
-        self.camera_controls.draw(&mut self.camera, framebuffer);
-
-        self.tile_mesh = TileMesh::new(
-            &self.geng,
-            &self.view.tiles,
-            &self.noise,
-            &self.resource_pack,
-        );
-
-        self.ez3d.draw(
-            framebuffer,
-            &self.camera,
-            &self.light,
-            &self.tile_mesh.mesh,
-            std::iter::once(ez3d::Instance {
-                i_pos: vec3(0.0, 0.0, 0.0),
-                i_rotation: 0.0,
-                i_size: 1.0,
-                i_color: Color::WHITE,
-            }),
-        );
-
-        let selected_pos = self
-            .tile_mesh
-            .intersect(self.camera.pixel_ray(
-                self.framebuffer_size,
-                self.geng.window().mouse_pos().map(|x| x as f32),
-            ))
-            .map(|pos| pos.xy());
-        let mut selected_item = None;
-        let mut selected_player = None;
-        if let Some(data) = self.player_positions.get(&self.player_id) {
-            self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
-        }
-        if let Some(pos) = selected_pos {
-            if let Some((_, item)) = self
-                .view
-                .items
-                .iter()
-                .find(|(_, s)| (s.pos - pos).len() <= s.size)
-            {
-                self.draw_circle(
-                    framebuffer,
-                    item.pos,
-                    item.size,
-                    Color::rgba(1.0, 1.0, 1.0, 0.5),
-                );
-                selected_item = Some(item);
-            } else if let Some(player) = self
-                .view
-                .players
-                .iter()
-                .find(|e| (e.pos - pos).len() <= e.radius)
-            {
-                if let Some(data) = self.player_positions.get(&player.id) {
-                    if player.id != self.player_id {
-                        self.draw_circle(
-                            framebuffer,
-                            data.pos,
-                            player.radius,
-                            Color::rgba(1.0, 1.0, 1.0, 0.5),
-                        );
-                    }
-                }
-                selected_player = Some(player);
-            }
-        }
-
-        let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
-        for (_, item) in &self.view.items {
-            let pos = item.pos;
-            let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
-            let pos = pos.extend(height);
-            instances
-                .entry(item.item_type.clone())
-                .or_default()
-                .push(ez3d::Instance {
-                    i_pos: pos,
-                    i_size: 0.5,
-                    i_rotation: self.noise.get([pos.x as f64, pos.y as f64]) as f32 * f32::PI,
-                    i_color: Color::WHITE,
-                });
-        }
-        for (item_type, instances) in instances {
-            let obj = &self.resource_pack.items[&item_type].model;
-            self.ez3d.draw(
-                framebuffer,
-                &self.camera,
-                &self.light,
-                obj.vb(),
-                instances.into_iter(),
-            );
-        }
-        for player in &self.view.players {
-            let data = self
-                .player_positions
-                .entry(player.id)
-                .or_insert(PlayerData::new(player));
-            let mut pos = data.pos.extend(data.step());
-            let rotation = data.rotation;
-            let height = self
-                .tile_mesh
-                .get_height(pos.xy())
-                .expect("Failed to get player's height");
-            pos.z += height;
-            self.ez3d.draw(
-                framebuffer,
-                &self.camera,
-                &self.light,
-                self.assets.player.eyes.vb(),
-                std::iter::once(ez3d::Instance {
-                    i_pos: pos,
-                    i_size: 0.5,
-                    i_rotation: -rotation,
-                    i_color: Color::BLACK,
-                }),
-            );
-            self.ez3d.draw(
-                framebuffer,
-                &self.camera,
-                &self.light,
-                self.assets.player.skin.vb(),
-                std::iter::once(ez3d::Instance {
-                    i_pos: pos,
-                    i_size: 0.5,
-                    i_rotation: -rotation,
-                    i_color: player.colors.skin,
-                }),
-            );
-            self.ez3d.draw(
-                framebuffer,
-                &self.camera,
-                &self.light,
-                self.assets.player.shirt.vb(),
-                std::iter::once(ez3d::Instance {
-                    i_pos: pos,
-                    i_size: 0.5,
-                    i_rotation: -rotation,
-                    i_color: player.colors.shirt,
-                }),
-            );
-            self.ez3d.draw(
-                framebuffer,
-                &self.camera,
-                &self.light,
-                self.assets.player.pants.vb(),
-                std::iter::once(ez3d::Instance {
-                    i_pos: pos,
-                    i_size: 0.5,
-                    i_rotation: -rotation,
-                    i_color: player.colors.pants,
-                }),
-            );
-            if let Some(item) = &player.item {
-                self.ez3d.draw(
-                    framebuffer,
-                    &self.camera,
-                    &self.light,
-                    self.resource_pack.items[item].model.vb(),
-                    std::iter::once(ez3d::Instance {
-                        i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
-                        i_size: 0.5,
-                        i_rotation: -rotation,
-                        i_color: Color::WHITE,
-                    }),
-                );
-            }
-        }
-        if let Some(item) = selected_item {
-            let text = item.item_type.to_string();
-            let pos = item.pos;
-            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap_or(0.0));
-            self.geng.default_font().draw_aligned(
-                framebuffer,
-                &text,
-                self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
-                0.5,
-                32.0,
-                Color::WHITE,
-            );
-        } else if let Some(player) = selected_player {
-            if let Some(data) = self.player_positions.get(&player.id) {
-                let mut text = if player.id == self.player_id {
-                    "Me"
-                } else {
-                    "Player"
-                }
-                .to_owned();
-                if let Some(item) = &player.item {
-                    text = format!("{}, holding {}", text, item);
-                }
-                let pos = data.pos;
-                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
-                self.geng.default_font().draw_aligned(
-                    framebuffer,
-                    &text,
-                    self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
-                    0.5,
-                    32.0,
-                    Color::WHITE,
-                );
-            }
-        }
-
-        let player = self
-            .view
-            .players
-            .iter()
-            .find(|player| player.id == self.player_id)
-            .unwrap();
-        let data = &self.player_positions[&player.id];
-        if let Some(action) = &player.action {
-            match action {
-                model::PlayerAction::Crafting { time_left, .. } => {
-                    let text = format!("{:.1}", time_left);
-                    let pos = data.pos;
-                    let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
-                    self.geng.default_font().draw_aligned(
-                        framebuffer,
-                        &text,
-                        self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 50.0),
-                        0.5,
-                        32.0,
-                        Color::WHITE,
-                    );
-                }
-                _ => (),
-            }
-        }
-
-        self.geng.default_font().draw_aligned(
-            framebuffer,
-            &format!("Players online: {}", self.view.players_online),
-            vec2(
-                self.framebuffer_size.x as f32 / 2.0,
-                self.framebuffer_size.y as f32 - 50.0,
-            ),
-            0.5,
-            32.0,
-            Color::WHITE,
-        );
-        self.geng.default_font().draw(
-            framebuffer,
-            self.traffic_counter.text(),
-            vec2(32.0, 32.0),
-            24.0,
-            Color::WHITE,
-        );
-        self.ui_controller
-            .draw(&mut self.ui_state.ui(), framebuffer);
+        self.draw(framebuffer);
     }
     fn handle_event(&mut self, event: geng::Event) {
         self.ui_controller

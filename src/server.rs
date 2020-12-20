@@ -18,13 +18,12 @@ impl Drop for Client {
 impl geng::net::Receiver<ClientMessage> for Client {
     fn handle(&mut self, message: ClientMessage) {
         let mut server_model = self.server_model.lock().unwrap();
-        if let ClientMessage::Ping = &message {
+        if let ClientMessage::RequestUpdate { .. } = &message {
             // TODO: Diff?
             self.sender
-                .send(ServerMessage::View(server_model.get_view(self.player_id)));
-        } else {
-            server_model.handle_message(self.player_id, message);
+                .send(ServerMessage::Update(server_model.get_view(self.player_id)));
         }
+        server_model.handle_message(self.player_id, message);
     }
 }
 struct ServerApp {
@@ -39,7 +38,7 @@ impl geng::net::server::App for ServerApp {
         let player_id = model.new_player();
         sender.send(ServerMessage::PlayerId(player_id));
         sender.send(ServerMessage::PackList(model.pack_list.clone()));
-        sender.send(ServerMessage::View(model.get_view(player_id)));
+        sender.send(ServerMessage::Update(model.get_view(player_id)));
         Client {
             server_model: self.model.clone(),
             player_id,
