@@ -39,17 +39,17 @@ impl Id {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
 pub struct Model {
-    pub pack_list: Vec<String>,
-    pub resource_pack: ResourcePack,
-    pub rules: Rules,
     pub ticks_per_second: f32,
-    pub chunk_size: Vec2<usize>,
-    pub chunks: HashMap<Vec2<i64>, Chunk>,
-    pub players: HashMap<Id, Player>,
-    pub items: HashMap<Id, Item>,
-    pub current_time: usize,
+    pub pack_list: Vec<String>,
+    rules: Rules,
+    resource_pack: ResourcePack,
+    generation_noises: HashMap<GenerationParameter, GenerationNoise>,
+    chunk_size: Vec2<usize>,
+    chunks: HashMap<Vec2<i64>, Chunk>,
+    players: HashMap<Id, Player>,
+    items: HashMap<Id, Item>,
+    current_time: usize,
     sounds: HashMap<Id, Vec<Sound>>,
 }
 
