@@ -23,13 +23,13 @@ impl Model {
             resource_pack,
             ticks_per_second: config.ticks_per_second,
             chunk_size: config.chunk_size,
-            chunks: HashMap::new(),
+            loaded_chunks: HashMap::new(),
             players: HashMap::new(),
             items: HashMap::new(),
             current_time: 0,
             sounds: HashMap::new(),
         };
-        model.generate_chunks_at(vec2(0, 0));
+        model.load_chunks_at(vec2(0, 0));
         model
     }
     pub fn new_player(&mut self) -> Id {
@@ -62,7 +62,7 @@ impl Model {
         };
         let id = Id::new();
         self.items.insert(id, item.clone());
-        self.chunks
+        self.loaded_chunks
             .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
             .unwrap()
             .items
@@ -71,7 +71,7 @@ impl Model {
     pub fn remove_item_id(&mut self, id: Id) -> Option<Item> {
         let item = self.items.remove(&id);
         if let Some(item) = item {
-            self.chunks
+            self.loaded_chunks
                 .get_mut(&self.get_chunk_pos(item.pos.map(|x| x as i64)))
                 .unwrap()
                 .items
@@ -96,16 +96,28 @@ impl Model {
         }
         noises
     }
-    pub fn generate_chunks_at(&mut self, origin_chunk_pos: Vec2<i64>) {
-        self.generate_chunks_range(origin_chunk_pos, self.rules.generation_distance);
+    pub fn load_chunks_at(&mut self, origin_chunk_pos: Vec2<i64>) {
+        self.load_chunks_range(origin_chunk_pos, self.rules.generation_distance);
     }
-    fn generate_chunks_range(&mut self, origin_chunk_pos: Vec2<i64>, generation_distance: usize) {
+    fn load_chunks_range(&mut self, origin_chunk_pos: Vec2<i64>, generation_distance: usize) {
         let gen_dist = generation_distance as i64;
         for y in -gen_dist..gen_dist + 1 {
             for x in -gen_dist..gen_dist + 1 {
                 let chunk_pos = vec2(x, y) + origin_chunk_pos;
-                if !self.chunks.contains_key(&chunk_pos) {
-                    self.generate_chunk(chunk_pos);
+                match Chunk::load(chunk_pos) {
+                    Ok(chunk) => {
+                        for (&item_id, item) in &chunk.items {
+                            self.items.insert(item_id, item.clone());
+                        }
+                        self.loaded_chunks.insert(chunk_pos, chunk);
+                    }
+                    Err(_) => {
+                        if let Some(chunk) = self.loaded_chunks.get_mut(&chunk_pos) {
+                            chunk.is_loaded = true;
+                        } else {
+                            self.generate_chunk(chunk_pos);
+                        }
+                    }
                 }
             }
         }
@@ -121,11 +133,12 @@ impl Model {
                 tile_map.insert(vec2(x, y), Tile { pos, height, biome });
             }
         }
-        self.chunks.insert(
+        self.loaded_chunks.insert(
             chunk_pos,
             Chunk {
                 tile_map,
                 items: HashMap::new(),
+                is_loaded: true,
             },
         );
         for y in 0..self.chunk_size.y as i64 {
@@ -179,7 +192,7 @@ impl Model {
     }
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
-        match self.chunks.get(&chunk_pos) {
+        match self.loaded_chunks.get(&chunk_pos) {
             Some(chunk) => {
                 let tile_pos = vec2(
                     pos.x - chunk_pos.x * self.chunk_size.x as i64,
@@ -205,7 +218,7 @@ impl Model {
         for y in -chunk_search_range..chunk_search_range + 1 {
             for x in -chunk_search_range..chunk_search_range + 1 {
                 let pos = vec2(x, y) + origin_chunk_pos;
-                if let Some(_) = self.chunks.get(&pos) {
+                if let Some(_) = self.loaded_chunks.get(&pos) {
                     chunks.push(pos);
                 }
             }

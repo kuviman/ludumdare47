@@ -46,7 +46,7 @@ pub struct Model {
     resource_pack: ResourcePack,
     generation_noises: HashMap<GenerationParameter, GenerationNoise>,
     chunk_size: Vec2<usize>,
-    chunks: HashMap<Vec2<i64>, Chunk>,
+    loaded_chunks: HashMap<Vec2<i64>, Chunk>,
     players: HashMap<Id, Player>,
     items: HashMap<Id, Item>,
     current_time: usize,
