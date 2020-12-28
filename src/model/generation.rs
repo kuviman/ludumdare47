@@ -118,7 +118,7 @@ impl Model {
                 let biome = self.generate_biome(pos);
                 let height = self.generation_noises[&GenerationParameter("Height".to_owned())]
                     .get(pos.map(|x| x as f32));
-                tile_map.insert(vec2(x, y), Tile { pos, height, biome });
+                tile_map.insert(vec2(x, y), Tile { height, biome });
             }
         }
         self.chunks.insert(
