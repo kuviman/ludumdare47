@@ -77,9 +77,9 @@ pub enum Sound {
 impl Model {
     pub fn create(world_name: String) -> Result<Self, anyhow::Error> {
         std::fs::create_dir_all(format!("saves/{}/chunks", world_name))?;
-        bincode::serialize_into(
+        serde_json::to_writer(
             std::io::BufWriter::new(std::fs::File::create(format!(
-                "saves/{}/config.cfg",
+                "saves/{}/config.json",
                 world_name
             ))?),
             &Config::default(),
@@ -87,8 +87,8 @@ impl Model {
         Self::load(world_name)
     }
     pub fn load(world_name: String) -> Result<Self, anyhow::Error> {
-        let config: Config = bincode::deserialize_from(std::io::BufReader::new(
-            std::fs::File::open(format!("saves/{}/config.cfg", world_name))?,
+        let config: Config = serde_json::from_reader(std::io::BufReader::new(
+            std::fs::File::open(format!("saves/{}/config.json", world_name))?,
         ))?;
         let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
         let rules = Rules {
