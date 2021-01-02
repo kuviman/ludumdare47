@@ -52,12 +52,7 @@ impl Model {
                     if let Some((normal, penetration)) = match self.get_tile(pos) {
                         Some(tile) => {
                             if self.resource_pack.biomes[&tile.biome].collidable {
-                                Self::collide(
-                                    player.pos,
-                                    player.radius,
-                                    tile.pos.map(|x| x as f32),
-                                    1.0,
-                                )
+                                Self::collide(player.pos, player.radius, pos.map(|x| x as f32), 1.0)
                             } else {
                                 None
                             }
