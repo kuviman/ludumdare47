@@ -82,6 +82,7 @@ impl Server {
                     model.tick();
                     sleep_time = (1000.0 / model.ticks_per_second) as u64;
                 }
+                model.lock().unwrap().save().unwrap();
             }
         });
         self.server.run();

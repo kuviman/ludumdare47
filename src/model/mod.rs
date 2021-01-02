@@ -142,6 +142,12 @@ impl Model {
         model.load_chunks_at(vec2(0, 0));
         Ok(model)
     }
+    pub fn save(&self) -> Result<(), anyhow::Error> {
+        for (&chunk_pos, chunk) in &self.loaded_chunks {
+            chunk.save(&self.world_name, chunk_pos)?;
+        }
+        Ok(())
+    }
     pub fn drop_player(&mut self, player_id: Id) {
         self.players.remove(&player_id);
         self.sounds.remove(&player_id);
