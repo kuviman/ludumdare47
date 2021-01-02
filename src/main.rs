@@ -48,7 +48,11 @@ fn main() {
 
     #[cfg(not(target_arch = "wasm32"))]
     let (server, server_handle) = if !opt.no_server {
-        let server = Server::new(addr, Model::create("new_world".to_owned()).unwrap());
+        let server = Server::new(
+            addr,
+            Model::create("new_world".to_owned())
+                .unwrap_or(Model::load("new_world".to_owned()).unwrap()),
+        );
         let server_handle = server.handle();
         ctrlc::set_handler({
             let server_handle = server_handle.clone();
