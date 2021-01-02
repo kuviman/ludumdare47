@@ -24,8 +24,6 @@ type Connection = geng::net::client::Connection<ServerMessage, ClientMessage>;
 #[derive(StructOpt)]
 struct Opt {
     #[structopt(long)]
-    config: Option<std::path::PathBuf>,
-    #[structopt(long)]
     no_server: bool,
     #[structopt(long)]
     no_client: bool,
@@ -50,18 +48,7 @@ fn main() {
 
     #[cfg(not(target_arch = "wasm32"))]
     let (server, server_handle) = if !opt.no_server {
-        let config = opt
-            .config
-            .as_ref()
-            .map(|path| -> anyhow::Result<model::Config> {
-                Ok(serde_json::from_reader(std::io::BufReader::new(
-                    std::fs::File::open(path)?,
-                ))?)
-            })
-            .map(|result| result.expect("Failed to load config"))
-            .unwrap_or_default();
-
-        let server = Server::new(addr, Model::new(config));
+        let server = Server::new(addr, Model::load("new_world".to_owned()).unwrap());
         let server_handle = server.handle();
         ctrlc::set_handler({
             let server_handle = server_handle.clone();

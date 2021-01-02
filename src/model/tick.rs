@@ -73,12 +73,13 @@ impl Model {
         }
 
         let items = &mut self.items;
+        let world_name = &self.world_name;
         self.loaded_chunks.retain(|&chunk_pos, chunk| {
             if !chunk.is_loaded {
                 for item_id in chunk.items.keys() {
                     items.remove(item_id);
                 }
-                chunk.save(chunk_pos).unwrap();
+                chunk.save(world_name, chunk_pos).unwrap();
                 false
             } else {
                 true

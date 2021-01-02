@@ -42,8 +42,10 @@ impl Id {
 pub struct Model {
     pub ticks_per_second: f32,
     pub pack_list: Vec<String>,
+    world_name: String,
     rules: Rules,
     resource_pack: ResourcePack,
+    seed: u32,
     generation_noises: HashMap<GenerationParameter, GenerationNoise>,
     chunk_size: Vec2<usize>,
     loaded_chunks: HashMap<Vec2<i64>, Chunk>,
@@ -73,6 +75,52 @@ pub enum Sound {
 }
 
 impl Model {
+    pub fn create(world_name: String) -> Result<Self, anyhow::Error> {
+        std::fs::create_dir_all(format!("saves/{}/chunks", world_name))?;
+        bincode::serialize_into(
+            std::io::BufWriter::new(std::fs::File::create(format!(
+                "saves/{}/config.cfg",
+                world_name
+            ))?),
+            &Config::default(),
+        )?;
+        Self::load(world_name)
+    }
+    pub fn load(world_name: String) -> Result<Self, anyhow::Error> {
+        let config: Config = bincode::deserialize_from(std::io::BufReader::new(
+            std::fs::File::open(format!("saves/{}/config.cfg", world_name))?,
+        ))?;
+        let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
+        let rules = Rules {
+            player_movement_speed: config.player_movement_speed,
+            client_view_distance: config.view_distance,
+            campfire_light: config.campfire_light,
+            torch_light: config.torch_light,
+            statue_light: config.statue_light,
+            regeneration_percent: config.regeneration_percent,
+            player_interaction_range: config.player_interaction_range,
+            sound_distance: config.sound_distance,
+            generation_distance: config.generation_distance,
+            spawn_area: config.spawn_area,
+        };
+        let mut model = Self {
+            world_name,
+            pack_list,
+            rules,
+            seed: config.seed,
+            generation_noises: Self::init_generation_noises(config.seed, &resource_pack),
+            resource_pack,
+            ticks_per_second: config.ticks_per_second,
+            chunk_size: config.chunk_size,
+            loaded_chunks: HashMap::new(),
+            players: HashMap::new(),
+            items: HashMap::new(),
+            current_time: 0,
+            sounds: HashMap::new(),
+        };
+        model.load_chunks_at(vec2(0, 0));
+        Ok(model)
+    }
     pub fn drop_player(&mut self, player_id: Id) {
         self.players.remove(&player_id);
         self.sounds.remove(&player_id);
