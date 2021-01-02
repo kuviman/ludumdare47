@@ -18,6 +18,7 @@ pub use client_view::*;
 pub use config::*;
 pub use generation::*;
 pub use generation_noise::*;
+use geng::prelude::fmt::Formatter;
 pub use item::*;
 pub use player::*;
 pub use recipe::*;
@@ -74,8 +75,28 @@ pub enum Sound {
     Hello,
 }
 
+#[derive(Debug, Clone)]
+struct WorldError {
+    world_name: String,
+}
+
+impl std::fmt::Display for WorldError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "A world with the name {} already exists.",
+            self.world_name
+        )
+    }
+}
+
+impl std::error::Error for WorldError {}
+
 impl Model {
     pub fn create(world_name: String) -> Result<Self, anyhow::Error> {
+        if std::path::Path::new(&format!("saves/{}", world_name)).exists() {
+            return Err(anyhow::Error::from(WorldError { world_name }));
+        }
         std::fs::create_dir_all(format!("saves/{}/chunks", world_name))?;
         serde_json::to_writer(
             std::io::BufWriter::new(std::fs::File::create(format!(
