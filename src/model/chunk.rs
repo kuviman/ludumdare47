@@ -4,6 +4,32 @@ use super::*;
 pub struct Chunk {
     pub tile_map: HashMap<Vec2<i64>, Tile>,
     pub items: HashMap<Id, Item>,
+    pub is_loaded: bool,
+}
+
+impl Chunk {
+    pub fn load(world_name: &str, chunk_pos: Vec2<i64>) -> Result<Chunk, anyhow::Error> {
+        let mut chunk: Chunk = bincode::deserialize_from(std::io::BufReader::new(
+            std::fs::File::open(Self::save_file_path(world_name, chunk_pos))?,
+        ))?;
+        chunk.is_loaded = true;
+        Ok(chunk)
+    }
+    pub fn save(&self, world_name: &str, chunk_pos: Vec2<i64>) -> Result<(), anyhow::Error> {
+        bincode::serialize_into(
+            std::io::BufWriter::new(std::fs::File::create(Self::save_file_path(
+                world_name, chunk_pos,
+            ))?),
+            self,
+        )?;
+        Ok(())
+    }
+    fn save_file_path(world_name: &str, chunk_pos: Vec2<i64>) -> String {
+        format!(
+            "saves/{}/chunks/chunk_{}_{}.chunk",
+            world_name, chunk_pos.x, chunk_pos.y
+        )
+    }
 }
 
 impl Model {

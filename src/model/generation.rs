@@ -1,37 +1,7 @@
 use super::*;
-use noise::{OpenSimplex, Seedable};
+use noise::{NoiseFn, OpenSimplex, Seedable};
 
 impl Model {
-    pub fn new(config: Config) -> Self {
-        let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
-        let rules = Rules {
-            player_movement_speed: config.player_movement_speed,
-            client_view_distance: config.view_distance,
-            campfire_light: config.campfire_light,
-            torch_light: config.torch_light,
-            statue_light: config.statue_light,
-            regeneration_percent: config.regeneration_percent,
-            player_interaction_range: config.player_interaction_range,
-            sound_distance: config.sound_distance,
-            generation_distance: config.generation_distance,
-            spawn_area: config.spawn_area,
-        };
-        let mut model = Self {
-            pack_list,
-            rules,
-            generation_noises: Self::init_generation_noises(&resource_pack),
-            resource_pack,
-            ticks_per_second: config.ticks_per_second,
-            chunk_size: config.chunk_size,
-            chunks: HashMap::new(),
-            players: HashMap::new(),
-            items: HashMap::new(),
-            current_time: 0,
-            sounds: HashMap::new(),
-        };
-        model.generate_chunks_at(vec2(0, 0));
-        model
-    }
     pub fn new_player(&mut self) -> Id {
         let player_id;
         if let Some(pos) = self.get_spawnable_pos(vec2(0, 0), self.rules.spawn_area) {
@@ -62,7 +32,7 @@ impl Model {
         };
         let id = Id::new();
         self.items.insert(id, item.clone());
-        self.chunks
+        self.loaded_chunks
             .get_mut(&self.get_chunk_pos(pos.map(|x| x as i64)))
             .unwrap()
             .items
@@ -71,7 +41,7 @@ impl Model {
     pub fn remove_item_id(&mut self, id: Id) -> Option<Item> {
         let item = self.items.remove(&id);
         if let Some(item) = item {
-            self.chunks
+            self.loaded_chunks
                 .get_mut(&self.get_chunk_pos(item.pos.map(|x| x as i64)))
                 .unwrap()
                 .items
@@ -81,31 +51,56 @@ impl Model {
             None
         }
     }
-    fn init_generation_noises(
+    pub fn init_generation_noises(
+        seed: u32,
         resource_pack: &ResourcePack,
     ) -> HashMap<GenerationParameter, GenerationNoise> {
+        let seed_noise = OpenSimplex::new().set_seed(seed);
         let mut noises = HashMap::new();
         for (biome_parameter, parameters) in &resource_pack.parameters {
             noises.insert(
                 biome_parameter.clone(),
                 GenerationNoise {
-                    noise: Box::new(OpenSimplex::new().set_seed(global_rng().gen())),
+                    noise: Box::new(OpenSimplex::new().set_seed(
+                        (seed_noise.get([hash(biome_parameter) as f64, 0.0]) * 1000.0) as u32,
+                    )),
                     parameters: parameters.clone(),
                 },
             );
+            fn hash<T>(obj: T) -> u64
+            where
+                T: std::hash::Hash,
+            {
+                use std::hash::*;
+                let mut hasher = siphasher::sip::SipHasher::new();
+                obj.hash(&mut hasher);
+                hasher.finish()
+            }
         }
         noises
     }
-    pub fn generate_chunks_at(&mut self, origin_chunk_pos: Vec2<i64>) {
-        self.generate_chunks_range(origin_chunk_pos, self.rules.generation_distance);
+    pub fn load_chunks_at(&mut self, origin_chunk_pos: Vec2<i64>) {
+        self.load_chunks_range(origin_chunk_pos, self.rules.generation_distance);
     }
-    fn generate_chunks_range(&mut self, origin_chunk_pos: Vec2<i64>, generation_distance: usize) {
+    fn load_chunks_range(&mut self, origin_chunk_pos: Vec2<i64>, generation_distance: usize) {
         let gen_dist = generation_distance as i64;
         for y in -gen_dist..gen_dist + 1 {
             for x in -gen_dist..gen_dist + 1 {
                 let chunk_pos = vec2(x, y) + origin_chunk_pos;
-                if !self.chunks.contains_key(&chunk_pos) {
-                    self.generate_chunk(chunk_pos);
+                match Chunk::load(&self.world_name, chunk_pos) {
+                    Ok(chunk) => {
+                        for (&item_id, item) in &chunk.items {
+                            self.items.insert(item_id, item.clone());
+                        }
+                        self.loaded_chunks.insert(chunk_pos, chunk);
+                    }
+                    Err(_) => {
+                        if let Some(chunk) = self.loaded_chunks.get_mut(&chunk_pos) {
+                            chunk.is_loaded = true;
+                        } else {
+                            self.generate_chunk(chunk_pos);
+                        }
+                    }
                 }
             }
         }
@@ -121,11 +116,12 @@ impl Model {
                 tile_map.insert(vec2(x, y), Tile { height, biome });
             }
         }
-        self.chunks.insert(
+        self.loaded_chunks.insert(
             chunk_pos,
             Chunk {
                 tile_map,
                 items: HashMap::new(),
+                is_loaded: true,
             },
         );
         for y in 0..self.chunk_size.y as i64 {
@@ -179,7 +175,7 @@ impl Model {
     }
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         let chunk_pos = self.get_chunk_pos(pos.map(|x| x as i64));
-        match self.chunks.get(&chunk_pos) {
+        match self.loaded_chunks.get(&chunk_pos) {
             Some(chunk) => {
                 let tile_pos = vec2(
                     pos.x - chunk_pos.x * self.chunk_size.x as i64,
@@ -205,7 +201,7 @@ impl Model {
         for y in -chunk_search_range..chunk_search_range + 1 {
             for x in -chunk_search_range..chunk_search_range + 1 {
                 let pos = vec2(x, y) + origin_chunk_pos;
-                if let Some(_) = self.chunks.get(&pos) {
+                if let Some(_) = self.loaded_chunks.get(&pos) {
                     chunks.push(pos);
                 }
             }

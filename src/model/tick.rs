@@ -2,10 +2,15 @@ use super::*;
 
 impl Model {
     pub fn tick(&mut self) {
+        for chunk in self.loaded_chunks.values_mut() {
+            chunk.is_loaded = false;
+        }
+        self.load_chunks_at(vec2(0, 0));
+
         let ids: Vec<Id> = self.players.keys().copied().collect();
         for id in ids {
             let mut player = self.players.get(&id).unwrap().clone();
-            self.generate_chunks_at(self.get_chunk_pos(player.pos.map(|x| x as i64)));
+            self.load_chunks_at(self.get_chunk_pos(player.pos.map(|x| x as i64)));
             self.player_action(&mut player);
 
             // Collide with items
@@ -61,6 +66,20 @@ impl Model {
 
             *self.players.get_mut(&id).unwrap() = player;
         }
+
+        let items = &mut self.items;
+        let world_name = &self.world_name;
+        self.loaded_chunks.retain(|&chunk_pos, chunk| {
+            if !chunk.is_loaded {
+                for item_id in chunk.items.keys() {
+                    items.remove(item_id);
+                }
+                chunk.save(world_name, chunk_pos).unwrap();
+                false
+            } else {
+                true
+            }
+        });
     }
     fn collide(
         circle_pos: Vec2<f32>,

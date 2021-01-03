@@ -18,6 +18,7 @@ pub use client_view::*;
 pub use config::*;
 pub use generation::*;
 pub use generation_noise::*;
+use geng::prelude::fmt::Formatter;
 pub use item::*;
 pub use player::*;
 pub use recipe::*;
@@ -42,11 +43,13 @@ impl Id {
 pub struct Model {
     pub ticks_per_second: f32,
     pub pack_list: Vec<String>,
+    world_name: String,
     rules: Rules,
     resource_pack: ResourcePack,
+    seed: u32,
     generation_noises: HashMap<GenerationParameter, GenerationNoise>,
     chunk_size: Vec2<usize>,
-    chunks: HashMap<Vec2<i64>, Chunk>,
+    loaded_chunks: HashMap<Vec2<i64>, Chunk>,
     players: HashMap<Id, Player>,
     items: HashMap<Id, Item>,
     current_time: usize,
@@ -72,7 +75,79 @@ pub enum Sound {
     Hello,
 }
 
+#[derive(Debug, Clone)]
+struct WorldError {
+    world_name: String,
+}
+
+impl std::fmt::Display for WorldError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "A world with the name {} already exists.",
+            self.world_name
+        )
+    }
+}
+
+impl std::error::Error for WorldError {}
+
 impl Model {
+    pub fn create(world_name: String) -> Result<Self, anyhow::Error> {
+        if std::path::Path::new(&format!("saves/{}", world_name)).exists() {
+            return Err(anyhow::Error::from(WorldError { world_name }));
+        }
+        std::fs::create_dir_all(format!("saves/{}/chunks", world_name))?;
+        serde_json::to_writer(
+            std::io::BufWriter::new(std::fs::File::create(format!(
+                "saves/{}/config.json",
+                world_name
+            ))?),
+            &Config::default(),
+        )?;
+        Self::load(world_name)
+    }
+    pub fn load(world_name: String) -> Result<Self, anyhow::Error> {
+        let config: Config = serde_json::from_reader(std::io::BufReader::new(
+            std::fs::File::open(format!("saves/{}/config.json", world_name))?,
+        ))?;
+        let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
+        let rules = Rules {
+            player_movement_speed: config.player_movement_speed,
+            client_view_distance: config.view_distance,
+            campfire_light: config.campfire_light,
+            torch_light: config.torch_light,
+            statue_light: config.statue_light,
+            regeneration_percent: config.regeneration_percent,
+            player_interaction_range: config.player_interaction_range,
+            sound_distance: config.sound_distance,
+            generation_distance: config.generation_distance,
+            spawn_area: config.spawn_area,
+        };
+        let mut model = Self {
+            world_name,
+            pack_list,
+            rules,
+            seed: config.seed,
+            generation_noises: Self::init_generation_noises(config.seed, &resource_pack),
+            resource_pack,
+            ticks_per_second: config.ticks_per_second,
+            chunk_size: config.chunk_size,
+            loaded_chunks: HashMap::new(),
+            players: HashMap::new(),
+            items: HashMap::new(),
+            current_time: 0,
+            sounds: HashMap::new(),
+        };
+        model.load_chunks_at(vec2(0, 0));
+        Ok(model)
+    }
+    pub fn save(&self) -> Result<(), anyhow::Error> {
+        for (&chunk_pos, chunk) in &self.loaded_chunks {
+            chunk.save(&self.world_name, chunk_pos)?;
+        }
+        Ok(())
+    }
     pub fn drop_player(&mut self, player_id: Id) {
         self.players.remove(&player_id);
         self.sounds.remove(&player_id);

@@ -2,6 +2,7 @@ use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
+    pub seed: u32,
     pub ticks_per_second: f32,
     pub chunk_size: Vec2<usize>,
     pub player_movement_speed: f32,
@@ -19,6 +20,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            seed: 0,
             ticks_per_second: 20.0,
             chunk_size: vec2(10, 10),
             player_movement_speed: 2.0,
