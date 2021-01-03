@@ -218,7 +218,7 @@ impl Model {
         }
         let length = positions.len();
         if length > 0 {
-            positions.get(global_rng().gen_range(0, length)).copied()
+            positions.get(global_rng().gen_range(0..length)).copied()
         } else {
             None
         }

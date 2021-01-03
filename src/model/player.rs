@@ -45,9 +45,9 @@ impl PlayerColors {
             Color::rgb(r, g, b)
         }
         Self {
-            skin: hsv(0.04, 0.5, global_rng().gen_range(0.25, 1.0)),
-            shirt: hsv(global_rng().gen_range(0.0, 1.0), 1.0, 1.0),
-            pants: hsv(global_rng().gen_range(0.0, 1.0), 1.0, 1.0),
+            skin: hsv(0.04, 0.5, global_rng().gen_range(0.25..=1.0)),
+            shirt: hsv(global_rng().gen_range(0.0..1.0), 1.0, 1.0),
+            pants: hsv(global_rng().gen_range(0.0..1.0), 1.0, 1.0),
         }
     }
 }
