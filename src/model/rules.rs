@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Rules {
     pub player_movement_speed: f32,
     pub client_view_distance: f32,

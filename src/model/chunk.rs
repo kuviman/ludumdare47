@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Chunk {
     pub tile_map: HashMap<Vec2<i64>, Tile>,
     pub items: HashMap<Id, Item>,

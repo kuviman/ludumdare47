@@ -1,12 +1,12 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Tile {
     pub height: f32,
     pub biome: Biome,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans, Hash, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub struct Biome(String);
 
 impl Biome {

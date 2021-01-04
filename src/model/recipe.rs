@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Recipe {
     pub ingredient1: Option<ItemType>,
     pub ingredient2: Option<ItemType>,

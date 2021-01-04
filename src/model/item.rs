@@ -1,13 +1,13 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Item {
     pub pos: Vec2<f32>,
     pub size: f32,
     pub item_type: ItemType,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct ItemType(String);
 
 impl Display for ItemType {
@@ -16,14 +16,14 @@ impl Display for ItemType {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, Trans)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct ItemParameters {
     pub size: f32,
     pub traversable: bool,
     pub pickable: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemGeneration {
     pub item_type: Option<ItemType>,
     pub weight: usize,

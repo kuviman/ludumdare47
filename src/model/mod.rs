@@ -27,7 +27,7 @@ pub use rules::*;
 pub use tick::*;
 pub use tile::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq, Copy, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq, Copy)]
 pub struct Id(usize);
 
 impl Id {
@@ -66,7 +66,7 @@ pub enum Message {
     SayHi,
 }
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 pub enum Sound {
     Craft,
     PickUp,

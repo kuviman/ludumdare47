@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourcePack {
     pub biome_names: HashMap<String, Biome>,
     pub biomes: HashMap<Biome, BiomeGeneration>,

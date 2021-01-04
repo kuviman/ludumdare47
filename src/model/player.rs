@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PlayerColors {
     pub skin: Color<f32>,
     pub shirt: Color<f32>,
@@ -52,7 +52,7 @@ impl PlayerColors {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Player {
     pub id: Id,
     pub pos: Vec2<f32>,
@@ -64,7 +64,7 @@ pub struct Player {
     pub load_area: AABB<f32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PlayerAction {
     MovingTo {
         pos: Vec2<f32>,
@@ -77,7 +77,7 @@ pub enum PlayerAction {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, Trans)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 pub enum MomentAction {
     Interact { id: Id },
     Drop { pos: Vec2<f32> },

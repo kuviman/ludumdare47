@@ -225,7 +225,7 @@ impl Model {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Trans)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BiomeGeneration {
     pub collidable: bool,
     pub spawnable: bool,
@@ -249,5 +249,5 @@ impl BiomeGeneration {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Trans)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GenerationParameter(String);
