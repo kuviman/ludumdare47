@@ -1,5 +1,6 @@
 use geng::prelude::*;
-use noise::{NoiseFn, OpenSimplex, Seedable as _};
+
+use ::noise::{NoiseFn as _, Seedable as _};
 
 mod app;
 mod model;

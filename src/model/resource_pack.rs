@@ -4,7 +4,7 @@ use super::*;
 pub struct ResourcePack {
     pub biome_names: HashMap<String, Biome>,
     pub biomes: HashMap<Biome, BiomeGeneration>,
-    pub parameters: HashMap<GenerationParameter, NoiseParameters>,
+    pub parameters: HashMap<GenerationParameter, MultiNoiseParameters>,
     pub items: HashMap<ItemType, ItemParameters>,
     pub item_generation: HashMap<Biome, Vec<ItemGeneration>>,
     pub recipes: Vec<Recipe>,
@@ -22,9 +22,9 @@ impl ResourcePack {
         Ok((packs, resource_pack))
     }
     fn load_resource_pack(path: std::fs::DirEntry) -> Result<Self, std::io::Error> {
-        // Load noise maps
+        // Load generation parameters
         let parameters_path = path.path().join("server/generation-parameters.json");
-        let generation_parameters: HashMap<GenerationParameter, NoiseParameters> =
+        let generation_parameters: HashMap<GenerationParameter, MultiNoiseParameters> =
             match std::fs::File::open(parameters_path) {
                 Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
                 Err(_) => HashMap::new(),

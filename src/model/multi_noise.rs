@@ -1,15 +1,15 @@
 use super::*;
-use noise::NoiseFn;
 
-pub struct GenerationNoise {
-    noise: Box<dyn NoiseFn<[f64; 2]> + Sync + Send>,
-    parameters: NoiseParameters,
+pub struct MultiNoise {
+    noise: Box<dyn ::noise::NoiseFn<[f64; 2]> + Sync + Send>,
+    parameters: MultiNoiseParameters,
 }
 
-impl GenerationNoise {
-    pub fn new(seed: u32, parameters: &NoiseParameters) -> Self {
+impl MultiNoise {
+    pub fn new(seed: u32, parameters: &MultiNoiseParameters) -> Self {
+        use ::noise::Seedable;
         Self {
-            noise: Box::new(OpenSimplex::new().set_seed(seed)),
+            noise: Box::new(::noise::OpenSimplex::new().set_seed(seed)),
             parameters: parameters.clone(),
         }
     }
@@ -37,7 +37,7 @@ impl GenerationNoise {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NoiseParameters {
+pub struct MultiNoiseParameters {
     pub min_value: f32,
     pub max_value: f32,
     pub scale: f32,

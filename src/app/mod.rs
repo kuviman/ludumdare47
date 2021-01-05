@@ -1,7 +1,5 @@
 use super::*;
 
-use noise::NoiseFn;
-
 mod camera;
 mod draw;
 mod ez3d;

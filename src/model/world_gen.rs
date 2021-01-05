@@ -1,7 +1,7 @@
 use super::*;
 
 pub struct WorldGen {
-    parameters: HashMap<GenerationParameter, GenerationNoise>,
+    parameters: HashMap<GenerationParameter, MultiNoise>,
     biomes: HashMap<Biome, BiomeGeneration>,
     item_generation: HashMap<Biome, Vec<ItemGeneration>>,
     item_parameters: HashMap<ItemType, ItemParameters>,
@@ -9,12 +9,12 @@ pub struct WorldGen {
 
 impl WorldGen {
     pub fn new(seed: u32, resource_pack: &ResourcePack) -> Self {
-        let seed_noise = OpenSimplex::new().set_seed(seed);
+        let seed_noise = ::noise::OpenSimplex::new().set_seed(seed);
         Self {
             parameters: resource_pack
                 .parameters
                 .iter()
-                .map(|(parameter, noise_parameters)| {
+                .map(|(parameter, multi_noise_parameters)| {
                     fn hash<T>(obj: T) -> u64
                     where
                         T: std::hash::Hash,
@@ -26,9 +26,9 @@ impl WorldGen {
                     }
                     (
                         parameter.clone(),
-                        GenerationNoise::new(
+                        MultiNoise::new(
                             (seed_noise.get([hash(parameter) as f64, 0.0]) * 1000.0) as u32,
-                            noise_parameters,
+                            multi_noise_parameters,
                         ),
                     )
                 })
@@ -46,7 +46,12 @@ impl WorldGen {
         let parameters: HashMap<GenerationParameter, f32> = self
             .parameters
             .iter()
-            .map(|(parameter, noise)| (parameter.clone(), noise.get(pos.map(|x| x as f32 + 0.5))))
+            .map(|(parameter, multi_noise)| {
+                (
+                    parameter.clone(),
+                    multi_noise.get(pos.map(|x| x as f32 + 0.5)),
+                )
+            })
             .collect();
         let biome = self
             .biomes

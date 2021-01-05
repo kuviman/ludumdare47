@@ -2,7 +2,7 @@ use super::*;
 
 pub struct TileMesh {
     ez3d: Rc<Ez3D>,
-    noise: noise::OpenSimplex,
+    noise: ::noise::OpenSimplex,
     pub tiles: HashMap<Vec2<i64>, model::Tile>,
     pub mesh: ugli::VertexBuffer<ez3d::Vertex>,
     resource_pack: Rc<ResourcePack>,
@@ -12,7 +12,7 @@ impl TileMesh {
     pub fn new(geng: &Rc<Geng>, ez3d: &Rc<Ez3D>, resource_pack: &Rc<ResourcePack>) -> Self {
         Self {
             ez3d: ez3d.clone(),
-            noise: noise::OpenSimplex::new(),
+            noise: ::noise::OpenSimplex::new(),
             tiles: HashMap::new(),
             mesh: ugli::VertexBuffer::new_static(geng.ugli(), Vec::new()),
             resource_pack: resource_pack.clone(),
