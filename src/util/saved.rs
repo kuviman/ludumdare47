@@ -1,21 +1,11 @@
 use super::*;
 
+#[derive(Deref, DerefMut)]
 pub struct Saved<T: Serialize + for<'de> Deserialize<'de>> {
     path: std::path::PathBuf,
+    #[deref]
+    #[deref_mut]
     value: T,
-}
-
-impl<T: Serialize + for<'de> Deserialize<'de>> Deref for Saved<T> {
-    type Target = T;
-    fn deref(&self) -> &T {
-        &self.value
-    }
-}
-
-impl<T: Serialize + for<'de> Deserialize<'de>> DerefMut for Saved<T> {
-    fn deref_mut(&mut self) -> &mut T {
-        &mut self.value
-    }
 }
 
 impl<T: Serialize + for<'de> Deserialize<'de>> Saved<T> {
