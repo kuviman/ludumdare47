@@ -27,21 +27,28 @@ impl ResourcePack {
         let path = path.as_ref();
         let server_path = path.join("server");
 
-        fn load<T: for<'de> Deserialize<'de>>(
+        fn load_or_default<T: Default + for<'de> Deserialize<'de>>(
             path: impl AsRef<std::path::Path>,
         ) -> std::io::Result<T> {
-            let file = std::fs::File::open(path.as_ref())?;
-            let reader = std::io::BufReader::new(file);
-            Ok(serde_json::from_reader(reader)?)
+            match std::fs::File::open(path.as_ref()) {
+                Ok(file) => {
+                    let reader = std::io::BufReader::new(file);
+                    Ok(serde_json::from_reader(reader)?)
+                }
+                Err(err) => match err.kind() {
+                    std::io::ErrorKind::NotFound => Ok(T::default()),
+                    _ => Err(err),
+                },
+            }
         }
 
         Ok(Self {
-            biome_properties: load(server_path.join("biomes.json"))?,
-            biome_generation: load(server_path.join("generation-biomes.json"))?,
-            world_parameters: load(server_path.join("world-parameters.json"))?,
-            item_generation: load(server_path.join("generation-items.json"))?,
-            recipes: load(server_path.join("recipes.json"))?,
-            item_properties: load(server_path.join("items.json"))?,
+            biome_properties: load_or_default(server_path.join("biomes.json"))?,
+            biome_generation: load_or_default(server_path.join("generation-biomes.json"))?,
+            world_parameters: load_or_default(server_path.join("world-parameters.json"))?,
+            item_generation: load_or_default(server_path.join("generation-items.json"))?,
+            recipes: load_or_default(server_path.join("recipes.json"))?,
+            item_properties: load_or_default(server_path.join("items.json"))?,
         })
     }
     pub fn empty() -> Self {
