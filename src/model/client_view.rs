@@ -25,7 +25,7 @@ impl Model {
             tiles: {
                 let mut tiles = HashMap::new();
                 for pos in player.load_area.map(|x| x as i64).points() {
-                    if let Some(tile) = self.get_tile(pos) {
+                    if let Some(tile) = self.chunked_world.get_tile(pos) {
                         tiles.insert(pos, tile.clone());
                     }
                 }

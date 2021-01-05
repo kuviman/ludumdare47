@@ -1,5 +1,15 @@
 use super::*;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BiomeGeneration {
+    pub collidable: bool,
+    pub spawnable: bool,
+    pub parameters: HashMap<GenerationParameter, (f32, f32)>,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GenerationParameter(pub String);
+
 pub struct WorldGen {
     parameters: HashMap<GenerationParameter, MultiNoise>,
     biomes: HashMap<Biome, BiomeGeneration>,

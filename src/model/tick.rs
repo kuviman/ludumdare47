@@ -43,7 +43,7 @@ impl Model {
             for x in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
                 for y in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
                     let pos = vec2(x, y) + player.pos.map(|x| x as i64);
-                    if let Some((normal, penetration)) = match self.get_tile(pos) {
+                    if let Some((normal, penetration)) = match self.chunked_world.get_tile(pos) {
                         Some(tile) => {
                             if self.resource_pack.biomes[&tile.biome].collidable {
                                 Self::collide(player.pos, player.radius, pos.map(|x| x as f32), 1.0)
@@ -137,11 +137,12 @@ impl Model {
                     let time_left = time_left - 1.0 / self.ticks_per_second;
                     if time_left <= 0.0 {
                         let hand_item = &mut player.item;
-                        let mut item = self.remove_item_id(item_id);
+                        let mut item = self.chunked_world.remove_item(item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
                                 Some(
-                                    self.get_tile(item.pos.map(|x| x as i64))
+                                    self.chunked_world
+                                        .get_tile(item.pos.map(|x| x as i64))
                                         .unwrap()
                                         .biome
                                         .clone(),
@@ -180,7 +181,8 @@ impl Model {
                     let (conditions, ingredient2) = match self.chunked_world.get_item(id) {
                         Some(item) => (
                             Some(
-                                self.get_tile(item.pos.map(|x| x as i64))
+                                self.chunked_world
+                                    .get_tile(item.pos.map(|x| x as i64))
                                     .unwrap()
                                     .biome
                                     .clone(),
@@ -236,5 +238,15 @@ impl Model {
         } else {
             false
         }
+    }
+
+    fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<f32>) {
+        let item = Item {
+            id: self.id_generator.gen(),
+            pos,
+            size: self.resource_pack.items[&item_type].size,
+            item_type,
+        };
+        self.chunked_world.insert_item(item);
     }
 }
