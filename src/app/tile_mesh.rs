@@ -75,7 +75,7 @@ impl TileMesh {
             };
         for (&tile_pos, tile) in tiles {
             let height = |tile: &model::Tile| {
-                tile.parameters[&model::GenerationParameter("Height".to_owned())]
+                tile.world_parameters[&model::WorldParameter("Height".to_owned())]
             };
             let x_height = if let Some(tile_x) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y)) {
                 height(tile_x)

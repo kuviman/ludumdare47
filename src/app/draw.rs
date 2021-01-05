@@ -24,12 +24,12 @@ impl App {
         }
         if let Some(pos) = selected_pos {
             if let Some(item) = self.view.items.iter().find(|item| {
-                (item.pos - pos).len() <= self.view.item_parameters[&item.item_type].size
+                (item.pos - pos).len() <= self.view.item_properties[&item.item_type].size
             }) {
                 self.draw_circle(
                     framebuffer,
                     item.pos,
-                    self.view.item_parameters[&item.item_type].size,
+                    self.view.item_properties[&item.item_type].size,
                     Color::rgba(1.0, 1.0, 1.0, 0.5),
                 );
                 selected_item = Some(item);

@@ -9,12 +9,14 @@ impl Model {
 
             // Collide with items
             for item in self.chunked_world.items() {
-                if !self.resource_pack.items[&item.item_type].traversable {
+                if !self.resource_pack.item_properties[&item.item_type].traversable {
                     let dir = player.pos - item.pos;
                     let distance = dir.len();
-                    if distance <= player.radius + self.resource_pack.items[&item.item_type].size {
+                    if distance
+                        <= player.radius + self.resource_pack.item_properties[&item.item_type].size
+                    {
                         let penetration = player.radius
-                            + self.resource_pack.items[&item.item_type].size
+                            + self.resource_pack.item_properties[&item.item_type].size
                             - distance;
                         let normal = dir / distance;
                         player.pos += normal * penetration;
@@ -47,7 +49,7 @@ impl Model {
                     let pos = vec2(x, y) + player.pos.map(|x| x as i64);
                     if let Some((normal, penetration)) = match self.chunked_world.get_tile(pos) {
                         Some(tile) => {
-                            if self.resource_pack.biomes[&tile.biome].collidable {
+                            if self.resource_pack.biome_properties[&tile.biome].collidable {
                                 Self::collide(player.pos, player.radius, pos.map(|x| x as f32), 1.0)
                             } else {
                                 None
@@ -224,7 +226,7 @@ impl Model {
                     };
                     if let None = hand_item {
                         if let Some(item_type) = ground_item {
-                            if self.resource_pack.items[&item_type].pickable {
+                            if self.resource_pack.item_properties[&item_type].pickable {
                                 item.take();
                                 *hand_item = Some(item_type);
                                 self.play_sound(Sound::PickUp, player.pos);

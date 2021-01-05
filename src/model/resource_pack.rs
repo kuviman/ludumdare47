@@ -2,10 +2,10 @@ use super::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourcePack {
-    pub biomes: HashMap<Biome, BiomeParameters>,
+    pub biome_properties: HashMap<Biome, BiomeProperties>,
     pub biome_generation: HashMap<Biome, BiomeGeneration>,
-    pub parameters: HashMap<GenerationParameter, MultiNoiseParameters>,
-    pub items: HashMap<ItemType, ItemParameters>,
+    pub world_parameters: HashMap<WorldParameter, MultiNoiseProperties>,
+    pub item_properties: HashMap<ItemType, ItemProperties>,
     pub item_generation: HashMap<Biome, Vec<ItemGeneration>>,
     pub recipes: Vec<Recipe>,
 }
@@ -43,29 +43,29 @@ impl ResourcePack {
         }
 
         Ok(Self {
-            biomes: load_or_default(server_path.join("biomes.json"))?,
+            biome_properties: load_or_default(server_path.join("biomes.json"))?,
             biome_generation: load_or_default(server_path.join("generation-biomes.json"))?,
-            parameters: load_or_default(server_path.join("generation-parameters.json"))?,
+            world_parameters: load_or_default(server_path.join("world-parameters.json"))?,
             item_generation: load_or_default(server_path.join("generation-items.json"))?,
             recipes: load_or_default(server_path.join("recipes.json"))?,
-            items: load_or_default(server_path.join("items.json"))?,
+            item_properties: load_or_default(server_path.join("items.json"))?,
         })
     }
     pub fn empty() -> Self {
         Self {
-            biomes: HashMap::new(),
+            biome_properties: HashMap::new(),
             biome_generation: HashMap::new(),
-            parameters: HashMap::new(),
-            items: HashMap::new(),
+            world_parameters: HashMap::new(),
+            item_properties: HashMap::new(),
             item_generation: HashMap::new(),
             recipes: Vec::new(),
         }
     }
     pub fn merge(&mut self, resource_pack: ResourcePack) {
-        self.biomes.extend(resource_pack.biomes);
+        self.biome_properties.extend(resource_pack.biome_properties);
         self.biome_generation.extend(resource_pack.biome_generation);
-        self.parameters.extend(resource_pack.parameters);
-        self.items.extend(resource_pack.items);
+        self.world_parameters.extend(resource_pack.world_parameters);
+        self.item_properties.extend(resource_pack.item_properties);
         self.item_generation.extend(resource_pack.item_generation);
         self.recipes.extend(resource_pack.recipes);
     }

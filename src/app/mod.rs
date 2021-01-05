@@ -338,7 +338,7 @@ impl geng::State for App {
                         geng::MouseButton::Right => {
                             if let Some(item) = self.view.items.iter().find(|item| {
                                 (item.pos - pos).len()
-                                    <= self.view.item_parameters[&item.item_type].size
+                                    <= self.view.item_properties[&item.item_type].size
                             }) {
                                 self.connection
                                     .send(ClientMessage::Interact { id: item.id })
@@ -366,7 +366,7 @@ impl geng::State for App {
                 ) {
                     let pos = pos.xy();
                     if let Some(item) = self.view.items.iter().find(|item| {
-                        (item.pos - pos).len() <= self.view.item_parameters[&item.item_type].size
+                        (item.pos - pos).len() <= self.view.item_properties[&item.item_type].size
                     }) {
                         self.connection.send(ClientMessage::PickUp { id: item.id });
                     }
