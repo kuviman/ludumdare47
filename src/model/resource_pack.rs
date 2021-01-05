@@ -27,7 +27,7 @@ impl ResourcePack {
         let path = path.as_ref();
         let server_path = path.join("server");
 
-        fn try_load<T: Default + for<'de> Deserialize<'de>>(
+        fn load_or_default<T: Default + for<'de> Deserialize<'de>>(
             path: impl AsRef<std::path::Path>,
         ) -> std::io::Result<T> {
             fn load<T: for<'de> Deserialize<'de>>(
@@ -48,12 +48,12 @@ impl ResourcePack {
         }
 
         Ok(Self {
-            biomes: try_load(server_path.join("biomes.json"))?,
-            biome_generation: try_load(server_path.join("generation-biomes.json"))?,
-            parameters: try_load(server_path.join("generation-parameters.json"))?,
-            item_generation: try_load(server_path.join("generation-items.json"))?,
-            recipes: try_load(server_path.join("recipes.json"))?,
-            items: try_load(server_path.join("items.json"))?,
+            biomes: load_or_default(server_path.join("biomes.json"))?,
+            biome_generation: load_or_default(server_path.join("generation-biomes.json"))?,
+            parameters: load_or_default(server_path.join("generation-parameters.json"))?,
+            item_generation: load_or_default(server_path.join("generation-items.json"))?,
+            recipes: load_or_default(server_path.join("recipes.json"))?,
+            items: load_or_default(server_path.join("items.json"))?,
         })
     }
     pub fn empty() -> Self {
