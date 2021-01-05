@@ -4,7 +4,7 @@ use super::*;
 pub struct ResourcePack {
     pub biome_properties: HashMap<Biome, BiomeProperties>,
     pub biome_generation: HashMap<Biome, BiomeGeneration>,
-    pub parameters: HashMap<GenerationParameter, MultiNoiseProperties>,
+    pub world_parameters: HashMap<WorldParameter, MultiNoiseProperties>,
     pub item_properties: HashMap<ItemType, ItemProperties>,
     pub item_generation: HashMap<Biome, Vec<ItemGeneration>>,
     pub recipes: Vec<Recipe>,
@@ -38,7 +38,7 @@ impl ResourcePack {
         Ok(Self {
             biome_properties: load(server_path.join("biomes.json"))?,
             biome_generation: load(server_path.join("generation-biomes.json"))?,
-            parameters: load(server_path.join("generation-parameters.json"))?,
+            world_parameters: load(server_path.join("world-parameters.json"))?,
             item_generation: load(server_path.join("generation-items.json"))?,
             recipes: load(server_path.join("recipes.json"))?,
             item_properties: load(server_path.join("items.json"))?,
@@ -48,7 +48,7 @@ impl ResourcePack {
         Self {
             biome_properties: HashMap::new(),
             biome_generation: HashMap::new(),
-            parameters: HashMap::new(),
+            world_parameters: HashMap::new(),
             item_properties: HashMap::new(),
             item_generation: HashMap::new(),
             recipes: Vec::new(),
@@ -57,7 +57,7 @@ impl ResourcePack {
     pub fn merge(&mut self, resource_pack: ResourcePack) {
         self.biome_properties.extend(resource_pack.biome_properties);
         self.biome_generation.extend(resource_pack.biome_generation);
-        self.parameters.extend(resource_pack.parameters);
+        self.world_parameters.extend(resource_pack.world_parameters);
         self.item_properties.extend(resource_pack.item_properties);
         self.item_generation.extend(resource_pack.item_generation);
         self.recipes.extend(resource_pack.recipes);
