@@ -77,28 +77,45 @@ impl ChunkedWorld {
         self.chunks.get(&chunk_pos).map(|chunk| &chunk.tiles[&pos])
     }
 
-    pub fn load_area(&mut self, id_generator: &mut IdGenerator, area: AABB<i64>) {
-        let chunks_area = AABB {
-            x_min: div_down(area.x_min, self.chunk_size.x as i64),
-            x_max: div_up(area.x_max - 1, self.chunk_size.x as i64) + 1,
-            y_min: div_down(area.y_min, self.chunk_size.y as i64),
-            y_max: div_up(area.y_max - 1, self.chunk_size.y as i64) + 1,
-        };
-        for chunk_pos in chunks_area.points() {
-            self.load_chunk(chunk_pos, id_generator);
+    pub fn set_load_area_for(
+        &mut self,
+        loader: Id,
+        id_generator: &mut IdGenerator,
+        area: Option<AABB<f32>>,
+    ) {
+        for chunk in self.chunks.values_mut() {
+            chunk.loaded_by.remove(&loader);
         }
+        if let Some(area) = area {
+            let chunks_area = AABB {
+                x_min: div_down(area.x_min.floor() as i64, self.chunk_size.x as i64),
+                x_max: div_up(area.x_max.ceil() as i64 - 1, self.chunk_size.x as i64) + 1,
+                y_min: div_down(area.y_min.floor() as i64, self.chunk_size.y as i64),
+                y_max: div_up(area.y_max.ceil() as i64 - 1, self.chunk_size.y as i64) + 1,
+            };
+            for chunk_pos in chunks_area.points() {
+                let chunk = self.load_chunk(chunk_pos, id_generator);
+                chunk.loaded_by.insert(loader);
+            }
+        }
+        self.chunks.retain(|_, chunk| !chunk.loaded_by.is_empty());
     }
 }
 
 #[derive(Deref, DerefMut)]
 struct Chunk {
     #[deref]
+    #[deref_mut]
     saved: util::Saved<SavedChunk>,
+    loaded_by: HashSet<Id>,
 }
 
 impl Chunk {
     fn new(saved: util::Saved<SavedChunk>) -> Self {
-        Self { saved }
+        Self {
+            saved,
+            loaded_by: HashSet::new(),
+        }
     }
 }
 

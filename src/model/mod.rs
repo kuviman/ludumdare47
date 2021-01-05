@@ -134,6 +134,8 @@ impl Model {
     pub fn drop_player(&mut self, player_id: Id) {
         self.players.remove(&player_id);
         self.sounds.remove(&player_id);
+        self.chunked_world
+            .set_load_area_for(player_id, &mut self.id_generator, None);
     }
     pub fn handle_message(&mut self, player_id: Id, message: Message) {
         let player = self.players.get_mut(&player_id).unwrap();
@@ -141,6 +143,11 @@ impl Model {
             Message::RequestUpdate { load_area } => {
                 if let Some(load_area) = load_area {
                     player.load_area = load_area;
+                    self.chunked_world.set_load_area_for(
+                        player_id,
+                        &mut self.id_generator,
+                        Some(load_area),
+                    );
                 }
             }
             Message::Goto { pos } => {

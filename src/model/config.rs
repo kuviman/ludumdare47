@@ -14,7 +14,7 @@ pub struct Config {
     pub sound_distance: f32,
     pub player_interaction_range: f32,
     pub generation_distance: usize,
-    pub spawn_area: usize,
+    pub spawn_area: f32,
 }
 
 impl Default for Config {
@@ -32,7 +32,7 @@ impl Default for Config {
             sound_distance: 5.0,
             player_interaction_range: 1.5,
             generation_distance: 5,
-            spawn_area: 50,
+            spawn_area: 50.0,
         }
     }
 }
