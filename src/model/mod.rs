@@ -103,7 +103,7 @@ impl Model {
         let config: Config = serde_json::from_reader(std::io::BufReader::new(
             std::fs::File::open(world_path.join("config.json"))?,
         ))?;
-        let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
+        let (pack_list, resource_pack) = ResourcePack::load_all("packs").unwrap();
         let rules = Rules {
             player_movement_speed: config.player_movement_speed,
             client_view_distance: config.view_distance,

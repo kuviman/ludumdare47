@@ -11,66 +11,37 @@ pub struct ResourcePack {
 }
 
 impl ResourcePack {
-    pub fn load_resource_packs() -> Result<(Vec<String>, Self), std::io::Error> {
+    pub fn load_all(
+        path: impl AsRef<std::path::Path>,
+    ) -> Result<(Vec<String>, Self), std::io::Error> {
         let mut packs = Vec::new();
         let mut resource_pack = Self::empty();
-        for pack in std::fs::read_dir("packs/")? {
+        for pack in std::fs::read_dir(path.as_ref())? {
             let pack = pack?;
             packs.push(pack.file_name().to_str().unwrap().to_owned());
-            resource_pack.merge(Self::load_resource_pack(pack)?);
+            resource_pack.merge(Self::load(pack.path())?);
         }
         Ok((packs, resource_pack))
     }
-    fn load_resource_pack(path: std::fs::DirEntry) -> Result<Self, std::io::Error> {
-        // Load generation parameters
-        let generation_parameters: HashMap<GenerationParameter, MultiNoiseParameters> =
-            match std::fs::File::open(path.path().join("server/generation-parameters.json")) {
-                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-                Err(_) => HashMap::new(),
-            };
+    fn load(path: impl AsRef<std::path::Path>) -> Result<Self, std::io::Error> {
+        let path = path.as_ref();
+        let server_path = path.join("server");
 
-        // Load biomes
-        let biomes: HashMap<Biome, BiomeParameters> =
-            match std::fs::File::open(path.path().join("server/biomes.json")) {
-                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-                Err(_) => HashMap::new(),
-            };
-
-        // Load biome generaion
-        let biome_generation: HashMap<Biome, BiomeGeneration> =
-            match std::fs::File::open(path.path().join("server/generation-biomes.json")) {
-                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-                Err(_) => HashMap::new(),
-            };
-
-        // Load items
-        let items: HashMap<ItemType, ItemParameters> =
-            match std::fs::File::open(path.path().join("server/items.json")) {
-                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-                Err(_) => HashMap::new(),
-            };
-
-        // Load item generation
-        let item_generation: HashMap<Biome, Vec<ItemGeneration>> =
-            match std::fs::File::open(path.path().join("server/generation-items.json")) {
-                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-                Err(_) => HashMap::new(),
-            };
-
-        // Load recipes
-        let recipes: Vec<Recipe> =
-            match std::fs::File::open(path.path().join("server/recipes.json")) {
-                Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-                Err(_) => Vec::new(),
-            };
+        fn load<T: for<'de> Deserialize<'de>>(
+            path: impl AsRef<std::path::Path>,
+        ) -> std::io::Result<T> {
+            let file = std::fs::File::open(path.as_ref())?;
+            let reader = std::io::BufReader::new(file);
+            Ok(serde_json::from_reader(reader)?)
+        }
 
         Ok(Self {
-            biomes,
-            biome_generation,
-            parameters: generation_parameters,
-            item_generation,
-            recipes,
-            items,
+            biomes: load(server_path.join("biomes.json"))?,
+            biome_generation: load(server_path.join("generation-biomes.json"))?,
+            parameters: load(server_path.join("generation-parameters.json"))?,
+            item_generation: load(server_path.join("generation-items.json"))?,
+            recipes: load(server_path.join("recipes.json"))?,
+            items: load(server_path.join("items.json"))?,
         })
     }
     pub fn empty() -> Self {
