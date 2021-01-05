@@ -17,7 +17,7 @@ impl Display for ItemType {
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct ItemParameters {
+pub struct ItemProperties {
     pub size: f32,
     pub traversable: bool,
     pub pickable: bool,

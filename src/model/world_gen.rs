@@ -27,7 +27,7 @@ impl WorldGen {
             parameters: resource_pack
                 .parameters
                 .iter()
-                .map(|(parameter, multi_noise_parameters)| {
+                .map(|(parameter, multi_noise_properties)| {
                     fn hash<T>(obj: T) -> u64
                     where
                         T: std::hash::Hash,
@@ -41,7 +41,7 @@ impl WorldGen {
                         parameter.clone(),
                         MultiNoise::new(
                             (seed_noise.get([hash(parameter) as f64, 0.0]) * 1000.0) as u32,
-                            multi_noise_parameters,
+                            multi_noise_properties,
                         ),
                     )
                 })

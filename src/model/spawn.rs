@@ -37,7 +37,8 @@ impl Model {
     fn is_spawnable(&self, pos: Vec2<i64>) -> bool {
         match self.chunked_world.get_tile(pos) {
             Some(tile) => {
-                self.resource_pack.biomes[&tile.biome].spawnable && self.is_empty_tile(pos)
+                self.resource_pack.biome_properties[&tile.biome].spawnable
+                    && self.is_empty_tile(pos)
             }
             None => false,
         }

@@ -16,7 +16,7 @@ impl Display for Biome {
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct BiomeParameters {
+pub struct BiomeProperties {
     pub collidable: bool,
     pub spawnable: bool,
 }

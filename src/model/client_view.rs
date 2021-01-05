@@ -11,7 +11,7 @@ pub struct ClientView {
     pub items: Vec<Item>,
     pub recipes: Vec<Recipe>,
     pub sounds: Vec<Sound>,
-    pub item_parameters: HashMap<ItemType, ItemParameters>,
+    pub item_properties: HashMap<ItemType, ItemProperties>,
 }
 
 impl Model {
@@ -48,7 +48,7 @@ impl Model {
                 .collect(),
             recipes: self.resource_pack.recipes.clone(),
             sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),
-            item_parameters: self.resource_pack.items.clone(),
+            item_properties: self.resource_pack.item_properties.clone(),
         };
         vision
     }
