@@ -1,7 +1,5 @@
 {
     "Ocean": {
-        "collidable": true,
-        "spawnable": false,
         "world_parameters": {
             "Height": [
                 -7,
@@ -10,8 +8,6 @@
         }
     },
     "Beach": {
-        "collidable": false,
-        "spawnable": true,
         "world_parameters": {
             "Height": [
                 0,
@@ -20,8 +16,6 @@
         }
     },
     "Forest": {
-        "collidable": false,
-        "spawnable": true,
         "world_parameters": {
             "Height": [
                 1,
@@ -30,8 +24,6 @@
         }
     },
     "Lake": {
-        "collidable": true,
-        "spawnable": false,
         "world_parameters": {
             "Height": [
                 5,
@@ -44,8 +36,6 @@
         }
     },
     "Hills": {
-        "collidable": false,
-        "spawnable": true,
         "world_parameters": {
             "Height": [
                 9,
