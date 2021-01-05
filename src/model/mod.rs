@@ -137,7 +137,12 @@ impl Model {
         self.chunked_world
             .set_load_area_for(player_id, &mut self.id_generator, None);
     }
-    pub fn handle_message(&mut self, player_id: Id, message: Message) {
+    pub fn handle_message(
+        &mut self,
+        player_id: Id,
+        message: Message,
+        sender: &mut dyn geng::net::Sender<ServerMessage>,
+    ) {
         let player = self.players.get_mut(&player_id).unwrap();
         match message {
             Message::RequestUpdate { load_area } => {
@@ -149,6 +154,8 @@ impl Model {
                         Some(load_area),
                     );
                 }
+                // TODO: Diff?
+                sender.send(ServerMessage::Update(self.get_view(player_id)));
             }
             Message::Goto { pos } => {
                 player.action = Some(PlayerAction::MovingTo {
