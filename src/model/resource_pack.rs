@@ -27,21 +27,33 @@ impl ResourcePack {
         let path = path.as_ref();
         let server_path = path.join("server");
 
-        fn load<T: for<'de> Deserialize<'de>>(
+        fn try_load<T: Default + for<'de> Deserialize<'de>>(
             path: impl AsRef<std::path::Path>,
         ) -> std::io::Result<T> {
-            let file = std::fs::File::open(path.as_ref())?;
-            let reader = std::io::BufReader::new(file);
-            Ok(serde_json::from_reader(reader)?)
+            fn load<T: for<'de> Deserialize<'de>>(
+                path: impl AsRef<std::path::Path>,
+            ) -> std::io::Result<T> {
+                let file = std::fs::File::open(path.as_ref())?;
+                let reader = std::io::BufReader::new(file);
+                Ok(serde_json::from_reader(reader)?)
+            }
+
+            match load(path) {
+                Ok(value) => Ok(value),
+                Err(err) => match err.kind() {
+                    std::io::ErrorKind::NotFound => Ok(T::default()),
+                    _ => Err(err),
+                },
+            }
         }
 
         Ok(Self {
-            biomes: load(server_path.join("biomes.json"))?,
-            biome_generation: load(server_path.join("generation-biomes.json"))?,
-            parameters: load(server_path.join("generation-parameters.json"))?,
-            item_generation: load(server_path.join("generation-items.json"))?,
-            recipes: load(server_path.join("recipes.json"))?,
-            items: load(server_path.join("items.json"))?,
+            biomes: try_load(server_path.join("biomes.json"))?,
+            biome_generation: try_load(server_path.join("generation-biomes.json"))?,
+            parameters: try_load(server_path.join("generation-parameters.json"))?,
+            item_generation: try_load(server_path.join("generation-items.json"))?,
+            recipes: try_load(server_path.join("recipes.json"))?,
+            items: try_load(server_path.join("items.json"))?,
         })
     }
     pub fn empty() -> Self {
