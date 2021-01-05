@@ -30,16 +30,11 @@ impl ResourcePack {
         fn load_or_default<T: Default + for<'de> Deserialize<'de>>(
             path: impl AsRef<std::path::Path>,
         ) -> std::io::Result<T> {
-            fn load<T: for<'de> Deserialize<'de>>(
-                path: impl AsRef<std::path::Path>,
-            ) -> std::io::Result<T> {
-                let file = std::fs::File::open(path.as_ref())?;
-                let reader = std::io::BufReader::new(file);
-                Ok(serde_json::from_reader(reader)?)
-            }
-
-            match load(path) {
-                Ok(value) => Ok(value),
+            match std::fs::File::open(path.as_ref()) {
+                Ok(file) => {
+                    let reader = std::io::BufReader::new(file);
+                    Ok(serde_json::from_reader(reader)?)
+                }
                 Err(err) => match err.kind() {
                     std::io::ErrorKind::NotFound => Ok(T::default()),
                     _ => Err(err),
