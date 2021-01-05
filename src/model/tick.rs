@@ -12,8 +12,10 @@ impl Model {
                 if !self.resource_pack.items[&item.item_type].traversable {
                     let dir = player.pos - item.pos;
                     let distance = dir.len();
-                    if distance <= player.radius + item.size {
-                        let penetration = player.radius + item.size - distance;
+                    if distance <= player.radius + self.resource_pack.items[&item.item_type].size {
+                        let penetration = player.radius
+                            + self.resource_pack.items[&item.item_type].size
+                            - distance;
                         let normal = dir / distance;
                         player.pos += normal * penetration;
                     }
@@ -244,7 +246,6 @@ impl Model {
         let item = Item {
             id: self.id_generator.gen(),
             pos,
-            size: self.resource_pack.items[&item_type].size,
             item_type,
         };
         self.chunked_world.insert_item(item);

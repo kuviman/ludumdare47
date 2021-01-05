@@ -336,12 +336,10 @@ impl geng::State for App {
                             self.connection.send(ClientMessage::Goto { pos })
                         }
                         geng::MouseButton::Right => {
-                            if let Some(item) = self
-                                .view
-                                .items
-                                .iter()
-                                .find(|item| (item.pos - pos).len() <= item.size)
-                            {
+                            if let Some(item) = self.view.items.iter().find(|item| {
+                                (item.pos - pos).len()
+                                    <= self.view.item_parameters[&item.item_type].size
+                            }) {
                                 self.connection
                                     .send(ClientMessage::Interact { id: item.id })
                             }
@@ -367,12 +365,9 @@ impl geng::State for App {
                         .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
                 ) {
                     let pos = pos.xy();
-                    if let Some(item) = self
-                        .view
-                        .items
-                        .iter()
-                        .find(|item| (item.pos - pos).len() <= item.size)
-                    {
+                    if let Some(item) = self.view.items.iter().find(|item| {
+                        (item.pos - pos).len() <= self.view.item_parameters[&item.item_type].size
+                    }) {
                         self.connection.send(ClientMessage::PickUp { id: item.id });
                     }
                 }

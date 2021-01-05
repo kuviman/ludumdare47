@@ -4,7 +4,6 @@ use super::*;
 pub struct Item {
     pub id: Id,
     pub pos: Vec2<f32>,
-    pub size: f32,
     pub item_type: ItemType,
 }
 

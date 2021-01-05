@@ -14,7 +14,6 @@ pub struct WorldGen {
     parameters: HashMap<GenerationParameter, MultiNoise>,
     biomes: HashMap<Biome, BiomeGeneration>,
     item_generation: HashMap<Biome, Vec<ItemGeneration>>,
-    item_parameters: HashMap<ItemType, ItemParameters>,
 }
 
 impl WorldGen {
@@ -45,7 +44,6 @@ impl WorldGen {
                 .collect(),
             biomes: resource_pack.biomes.clone(),
             item_generation: resource_pack.item_generation.clone(),
-            item_parameters: resource_pack.items.clone(),
         }
     }
     pub fn generate_tile(
@@ -101,7 +99,6 @@ impl WorldGen {
             .map(|item_type| Item {
                 id: id_generator.gen(),
                 pos: pos.map(|x| x as f32 + 0.5),
-                size: self.item_parameters[item_type].size,
                 item_type: item_type.clone(),
             });
         (tile, item)
