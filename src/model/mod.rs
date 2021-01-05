@@ -12,6 +12,7 @@ mod player;
 mod recipe;
 mod resource_pack;
 mod rules;
+mod spawn;
 mod tick;
 mod tile;
 mod world_gen;
@@ -177,16 +178,6 @@ impl Model {
                 self.play_sound(Sound::Hello, pos);
             }
         }
-    }
-    fn is_empty_tile(&self, pos: Vec2<i64>) -> bool {
-        !self
-            .chunked_world
-            .items()
-            .any(|item| pos == item.pos.map(|x| x as i64))
-            && !self
-                .players
-                .values()
-                .any(|player| pos == player.pos.map(|x| x as i64))
     }
     fn play_sound(&mut self, sound: Sound, pos: Vec2<f32>) {
         let range = self.rules.sound_distance;

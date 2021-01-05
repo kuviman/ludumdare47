@@ -35,7 +35,7 @@ impl geng::net::server::App for ServerApp {
     type ClientMessage = ClientMessage;
     fn connect(&mut self, mut sender: Box<dyn geng::net::Sender<ServerMessage>>) -> Client {
         let mut model = self.model.lock().unwrap();
-        let player_id = model.new_player();
+        let player_id = model.spawn_player();
         sender.send(ServerMessage::PlayerId(player_id));
         sender.send(ServerMessage::PackList(model.pack_list.clone()));
         sender.send(ServerMessage::Update(model.get_view(player_id)));
