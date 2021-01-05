@@ -1,0 +1,22 @@
+{
+    "Ocean": {
+        "collidable": true,
+        "spawnable": false
+    },
+    "Beach": {
+        "collidable": false,
+        "spawnable": true
+    },
+    "Forest": {
+        "collidable": false,
+        "spawnable": true
+    },
+    "Lake": {
+        "collidable": true,
+        "spawnable": false
+    },
+    "Hills": {
+        "collidable": false,
+        "spawnable": true
+    }
+}

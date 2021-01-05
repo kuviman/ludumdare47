@@ -1,0 +1,6 @@
+{
+    "MagicForest": {
+        "collidable": false,
+        "spawnable": true
+    }
+}

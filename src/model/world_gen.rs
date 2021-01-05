@@ -2,8 +2,6 @@ use super::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BiomeGeneration {
-    pub collidable: bool,
-    pub spawnable: bool,
     pub parameters: HashMap<GenerationParameter, (f32, f32)>,
 }
 
@@ -18,7 +16,7 @@ pub struct GenerationParameter(pub String);
 
 pub struct WorldGen {
     parameters: HashMap<GenerationParameter, MultiNoise>,
-    biomes: HashMap<Biome, BiomeGeneration>,
+    biome_generation: HashMap<Biome, BiomeGeneration>,
     item_generation: HashMap<Biome, Vec<ItemGeneration>>,
 }
 
@@ -48,7 +46,7 @@ impl WorldGen {
                     )
                 })
                 .collect(),
-            biomes: resource_pack.biomes.clone(),
+            biome_generation: resource_pack.biome_generation.clone(),
             item_generation: resource_pack.item_generation.clone(),
         }
     }
@@ -68,7 +66,7 @@ impl WorldGen {
             })
             .collect();
         let biome = self
-            .biomes
+            .biome_generation
             .iter()
             .filter_map(|(biome, biome_gen)| {
                 let mut total_score = 0.0;

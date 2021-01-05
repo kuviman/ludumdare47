@@ -14,3 +14,9 @@ impl Display for Biome {
         write!(f, "{}", self.0)
     }
 }
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+pub struct BiomeParameters {
+    pub collidable: bool,
+    pub spawnable: bool,
+}
