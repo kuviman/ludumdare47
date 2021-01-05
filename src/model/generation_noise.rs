@@ -2,11 +2,17 @@ use super::*;
 use noise::NoiseFn;
 
 pub struct GenerationNoise {
-    pub noise: Box<dyn NoiseFn<[f64; 2]> + Sync + Send>,
-    pub parameters: NoiseParameters,
+    noise: Box<dyn NoiseFn<[f64; 2]> + Sync + Send>,
+    parameters: NoiseParameters,
 }
 
 impl GenerationNoise {
+    pub fn new(seed: u32, parameters: &NoiseParameters) -> Self {
+        Self {
+            noise: Box::new(OpenSimplex::new().set_seed(seed)),
+            parameters: parameters.clone(),
+        }
+    }
     pub fn get(&self, pos: Vec2<f32>) -> f32 {
         let mut frequency = 1.0;
         let mut amplitude = 1.0;

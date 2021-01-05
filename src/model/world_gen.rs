@@ -26,12 +26,10 @@ impl WorldGen {
                     }
                     (
                         parameter.clone(),
-                        GenerationNoise {
-                            noise: Box::new(OpenSimplex::new().set_seed(
-                                (seed_noise.get([hash(parameter) as f64, 0.0]) * 1000.0) as u32,
-                            )),
-                            parameters: noise_parameters.clone(),
-                        },
+                        GenerationNoise::new(
+                            (seed_noise.get([hash(parameter) as f64, 0.0]) * 1000.0) as u32,
+                            noise_parameters,
+                        ),
                     )
                 })
                 .collect(),
