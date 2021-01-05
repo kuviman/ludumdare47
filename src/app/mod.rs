@@ -251,7 +251,7 @@ impl geng::State for App {
         let mut request_update = false;
         for message in self.connection.new_messages() {
             match message {
-                ServerMessage::Update(view) => {
+                ServerMessage::UpdateClientView(view) => {
                     request_update = true;
                     for sound in &view.sounds {
                         let sound = match sound {

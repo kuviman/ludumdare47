@@ -155,7 +155,7 @@ impl Model {
                     );
                 }
                 // TODO: Diff?
-                sender.send(ServerMessage::Update(self.get_view(player_id)));
+                sender.send(ServerMessage::UpdateClientView(self.get_view(player_id)));
             }
             Message::Goto { pos } => {
                 player.action = Some(PlayerAction::MovingTo {

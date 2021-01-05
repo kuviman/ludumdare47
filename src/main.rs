@@ -19,7 +19,7 @@ pub type ClientMessage = model::Message;
 pub enum ServerMessage {
     PlayerId(Id),
     PackList(Vec<String>),
-    Update(model::ClientView),
+    UpdateClientView(model::ClientView),
 }
 
 type Connection = geng::net::client::Connection<ServerMessage, ClientMessage>;
@@ -116,7 +116,7 @@ fn main() {
                             .expect("Failed to load resource packs");
                         let (message, connection) = connection.into_future().await;
                         let view = match message {
-                            Some(ServerMessage::Update(view)) => view,
+                            Some(ServerMessage::UpdateClientView(view)) => view,
                             _ => unreachable!(),
                         };
                         App::new(

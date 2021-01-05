@@ -33,7 +33,7 @@ impl geng::net::server::App for ServerApp {
         let player_id = model.spawn_player();
         sender.send(ServerMessage::PlayerId(player_id));
         sender.send(ServerMessage::PackList(model.pack_list.clone()));
-        sender.send(ServerMessage::Update(model.get_view(player_id)));
+        sender.send(ServerMessage::UpdateClientView(model.get_view(player_id)));
         Client {
             server_model: self.model.clone(),
             player_id,
