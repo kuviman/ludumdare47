@@ -23,11 +23,11 @@ impl App {
             self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
         }
         if let Some(pos) = selected_pos {
-            if let Some((_, item)) = self
+            if let Some(item) = self
                 .view
                 .items
                 .iter()
-                .find(|(_, s)| (s.pos - pos).len() <= s.size)
+                .find(|item| (item.pos - pos).len() <= item.size)
             {
                 self.draw_circle(
                     framebuffer,
@@ -57,7 +57,7 @@ impl App {
         }
 
         let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
-        for (_, item) in &self.view.items {
+        for item in &self.view.items {
             let pos = item.pos;
             let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
             let pos = pos.extend(height);

@@ -1,10 +1,12 @@
 use super::*;
 
-mod chunk;
+mod biome;
+mod chunked_world;
 mod client_view;
 mod config;
 mod generation;
 mod generation_noise;
+mod id;
 mod item;
 mod player;
 mod recipe;
@@ -12,13 +14,16 @@ mod resource_pack;
 mod rules;
 mod tick;
 mod tile;
+mod world_gen;
 
-pub use chunk::*;
+pub use biome::*;
+pub use chunked_world::*;
 pub use client_view::*;
 pub use config::*;
 pub use generation::*;
 pub use generation_noise::*;
 use geng::prelude::fmt::Formatter;
+pub use id::*;
 pub use item::*;
 pub use player::*;
 pub use recipe::*;
@@ -26,32 +31,17 @@ pub use resource_pack::*;
 pub use rules::*;
 pub use tick::*;
 pub use tile::*;
-
-#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq, Copy)]
-pub struct Id(usize);
-
-impl Id {
-    pub fn new() -> Self {
-        static NEXT_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
-        Self(NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
-    }
-    pub fn raw(&self) -> usize {
-        self.0
-    }
-}
+pub use world_gen::*;
 
 pub struct Model {
     pub ticks_per_second: f32,
     pub pack_list: Vec<String>,
+    id_generator: util::Saved<IdGenerator>,
     world_name: String,
     rules: Rules,
     resource_pack: ResourcePack,
-    seed: u32,
-    generation_noises: HashMap<GenerationParameter, GenerationNoise>,
-    chunk_size: Vec2<usize>,
-    loaded_chunks: HashMap<Vec2<i64>, Chunk>,
+    chunked_world: ChunkedWorld,
     players: HashMap<Id, Player>,
-    items: HashMap<Id, Item>,
     current_time: usize,
     sounds: HashMap<Id, Vec<Sound>>,
 }
@@ -93,9 +83,11 @@ impl std::fmt::Display for WorldError {
 impl std::error::Error for WorldError {}
 
 impl Model {
-    pub fn create(world_name: String) -> Result<Self, anyhow::Error> {
+    pub fn create(world_name: &str) -> Result<Self, anyhow::Error> {
         if std::path::Path::new(&format!("saves/{}", world_name)).exists() {
-            return Err(anyhow::Error::from(WorldError { world_name }));
+            return Err(anyhow::Error::from(WorldError {
+                world_name: world_name.to_owned(),
+            }));
         }
         std::fs::create_dir_all(format!("saves/{}/chunks", world_name))?;
         serde_json::to_writer(
@@ -107,9 +99,10 @@ impl Model {
         )?;
         Self::load(world_name)
     }
-    pub fn load(world_name: String) -> Result<Self, anyhow::Error> {
+    pub fn load(world_name: &str) -> Result<Self, anyhow::Error> {
+        let world_path = std::path::Path::new("saves").join(world_name);
         let config: Config = serde_json::from_reader(std::io::BufReader::new(
-            std::fs::File::open(format!("saves/{}/config.json", world_name))?,
+            std::fs::File::open(world_path.join("config.json"))?,
         ))?;
         let (pack_list, resource_pack) = ResourcePack::load_resource_packs().unwrap();
         let rules = Rules {
@@ -124,29 +117,20 @@ impl Model {
             generation_distance: config.generation_distance,
             spawn_area: config.spawn_area,
         };
+        let world_gen = WorldGen::new(config.seed, &resource_pack);
         let mut model = Self {
-            world_name,
+            id_generator: util::Saved::new(world_path.join("id_gen"), IdGenerator::new),
+            world_name: world_name.to_owned(),
             pack_list,
             rules,
-            seed: config.seed,
-            generation_noises: Self::init_generation_noises(config.seed, &resource_pack),
             resource_pack,
             ticks_per_second: config.ticks_per_second,
-            chunk_size: config.chunk_size,
-            loaded_chunks: HashMap::new(),
+            chunked_world: ChunkedWorld::new(world_path, config.chunk_size, world_gen),
             players: HashMap::new(),
-            items: HashMap::new(),
             current_time: 0,
             sounds: HashMap::new(),
         };
-        model.load_chunks_at(vec2(0, 0));
         Ok(model)
-    }
-    pub fn save(&self) -> Result<(), anyhow::Error> {
-        for (&chunk_pos, chunk) in &self.loaded_chunks {
-            chunk.save(&self.world_name, chunk_pos)?;
-        }
-        Ok(())
     }
     pub fn drop_player(&mut self, player_id: Id) {
         self.players.remove(&player_id);
@@ -167,7 +151,7 @@ impl Model {
                 });
             }
             Message::Interact { id } => {
-                if let Some(item) = self.items.get(&id) {
+                if let Some(item) = self.chunked_world.get_item(id) {
                     player.action = Some(PlayerAction::MovingTo {
                         pos: item.pos,
                         finish_action: Some(MomentAction::Interact { id }),
@@ -181,7 +165,7 @@ impl Model {
                 });
             }
             Message::PickUp { id } => {
-                if let Some(item) = self.items.get(&id) {
+                if let Some(item) = self.chunked_world.get_item(id) {
                     player.action = Some(PlayerAction::MovingTo {
                         pos: item.pos,
                         finish_action: Some(MomentAction::PickUp { id }),
@@ -196,8 +180,8 @@ impl Model {
     }
     fn is_empty_tile(&self, pos: Vec2<i64>) -> bool {
         !self
-            .items
-            .values()
+            .chunked_world
+            .items()
             .any(|item| pos == item.pos.map(|x| x as i64))
             && !self
                 .players

@@ -30,7 +30,7 @@ impl GenerationNoise {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NoiseParameters {
     pub min_value: f32,
     pub max_value: f32,

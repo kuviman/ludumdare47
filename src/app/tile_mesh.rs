@@ -74,25 +74,28 @@ impl TileMesh {
                 });
             };
         for (&tile_pos, tile) in tiles {
+            let height = |tile: &model::Tile| {
+                tile.parameters[&model::GenerationParameter("Height".to_owned())]
+            };
             let x_height = if let Some(tile_x) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y)) {
-                tile_x.height
+                height(tile_x)
             } else {
-                tile.height
+                height(tile)
             };
             let y_height = if let Some(tile_y) = tiles.get(&vec2(tile_pos.x, tile_pos.y + 1)) {
-                tile_y.height
+                height(tile_y)
             } else {
-                tile.height
+                height(tile)
             };
             let xy_height = if let Some(tile_xy) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y + 1))
             {
-                tile_xy.height
+                height(tile_xy)
             } else {
                 (x_height + y_height) / 2.0
             };
             append_quad(
                 tile_pos,
-                tile.height,
+                height(tile),
                 x_height,
                 xy_height,
                 y_height,

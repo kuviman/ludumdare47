@@ -32,7 +32,7 @@ impl Default for Config {
             sound_distance: 5.0,
             player_interaction_range: 1.5,
             generation_distance: 5,
-            spawn_area: 5,
+            spawn_area: 50,
         }
     }
 }

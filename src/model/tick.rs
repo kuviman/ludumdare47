@@ -2,19 +2,13 @@ use super::*;
 
 impl Model {
     pub fn tick(&mut self) {
-        for chunk in self.loaded_chunks.values_mut() {
-            chunk.is_loaded = false;
-        }
-        self.load_chunks_at(vec2(0, 0));
-
         let ids: Vec<Id> = self.players.keys().copied().collect();
         for id in ids {
             let mut player = self.players.get(&id).unwrap().clone();
-            self.load_chunks_at(self.get_chunk_pos(player.pos.map(|x| x as i64)));
             self.player_action(&mut player);
 
             // Collide with items
-            for item in self.items.values() {
+            for item in self.chunked_world.items() {
                 if !self.resource_pack.items[&item.item_type].traversable {
                     let dir = player.pos - item.pos;
                     let distance = dir.len();
@@ -66,20 +60,6 @@ impl Model {
 
             *self.players.get_mut(&id).unwrap() = player;
         }
-
-        let items = &mut self.items;
-        let world_name = &self.world_name;
-        self.loaded_chunks.retain(|&chunk_pos, chunk| {
-            if !chunk.is_loaded {
-                for item_id in chunk.items.keys() {
-                    items.remove(item_id);
-                }
-                chunk.save(world_name, chunk_pos).unwrap();
-                false
-            } else {
-                true
-            }
-        });
     }
     fn collide(
         circle_pos: Vec2<f32>,
@@ -197,7 +177,7 @@ impl Model {
             match finish_action {
                 MomentAction::Interact { id } => {
                     let ingredient1 = &mut player.item;
-                    let (conditions, ingredient2) = match self.items.get(&id) {
+                    let (conditions, ingredient2) = match self.chunked_world.get_item(id) {
                         Some(item) => (
                             Some(
                                 self.get_tile(item.pos.map(|x| x as i64))
@@ -233,7 +213,7 @@ impl Model {
                 }
                 MomentAction::PickUp { id } => {
                     let hand_item = &mut player.item;
-                    let mut item = self.items.remove(&id);
+                    let mut item = self.chunked_world.remove_item(id);
                     let ground_item = match &item {
                         Some(item) => Some(item.item_type.clone()),
                         None => None,

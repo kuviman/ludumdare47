@@ -8,7 +8,7 @@ pub struct ClientView {
     pub ticks_per_second: f32,
     pub tiles: HashMap<Vec2<i64>, Tile>,
     pub players: Vec<Player>,
-    pub items: HashMap<Id, Item>,
+    pub items: Vec<Item>,
     pub recipes: Vec<Recipe>,
     pub sounds: Vec<Sound>,
 }
@@ -40,10 +40,10 @@ impl Model {
                 .cloned()
                 .collect(),
             items: self
-                .items
-                .iter()
-                .filter(|(_, item)| player.load_area.contains(item.pos))
-                .map(|(id, item)| (id.clone(), item.clone()))
+                .chunked_world
+                .items()
+                .filter(|item| player.load_area.contains(item.pos))
+                .cloned()
                 .collect(),
             recipes: self.resource_pack.recipes.clone(),
             sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),

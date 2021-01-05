@@ -1,9 +1,11 @@
 use geng::prelude::*;
+use noise::{NoiseFn, OpenSimplex, Seedable as _};
 
 mod app;
 mod model;
 #[cfg(not(target_arch = "wasm32"))]
 mod server;
+pub mod util;
 
 use app::App;
 use model::{Id, Model};
@@ -50,8 +52,7 @@ fn main() {
     let (server, server_handle) = if !opt.no_server {
         let server = Server::new(
             addr,
-            Model::create("new_world".to_owned())
-                .unwrap_or(Model::load("new_world".to_owned()).unwrap()),
+            Model::create("new_world").unwrap_or(Model::load("new_world").unwrap()),
         );
         let server_handle = server.handle();
         ctrlc::set_handler({
