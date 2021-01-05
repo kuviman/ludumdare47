@@ -7,6 +7,12 @@ pub struct BiomeGeneration {
     pub parameters: HashMap<GenerationParameter, (f32, f32)>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ItemGeneration {
+    pub item_type: Option<ItemType>,
+    pub weight: usize,
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GenerationParameter(pub String);
 

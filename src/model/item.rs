@@ -22,9 +22,3 @@ pub struct ItemParameters {
     pub traversable: bool,
     pub pickable: bool,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ItemGeneration {
-    pub item_type: Option<ItemType>,
-    pub weight: usize,
-}
