@@ -31,9 +31,6 @@ impl MultiNoise {
         (value / 2.0 + 0.5) * (self.parameters.max_value - self.parameters.min_value)
             + self.parameters.min_value
     }
-    pub fn max_delta(&self) -> f32 {
-        self.parameters.max_value - self.parameters.min_value
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
