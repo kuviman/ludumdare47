@@ -83,22 +83,33 @@ impl ChunkedWorld {
         id_generator: &mut IdGenerator,
         area: Option<AABB<f32>>,
     ) {
-        for chunk in self.chunks.values_mut() {
-            chunk.loaded_by.remove(&loader);
-        }
-        if let Some(area) = area {
-            let chunks_area = AABB {
-                x_min: div_down(area.x_min.floor() as i64, self.chunk_size.x as i64),
-                x_max: div_up(area.x_max.ceil() as i64 - 1, self.chunk_size.x as i64) + 1,
-                y_min: div_down(area.y_min.floor() as i64, self.chunk_size.y as i64),
-                y_max: div_up(area.y_max.ceil() as i64 - 1, self.chunk_size.y as i64) + 1,
-            };
-            for chunk_pos in chunks_area.points() {
-                let chunk = self.load_chunk(chunk_pos, id_generator);
-                chunk.loaded_by.insert(loader);
+        let area = area.map(|area| AABB {
+            x_min: div_down(area.x_min.floor() as i64, self.chunk_size.x as i64),
+            x_max: div_up(area.x_max.ceil() as i64 - 1, self.chunk_size.x as i64) + 1,
+            y_min: div_down(area.y_min.floor() as i64, self.chunk_size.y as i64),
+            y_max: div_up(area.y_max.ceil() as i64 - 1, self.chunk_size.y as i64) + 1,
+        });
+        for (&chunk_pos, chunk) in &mut self.chunks {
+            if let Some(area) = &area {
+                if !area.contains(chunk_pos) {
+                    chunk.unload(loader);
+                }
+            } else {
+                chunk.forget(loader);
             }
         }
-        self.chunks.retain(|_, chunk| !chunk.loaded_by.is_empty());
+        if let Some(area) = area {
+            for chunk_pos in area.points() {
+                let chunk = self.load_chunk(chunk_pos, id_generator);
+                chunk.load(loader);
+            }
+        }
+        self.chunks.retain(|_, chunk| chunk.is_needed());
+    }
+    pub fn get_updates(&mut self, loader: Id, sender: &mut dyn geng::net::Sender<ServerMessage>) {
+        for chunk in self.chunks.values_mut() {
+            chunk.get_updates(loader, sender);
+        }
     }
 }
 
@@ -107,14 +118,47 @@ struct Chunk {
     #[deref]
     #[deref_mut]
     saved: util::Saved<SavedChunk>,
-    loaded_by: HashSet<Id>,
+    area: AABB<i64>,
+    version: u64,
+    loaders: HashMap<Id, Option<u64>>,
 }
 
 impl Chunk {
-    fn new(saved: util::Saved<SavedChunk>) -> Self {
+    fn new(area: AABB<i64>, saved: util::Saved<SavedChunk>) -> Self {
         Self {
             saved,
-            loaded_by: HashSet::new(),
+            area,
+            version: 1,
+            loaders: HashMap::new(),
+        }
+    }
+    fn is_needed(&self) -> bool {
+        !self.loaders.is_empty()
+    }
+    fn unload(&mut self, loader: Id) {
+        if let Some(version) = self.loaders.get_mut(&loader) {
+            *version = None;
+        }
+    }
+    fn forget(&mut self, loader: Id) {
+        self.loaders.remove(&loader);
+    }
+    fn load(&mut self, loader: Id) {
+        self.loaders.entry(loader).or_insert(Some(0));
+    }
+    fn get_updates(&mut self, loader: Id, sender: &mut dyn geng::net::Sender<ServerMessage>) {
+        match self.loaders.get_mut(&loader) {
+            Some(Some(version)) => {
+                if *version != self.version {
+                    *version = self.version;
+                    sender.send(ServerMessage::UpdateTiles(self.saved.tiles.clone()));
+                }
+            }
+            Some(None) => {
+                sender.send(ServerMessage::UnloadArea(self.area));
+                self.loaders.remove(&loader);
+            }
+            None => {}
         }
     }
 }
@@ -143,19 +187,18 @@ impl SavedChunk {
 impl ChunkedWorld {
     fn load_chunk(&mut self, chunk_pos: Vec2<i64>, id_generator: &mut IdGenerator) -> &mut Chunk {
         if !self.chunks.contains_key(&chunk_pos) {
+            let chunk_area = AABB::pos_size(
+                chunk_pos * self.chunk_size.map(|x| x as i64),
+                self.chunk_size.map(|x| x as i64),
+            );
             let chunk_path = self
                 .path
                 .join("chunks")
                 .join(format!("chunk_{}_{}.chunk", chunk_pos.x, chunk_pos.y));
             let saved_chunk = util::Saved::new(chunk_path, || {
-                let chunk_size = self.chunk_size.map(|x| x as i64);
-                SavedChunk::generate(
-                    &self.world_gen,
-                    id_generator,
-                    AABB::pos_size(chunk_pos * chunk_size, chunk_size),
-                )
+                SavedChunk::generate(&self.world_gen, id_generator, chunk_area)
             });
-            let chunk = Chunk::new(saved_chunk);
+            let chunk = Chunk::new(chunk_area, saved_chunk);
             self.chunks.insert(chunk_pos, chunk);
         }
         self.chunks.get_mut(&chunk_pos).unwrap()

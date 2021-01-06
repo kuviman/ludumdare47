@@ -6,7 +6,6 @@ pub struct ClientView {
     pub player_movement_speed: f32,
     pub current_time: usize,
     pub ticks_per_second: f32,
-    pub tiles: HashMap<Vec2<i64>, Tile>,
     pub players: Vec<Player>,
     pub items: Vec<Item>,
     pub recipes: Vec<Recipe>,
@@ -23,15 +22,6 @@ impl Model {
             player_movement_speed: self.rules.player_movement_speed,
             ticks_per_second: self.ticks_per_second,
             current_time: self.current_time,
-            tiles: {
-                let mut tiles = HashMap::new();
-                for pos in player.load_area.map(|x| x as i64).points() {
-                    if let Some(tile) = self.chunked_world.get_tile(pos) {
-                        tiles.insert(pos, tile.clone());
-                    }
-                }
-                tiles
-            },
             players: self
                 .players
                 .values()

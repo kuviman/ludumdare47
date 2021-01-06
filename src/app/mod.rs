@@ -269,7 +269,12 @@ impl geng::State for App {
                         sound.play();
                     }
                     self.view = view;
-                    self.tile_mesh.update(&self.view.tiles);
+                }
+                ServerMessage::UpdateTiles(tiles) => {
+                    self.tile_mesh.update(&tiles);
+                }
+                ServerMessage::UnloadArea(area) => {
+                    self.tile_mesh.unload(area);
                 }
                 _ => unreachable!(),
             }

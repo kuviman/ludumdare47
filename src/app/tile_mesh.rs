@@ -19,7 +19,16 @@ impl TileMesh {
         }
     }
     pub fn update(&mut self, tiles: &HashMap<Vec2<i64>, model::Tile>) {
-        self.tiles = tiles.clone();
+        self.tiles.extend(tiles.clone());
+        self.update_mesh();
+    }
+    pub fn unload(&mut self, area: AABB<i64>) {
+        self.tiles.retain(|&pos, _| !area.contains(pos));
+        self.update_mesh();
+    }
+
+    fn update_mesh(&mut self) {
+        let tiles = &self.tiles;
         let noise = &self.noise;
         let mesh = &mut self.mesh;
         mesh.clear();

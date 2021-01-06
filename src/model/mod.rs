@@ -156,6 +156,7 @@ impl Model {
                 }
                 // TODO: Diff?
                 sender.send(ServerMessage::UpdateClientView(self.get_view(player_id)));
+                self.chunked_world.get_updates(player_id, sender);
             }
             Message::Goto { pos } => {
                 player.action = Some(PlayerAction::MovingTo {

@@ -20,6 +20,8 @@ pub enum ServerMessage {
     PlayerId(Id),
     PackList(Vec<String>),
     UpdateClientView(model::ClientView),
+    UpdateTiles(HashMap<Vec2<i64>, model::Tile>),
+    UnloadArea(AABB<i64>),
 }
 
 type Connection = geng::net::client::Connection<ServerMessage, ClientMessage>;
