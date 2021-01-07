@@ -53,10 +53,6 @@ impl ChunkedWorld {
         self.chunks.values().flat_map(|chunk| chunk.items.values())
     }
 
-    pub fn get_tile_f32(&self, pos: Vec2<f32>) -> Option<&Tile> {
-        self.get_tile(pos.map(|x| x.floor() as i64))
-    }
-
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         let chunk_pos = self.get_chunk_pos(pos);
         self.chunks.get(&chunk_pos).map(|chunk| &chunk.tiles[&pos])
