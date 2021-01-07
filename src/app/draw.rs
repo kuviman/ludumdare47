@@ -174,7 +174,7 @@ impl App {
                     text = format!("{}, holding {}", text, item);
                 }
                 let pos = data.pos;
-                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
+                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap_or(0.0));
                 self.geng.default_font().draw_aligned(
                     framebuffer,
                     &text,
