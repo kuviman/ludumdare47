@@ -46,7 +46,7 @@ impl Model {
             // Collide with tiles
             for x in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
                 for y in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
-                    let tile_pos = tile_pos(vec2(x as f32, y as f32) + player.pos);
+                    let tile_pos = get_tile_pos(vec2(x as f32, y as f32) + player.pos);
                     if let Some((normal, penetration)) = match self.chunked_world.get_tile(tile_pos)
                     {
                         Some(tile) => {
@@ -147,7 +147,7 @@ impl Model {
                             Some(item) => (
                                 Some(
                                     self.chunked_world
-                                        .get_tile(tile_pos(item.pos))
+                                        .get_tile(get_tile_pos(item.pos))
                                         .unwrap()
                                         .biome
                                         .clone(),
@@ -187,7 +187,7 @@ impl Model {
                         Some(item) => (
                             Some(
                                 self.chunked_world
-                                    .get_tile(tile_pos(item.pos))
+                                    .get_tile(get_tile_pos(item.pos))
                                     .unwrap()
                                     .biome
                                     .clone(),

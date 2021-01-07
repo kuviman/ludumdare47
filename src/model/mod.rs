@@ -204,6 +204,6 @@ impl Model {
     }
 }
 
-fn tile_pos(pos: Vec2<f32>) -> Vec2<i64> {
+fn get_tile_pos(pos: Vec2<f32>) -> Vec2<i64> {
     pos.map(|x| x.floor() as i64)
 }
