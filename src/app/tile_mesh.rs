@@ -1,17 +1,5 @@
 use super::*;
 
-fn iter2<T>(a: [T; 2]) -> impl Iterator<Item = T> {
-    let [a0, a1] = a;
-    std::iter::once(a0).chain(std::iter::once(a1))
-}
-
-fn iter3<T>(a: [T; 3]) -> impl Iterator<Item = T> {
-    let [a0, a1, a2] = a;
-    std::iter::once(a0)
-        .chain(std::iter::once(a1))
-        .chain(std::iter::once(a2))
-}
-
 pub struct TileMesh {
     ez3d: Rc<Ez3D>,
     noise: ::noise::OpenSimplex,
@@ -100,8 +88,8 @@ impl TileMesh {
                 let tile = self.tiles.get(&pos)?;
                 let color = self.resource_pack.biomes[&tile.biome].color;
                 Some(
-                    iter2(self.get_faces(pos)?).flat_map(move |face: [Vec3<f32>; 3]| {
-                        iter3(face).map(move |vertex: Vec3<f32>| ez3d::Vertex {
+                    util::iter2(self.get_faces(pos)?).flat_map(move |face: [Vec3<f32>; 3]| {
+                        util::iter3(face).map(move |vertex: Vec3<f32>| ez3d::Vertex {
                             a_pos: vertex,
                             a_normal: vec3(0.0, 0.0, 0.0),
                             a_color: color,
