@@ -9,6 +9,23 @@ pub struct TileMesh {
     resource_pack: Rc<ResourcePack>,
 }
 
+fn intersect(face: &[Vec3<f32>; 3], ray: camera::Ray) -> Option<f32> {
+    let plane_pos = face[0];
+    let normal = Vec3::cross(face[1] - face[0], face[2] - face[0]);
+    // (ray.from + ray.dir * t - plane_pos, normal) = 0
+    let t = Vec3::dot(plane_pos - ray.from, normal) / Vec3::dot(ray.dir, normal);
+    let p = ray.from + ray.dir * t;
+    for i in 0..3 {
+        let p1 = face[i];
+        let p2 = face[(i + 1) % 3];
+        let inside = Vec3::cross(normal, p2 - p1);
+        if Vec3::dot(p - p1, inside) < 0.0 {
+            return None;
+        }
+    }
+    Some(t)
+}
+
 impl TileMesh {
     pub fn new(geng: &Rc<Geng>, ez3d: &Rc<Ez3D>, resource_pack: &Rc<ResourcePack>) -> Self {
         Self {
@@ -151,22 +168,8 @@ impl TileMesh {
     pub fn intersect(&self, ray: camera::Ray) -> Option<Vec3<f32>> {
         let mut result: Option<(f32, Vec3<f32>)> = None;
         for face in self.mesh.chunks_exact(3) {
-            let plane_pos = face[0].a_pos;
-            let normal = face[0].a_normal;
-            // (ray.from + ray.dir * t - plane_pos, normal) = 0
-            let t = Vec3::dot(plane_pos - ray.from, normal) / Vec3::dot(ray.dir, normal);
-            let p = ray.from + ray.dir * t;
-            let mut consider = true;
-            for i in 0..3 {
-                let p1 = face[i].a_pos;
-                let p2 = face[(i + 1) % 3].a_pos;
-                let inside = Vec3::cross(normal, p2 - p1);
-                if Vec3::dot(p - p1, inside) < 0.0 {
-                    consider = false;
-                    break;
-                }
-            }
-            if consider {
+            if let Some(t) = intersect(&[face[0].a_pos, face[1].a_pos, face[2].a_pos], ray) {
+                let p = ray.from + ray.dir * t;
                 if result.is_none() || t < result.unwrap().0 {
                     result = Some((t, p));
                 }

@@ -13,6 +13,7 @@ pub struct Camera {
     pub perspective: bool,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Ray {
     pub from: Vec3<f32>,
     pub dir: Vec3<f32>,
