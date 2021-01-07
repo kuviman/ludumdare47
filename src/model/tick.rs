@@ -46,11 +46,12 @@ impl Model {
             // Collide with tiles
             for x in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
                 for y in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
-                    let pos = vec2(x, y) + player.pos.map(|x| x as i64);
-                    if let Some((normal, penetration)) = match self.chunked_world.get_tile(pos) {
+                    let tile_pos = get_tile_pos(vec2(x as f32, y as f32) + player.pos);
+                    if let Some((normal, penetration)) = match self.chunked_world.get_tile(tile_pos)
+                    {
                         Some(tile) => {
                             if self.resource_pack.biome_properties[&tile.biome].collidable {
-                                Self::collide(player.pos, player.radius, pos.map(|x| x as f32), 1.0)
+                                Self::collide(player.pos, player.radius, tile_pos, 1.0)
                             } else {
                                 None
                             }
@@ -68,13 +69,13 @@ impl Model {
     fn collide(
         circle_pos: Vec2<f32>,
         circle_radius: f32,
-        tile_pos: Vec2<f32>,
+        tile_pos: Vec2<i64>,
         tile_size: f32,
     ) -> Option<(Vec2<f32>, f32)> {
-        let up = circle_pos.y - tile_pos.y - tile_size;
-        let down = tile_pos.y - circle_pos.y;
-        let right = circle_pos.x - tile_pos.x - tile_size;
-        let left = tile_pos.x - circle_pos.x;
+        let up = circle_pos.y - tile_pos.y as f32 - tile_size;
+        let down = tile_pos.y as f32 - circle_pos.y;
+        let right = circle_pos.x - tile_pos.x as f32 - tile_size;
+        let left = tile_pos.x as f32 - circle_pos.x;
 
         let (dy, ny) = if up.abs() < down.abs() {
             (up, 1.0)
@@ -146,7 +147,7 @@ impl Model {
                             Some(item) => (
                                 Some(
                                     self.chunked_world
-                                        .get_tile(item.pos.map(|x| x as i64))
+                                        .get_tile(get_tile_pos(item.pos))
                                         .unwrap()
                                         .biome
                                         .clone(),
@@ -186,7 +187,7 @@ impl Model {
                         Some(item) => (
                             Some(
                                 self.chunked_world
-                                    .get_tile(item.pos.map(|x| x as i64))
+                                    .get_tile(get_tile_pos(item.pos))
                                     .unwrap()
                                     .biome
                                     .clone(),
