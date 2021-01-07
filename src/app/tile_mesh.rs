@@ -1,10 +1,23 @@
 use super::*;
 
+fn iter2<T>(a: [T; 2]) -> impl Iterator<Item = T> {
+    let [a0, a1] = a;
+    std::iter::once(a0).chain(std::iter::once(a1))
+}
+
+fn iter3<T>(a: [T; 3]) -> impl Iterator<Item = T> {
+    let [a0, a1, a2] = a;
+    std::iter::once(a0)
+        .chain(std::iter::once(a1))
+        .chain(std::iter::once(a2))
+}
+
 pub struct TileMesh {
     ez3d: Rc<Ez3D>,
     noise: ::noise::OpenSimplex,
     pub tiles: HashMap<Vec2<i64>, model::Tile>,
     pub mesh: ugli::VertexBuffer<ez3d::Vertex>,
+    water_mesh: ugli::VertexBuffer<ez3d::Vertex>,
     resource_pack: Rc<ResourcePack>,
 }
 
@@ -14,7 +27,36 @@ impl TileMesh {
             ez3d: ez3d.clone(),
             noise: ::noise::OpenSimplex::new(),
             tiles: HashMap::new(),
-            mesh: ugli::VertexBuffer::new_static(geng.ugli(), Vec::new()),
+            mesh: ugli::VertexBuffer::new_dynamic(geng.ugli(), Vec::new()),
+            water_mesh: ugli::VertexBuffer::new_static(geng.ugli(), {
+                let inf = 1e3;
+                vec![
+                    ez3d::Vertex {
+                        a_pos: vec3(-inf, -inf, 0.0),
+                        a_normal: vec3(0.0, 0.0, 1.0),
+                        a_color: Color::WHITE,
+                        a_emission: 0.0,
+                    },
+                    ez3d::Vertex {
+                        a_pos: vec3(inf, -inf, 0.0),
+                        a_normal: vec3(0.0, 0.0, 1.0),
+                        a_color: Color::WHITE,
+                        a_emission: 0.0,
+                    },
+                    ez3d::Vertex {
+                        a_pos: vec3(inf, inf, 0.0),
+                        a_normal: vec3(0.0, 0.0, 1.0),
+                        a_color: Color::WHITE,
+                        a_emission: 0.0,
+                    },
+                    ez3d::Vertex {
+                        a_pos: vec3(-inf, inf, 0.0),
+                        a_normal: vec3(0.0, 0.0, 1.0),
+                        a_color: Color::WHITE,
+                        a_emission: 0.0,
+                    },
+                ]
+            }),
             resource_pack: resource_pack.clone(),
         }
     }
@@ -27,101 +69,51 @@ impl TileMesh {
         self.update_mesh();
     }
 
+    fn get_faces(&self, pos: Vec2<i64>) -> Option<[[Vec3<f32>; 3]; 2]> {
+        let v = |pos: Vec2<i64>| -> Option<Vec3<f32>> {
+            let tile = self.tiles.get(&pos)?;
+            let height = tile.world_parameters[&model::WorldParameter("Height".to_owned())];
+            let shift = vec2(
+                self.noise.get([pos.x as f64, pos.y as f64]) as f32,
+                self.noise.get([pos.x as f64, pos.y as f64 + 100.0]) as f32,
+            );
+            let pos = pos.map(|x| x as f32) + shift;
+            let pos = pos.extend(height);
+            Some(pos)
+        };
+
+        let vs = [
+            v(pos)?,
+            v(pos + vec2(1, 0))?,
+            v(pos + vec2(1, 1))?,
+            v(pos + vec2(0, 1))?,
+        ];
+
+        Some([[vs[0], vs[1], vs[2]], [vs[0], vs[2], vs[3]]])
+    }
+
     fn update_mesh(&mut self) {
-        let tiles = &self.tiles;
-        let noise = &self.noise;
-        let mesh = &mut self.mesh;
-        mesh.clear();
-        let mut append_quad =
-            |pos: Vec2<i64>, h00: f32, h10: f32, h11: f32, h01: f32, a_color: Color<f32>| {
-                let p = |p: Vec2<i64>, h: f32| {
-                    let dv = vec2(
-                        noise.get([p.x as f64, p.y as f64]) as f32,
-                        noise.get([p.x as f64, p.y as f64 + 100.0]) as f32,
-                    );
-                    (p.map(|x| x as f32) + dv).extend(h)
-                };
-                let p00 = p(pos, h00);
-                let p10 = p(pos + vec2(1, 0), h10);
-                let p11 = p(pos + vec2(1, 1), h11);
-                let p01 = p(pos + vec2(0, 1), h01);
-                mesh.push(ez3d::Vertex {
-                    a_pos: p00,
-                    a_normal: vec3(0.0, 0.0, 0.0),
-                    a_emission: 0.0,
-                    a_color,
-                });
-                mesh.push(ez3d::Vertex {
-                    a_pos: p10,
-                    a_normal: vec3(0.0, 0.0, 0.0),
-                    a_emission: 0.0,
-                    a_color,
-                });
-                mesh.push(ez3d::Vertex {
-                    a_pos: p11,
-                    a_normal: vec3(0.0, 0.0, 0.0),
-                    a_emission: 0.0,
-                    a_color,
-                });
-                mesh.push(ez3d::Vertex {
-                    a_pos: p00,
-                    a_normal: vec3(0.0, 0.0, 0.0),
-                    a_emission: 0.0,
-                    a_color,
-                });
-                mesh.push(ez3d::Vertex {
-                    a_pos: p11,
-                    a_normal: vec3(0.0, 0.0, 0.0),
-                    a_emission: 0.0,
-                    a_color,
-                });
-                mesh.push(ez3d::Vertex {
-                    a_pos: p01,
-                    a_normal: vec3(0.0, 0.0, 0.0),
-                    a_emission: 0.0,
-                    a_color,
-                });
-            };
-        for (&tile_pos, tile) in tiles {
-            let height = |tile: &model::Tile| {
-                tile.world_parameters[&model::WorldParameter("Height".to_owned())]
-            };
-            let x_height = if let Some(tile_x) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y)) {
-                height(tile_x)
-            } else {
-                height(tile)
-            };
-            let y_height = if let Some(tile_y) = tiles.get(&vec2(tile_pos.x, tile_pos.y + 1)) {
-                height(tile_y)
-            } else {
-                height(tile)
-            };
-            let xy_height = if let Some(tile_xy) = tiles.get(&vec2(tile_pos.x + 1, tile_pos.y + 1))
-            {
-                height(tile_xy)
-            } else {
-                (x_height + y_height) / 2.0
-            };
-            append_quad(
-                tile_pos,
-                height(tile),
-                x_height,
-                xy_height,
-                y_height,
-                self.resource_pack.biomes[&tile.biome].color,
-            );
-        }
-        for (&tile_pos, _) in tiles {
-            append_quad(
-                tile_pos,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                Color::rgba(0.0, 0.5, 1.0, 0.5),
-            );
-        }
-        ez3d::calc_normals(&mut self.mesh);
+        let mut mesh = self
+            .tiles
+            .keys()
+            .filter_map(|&pos| {
+                let tile = self.tiles.get(&pos)?;
+                let color = self.resource_pack.biomes[&tile.biome].color;
+                Some(
+                    iter2(self.get_faces(pos)?).flat_map(move |face: [Vec3<f32>; 3]| {
+                        iter3(face).map(move |vertex: Vec3<f32>| ez3d::Vertex {
+                            a_pos: vertex,
+                            a_normal: vec3(0.0, 0.0, 0.0),
+                            a_color: color,
+                            a_emission: 0.0,
+                        })
+                    }),
+                )
+            })
+            .flatten()
+            .collect::<Vec<ez3d::Vertex>>();
+        ez3d::calc_normals(&mut mesh);
+        *self.mesh = mesh;
     }
     pub fn draw(
         &self,
@@ -140,6 +132,25 @@ impl TileMesh {
                 i_size: 1.0,
                 i_color: Color::WHITE,
             }),
+        );
+        self.ez3d.draw_with(
+            framebuffer,
+            camera,
+            light,
+            &self.water_mesh,
+            std::iter::once(ez3d::Instance {
+                i_pos: vec3(0.0, 0.0, 0.0),
+                i_rotation: 0.0,
+                i_size: 1.0,
+                i_color: Color::rgba(0.0, 0.5, 1.0, 0.5),
+            }),
+            ugli::DrawMode::TriangleFan,
+            ugli::DrawParameters {
+                blend_mode: Some(default()),
+                depth_func: Some(default()),
+                cull_face: Some(ugli::CullFace::Back),
+                ..default()
+            },
         );
     }
     pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
