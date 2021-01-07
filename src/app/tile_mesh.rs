@@ -3,8 +3,8 @@ use super::*;
 pub struct TileMesh {
     ez3d: Rc<Ez3D>,
     noise: ::noise::OpenSimplex,
-    pub tiles: HashMap<Vec2<i64>, model::Tile>,
-    pub mesh: ugli::VertexBuffer<ez3d::Vertex>,
+    tiles: HashMap<Vec2<i64>, model::Tile>,
+    mesh: ugli::VertexBuffer<ez3d::Vertex>,
     water_mesh: ugli::VertexBuffer<ez3d::Vertex>,
     resource_pack: Rc<ResourcePack>,
 }
