@@ -46,11 +46,17 @@ impl Model {
             // Collide with tiles
             for x in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
                 for y in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
-                    let pos = vec2(x, y) + player.pos.map(|x| x as i64);
-                    if let Some((normal, penetration)) = match self.chunked_world.get_tile(pos) {
+                    let tile_pos = vec2(x, y) + player.pos.map(|x| x.floor() as i64);
+                    if let Some((normal, penetration)) = match self.chunked_world.get_tile(tile_pos)
+                    {
                         Some(tile) => {
                             if self.resource_pack.biome_properties[&tile.biome].collidable {
-                                Self::collide(player.pos, player.radius, pos.map(|x| x as f32), 1.0)
+                                Self::collide(
+                                    player.pos,
+                                    player.radius,
+                                    tile_pos.map(|x| x as f32),
+                                    1.0,
+                                )
                             } else {
                                 None
                             }
@@ -146,7 +152,7 @@ impl Model {
                             Some(item) => (
                                 Some(
                                     self.chunked_world
-                                        .get_tile(item.pos.map(|x| x as i64))
+                                        .get_tile_f32(item.pos)
                                         .unwrap()
                                         .biome
                                         .clone(),
@@ -186,7 +192,7 @@ impl Model {
                         Some(item) => (
                             Some(
                                 self.chunked_world
-                                    .get_tile(item.pos.map(|x| x as i64))
+                                    .get_tile_f32(item.pos)
                                     .unwrap()
                                     .biome
                                     .clone(),
