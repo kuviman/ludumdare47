@@ -1,12 +1,83 @@
 use super::*;
 
 pub struct TileMesh {
+    geng: Rc<Geng>,
+    chunk_size: i64,
     ez3d: Rc<Ez3D>,
-    noise: ::noise::OpenSimplex,
-    tiles: HashMap<Vec2<i64>, model::Tile>,
-    mesh: ugli::VertexBuffer<ez3d::Vertex>,
+    noise: Rc<::noise::OpenSimplex>,
+    chunks: HashMap<Vec2<i64>, Chunk>,
     water_mesh: ugli::VertexBuffer<ez3d::Vertex>,
     resource_pack: Rc<ResourcePack>,
+}
+
+struct Chunk {
+    noise: Rc<::noise::OpenSimplex>,
+    tiles: HashMap<Vec2<i64>, model::Tile>,
+    mesh: ugli::VertexBuffer<ez3d::Vertex>,
+    resource_pack: Rc<ResourcePack>,
+}
+
+impl Chunk {
+    fn get_faces(&self, pos: Vec2<i64>) -> Option<[[Vec3<f32>; 3]; 2]> {
+        let v = |pos: Vec2<i64>| -> Option<Vec3<f32>> {
+            let tile = self.tiles.get(&pos)?;
+            let height = tile.world_parameters[&model::WorldParameter("Height".to_owned())];
+            let shift = vec2(
+                self.noise.get([pos.x as f64, pos.y as f64]) as f32 / 0.55 / 2.1,
+                self.noise.get([pos.x as f64, pos.y as f64 + 100.0]) as f32 / 0.55 / 2.1,
+            );
+            let pos = pos.map(|x| x as f32) + shift;
+            let pos = pos.extend(height);
+            Some(pos)
+        };
+
+        let vs = [
+            v(pos)?,
+            v(pos + vec2(1, 0))?,
+            v(pos + vec2(1, 1))?,
+            v(pos + vec2(0, 1))?,
+        ];
+
+        Some([[vs[0], vs[1], vs[2]], [vs[0], vs[2], vs[3]]])
+    }
+    fn all_faces(&self) -> impl Iterator<Item = [Vec3<f32>; 3]> + '_ {
+        self.mesh.chunks_exact(3).map(|face| {
+            let p0 = face[0].a_pos;
+            let p1 = face[1].a_pos;
+            let p2 = face[2].a_pos;
+            [p0, p1, p2]
+        })
+    }
+    fn unload(&mut self, area: AABB<i64>) {
+        let updated = self.tiles.keys().any(|&pos| area.contains(pos));
+        self.tiles.retain(|&pos, _| !area.contains(pos));
+        if updated {
+            self.update_mesh();
+        }
+    }
+    fn update_mesh(&mut self) {
+        let mut mesh = self
+            .tiles
+            .keys()
+            .filter_map(|&pos| {
+                let tile = self.tiles.get(&pos)?;
+                let color = self.resource_pack.biomes[&tile.biome].color;
+                Some(
+                    util::iter2(self.get_faces(pos)?).flat_map(move |face: [Vec3<f32>; 3]| {
+                        util::iter3(face).map(move |vertex: Vec3<f32>| ez3d::Vertex {
+                            a_pos: vertex,
+                            a_normal: vec3(0.0, 0.0, 0.0),
+                            a_color: color,
+                            a_emission: 0.0,
+                        })
+                    }),
+                )
+            })
+            .flatten()
+            .collect::<Vec<ez3d::Vertex>>();
+        ez3d::calc_normals(&mut mesh);
+        *self.mesh = mesh;
+    }
 }
 
 fn intersect(face: &[Vec3<f32>; 3], ray: camera::Ray) -> Option<f32> {
@@ -29,10 +100,11 @@ fn intersect(face: &[Vec3<f32>; 3], ray: camera::Ray) -> Option<f32> {
 impl TileMesh {
     pub fn new(geng: &Rc<Geng>, ez3d: &Rc<Ez3D>, resource_pack: &Rc<ResourcePack>) -> Self {
         Self {
+            geng: geng.clone(),
+            chunk_size: 16,
             ez3d: ez3d.clone(),
-            noise: ::noise::OpenSimplex::new(),
-            tiles: HashMap::new(),
-            mesh: ugli::VertexBuffer::new_dynamic(geng.ugli(), Vec::new()),
+            noise: Rc::new(::noise::OpenSimplex::new()),
+            chunks: HashMap::new(),
             water_mesh: ugli::VertexBuffer::new_static(geng.ugli(), {
                 let inf = 1e3;
                 vec![
@@ -65,60 +137,47 @@ impl TileMesh {
             resource_pack: resource_pack.clone(),
         }
     }
+    fn get_chunk_pos(&self, pos: Vec2<i64>) -> Vec2<i64> {
+        vec2(
+            util::div_down(pos.x, self.chunk_size),
+            util::div_down(pos.y, self.chunk_size),
+        )
+    }
     pub fn update(&mut self, tiles: &HashMap<Vec2<i64>, model::Tile>) {
-        self.tiles.extend(tiles.clone());
-        self.update_mesh();
+        let mut updated_chunks = HashSet::new();
+        for (&pos, tile) in tiles {
+            for dx in -1..=0 {
+                for dy in -1..=0 {
+                    let update_in = pos + vec2(dx, dy);
+                    let chunk_pos = self.get_chunk_pos(update_in);
+                    if !self.chunks.contains_key(&chunk_pos) {
+                        self.chunks.insert(
+                            chunk_pos,
+                            Chunk {
+                                noise: self.noise.clone(),
+                                tiles: HashMap::new(),
+                                mesh: ugli::VertexBuffer::new_static(self.geng.ugli(), vec![]),
+                                resource_pack: self.resource_pack.clone(),
+                            },
+                        );
+                    }
+                    updated_chunks.insert(chunk_pos);
+                    self.chunks
+                        .get_mut(&chunk_pos)
+                        .unwrap()
+                        .tiles
+                        .insert(pos, tile.clone());
+                }
+            }
+        }
+        for chunk_pos in updated_chunks {
+            self.chunks.get_mut(&chunk_pos).unwrap().update_mesh();
+        }
     }
     pub fn unload(&mut self, area: AABB<i64>) {
-        self.tiles.retain(|&pos, _| !area.contains(pos));
-        self.update_mesh();
-    }
-
-    fn get_faces(&self, pos: Vec2<i64>) -> Option<[[Vec3<f32>; 3]; 2]> {
-        let v = |pos: Vec2<i64>| -> Option<Vec3<f32>> {
-            let tile = self.tiles.get(&pos)?;
-            let height = tile.world_parameters[&model::WorldParameter("Height".to_owned())];
-            let shift = vec2(
-                self.noise.get([pos.x as f64, pos.y as f64]) as f32 / 0.55 / 2.1,
-                self.noise.get([pos.x as f64, pos.y as f64 + 100.0]) as f32 / 0.55 / 2.1,
-            );
-            let pos = pos.map(|x| x as f32) + shift;
-            let pos = pos.extend(height);
-            Some(pos)
-        };
-
-        let vs = [
-            v(pos)?,
-            v(pos + vec2(1, 0))?,
-            v(pos + vec2(1, 1))?,
-            v(pos + vec2(0, 1))?,
-        ];
-
-        Some([[vs[0], vs[1], vs[2]], [vs[0], vs[2], vs[3]]])
-    }
-
-    fn update_mesh(&mut self) {
-        let mut mesh = self
-            .tiles
-            .keys()
-            .filter_map(|&pos| {
-                let tile = self.tiles.get(&pos)?;
-                let color = self.resource_pack.biomes[&tile.biome].color;
-                Some(
-                    util::iter2(self.get_faces(pos)?).flat_map(move |face: [Vec3<f32>; 3]| {
-                        util::iter3(face).map(move |vertex: Vec3<f32>| ez3d::Vertex {
-                            a_pos: vertex,
-                            a_normal: vec3(0.0, 0.0, 0.0),
-                            a_color: color,
-                            a_emission: 0.0,
-                        })
-                    }),
-                )
-            })
-            .flatten()
-            .collect::<Vec<ez3d::Vertex>>();
-        ez3d::calc_normals(&mut mesh);
-        *self.mesh = mesh;
+        for chunk in self.chunks.values_mut() {
+            chunk.unload(area);
+        }
     }
     pub fn draw(
         &self,
@@ -126,18 +185,20 @@ impl TileMesh {
         camera: &Camera,
         light: &light::Uniforms,
     ) {
-        self.ez3d.draw(
-            framebuffer,
-            camera,
-            light,
-            &self.mesh,
-            std::iter::once(ez3d::Instance {
-                i_pos: vec3(0.0, 0.0, 0.0),
-                i_rotation: 0.0,
-                i_size: 1.0,
-                i_color: Color::WHITE,
-            }),
-        );
+        for chunk in self.chunks.values() {
+            self.ez3d.draw(
+                framebuffer,
+                camera,
+                light,
+                &chunk.mesh,
+                std::iter::once(ez3d::Instance {
+                    i_pos: vec3(0.0, 0.0, 0.0),
+                    i_rotation: 0.0,
+                    i_size: 1.0,
+                    i_color: Color::WHITE,
+                }),
+            );
+        }
         self.ez3d.draw_with(
             framebuffer,
             camera,
@@ -158,6 +219,12 @@ impl TileMesh {
             },
         );
     }
+    fn get_faces(&self, pos: Vec2<i64>) -> Option<[[Vec3<f32>; 3]; 2]> {
+        self.chunks.get(&self.get_chunk_pos(pos))?.get_faces(pos)
+    }
+    fn all_faces(&self) -> impl Iterator<Item = [Vec3<f32>; 3]> + '_ {
+        self.chunks.values().flat_map(|chunk| chunk.all_faces())
+    }
     pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
         let ray = camera::Ray {
             from: pos.extend(0.0),
@@ -174,8 +241,8 @@ impl TileMesh {
     }
     pub fn intersect(&self, ray: camera::Ray) -> Option<Vec3<f32>> {
         let mut result: Option<(f32, Vec3<f32>)> = None;
-        for face in self.mesh.chunks_exact(3) {
-            if let Some(t) = intersect(&[face[0].a_pos, face[1].a_pos, face[2].a_pos], ray) {
+        for face in self.all_faces() {
+            if let Some(t) = intersect(&face, ray) {
                 let p = ray.from + ray.dir * t;
                 if result.is_none() || t < result.unwrap().0 {
                     result = Some((t, p));

@@ -7,25 +7,6 @@ pub struct ChunkedWorld {
     chunks: HashMap<Vec2<i64>, Chunk>,
 }
 
-fn div_down(a: i64, b: i64) -> i64 {
-    if a < 0 {
-        return -div_up(-a, b);
-    }
-    if b < 0 {
-        return -div_up(a, -b);
-    }
-    return a / b;
-}
-fn div_up(a: i64, b: i64) -> i64 {
-    if a < 0 {
-        return -div_down(-a, b);
-    }
-    if b < 0 {
-        return -div_down(a, -b);
-    }
-    return (a + b - 1) / b;
-}
-
 impl ChunkedWorld {
     pub fn new(
         path: impl AsRef<std::path::Path>,
@@ -84,10 +65,10 @@ impl ChunkedWorld {
         area: Option<AABB<f32>>,
     ) {
         let area = area.map(|area| AABB {
-            x_min: div_down(area.x_min.floor() as i64, self.chunk_size.x as i64),
-            x_max: div_up(area.x_max.ceil() as i64 - 1, self.chunk_size.x as i64) + 1,
-            y_min: div_down(area.y_min.floor() as i64, self.chunk_size.y as i64),
-            y_max: div_up(area.y_max.ceil() as i64 - 1, self.chunk_size.y as i64) + 1,
+            x_min: util::div_down(area.x_min.floor() as i64, self.chunk_size.x as i64),
+            x_max: util::div_up(area.x_max.ceil() as i64 - 1, self.chunk_size.x as i64) + 1,
+            y_min: util::div_down(area.y_min.floor() as i64, self.chunk_size.y as i64),
+            y_max: util::div_up(area.y_max.ceil() as i64 - 1, self.chunk_size.y as i64) + 1,
         });
         for (&chunk_pos, chunk) in &mut self.chunks {
             if let Some(area) = &area {
@@ -205,8 +186,8 @@ impl ChunkedWorld {
     }
     fn get_chunk_pos(&self, pos: Vec2<i64>) -> Vec2<i64> {
         vec2(
-            div_down(pos.x, self.chunk_size.x as i64),
-            div_down(pos.y, self.chunk_size.y as i64),
+            util::div_down(pos.x, self.chunk_size.x as i64),
+            util::div_down(pos.y, self.chunk_size.y as i64),
         )
     }
 }
