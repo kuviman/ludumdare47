@@ -19,7 +19,7 @@ fn intersect(face: &[Vec3<f32>; 3], ray: camera::Ray) -> Option<f32> {
         let p1 = face[i];
         let p2 = face[(i + 1) % 3];
         let inside = Vec3::cross(normal, p2 - p1);
-        if Vec3::dot(p - p1, inside) < 0.0 {
+        if Vec3::dot(p - p1, inside) < -1e-3 {
             return None;
         }
     }
@@ -79,8 +79,8 @@ impl TileMesh {
             let tile = self.tiles.get(&pos)?;
             let height = tile.world_parameters[&model::WorldParameter("Height".to_owned())];
             let shift = vec2(
-                self.noise.get([pos.x as f64, pos.y as f64]) as f32,
-                self.noise.get([pos.x as f64, pos.y as f64 + 100.0]) as f32,
+                self.noise.get([pos.x as f64, pos.y as f64]) as f32 / 0.55 / 2.1,
+                self.noise.get([pos.x as f64, pos.y as f64 + 100.0]) as f32 / 0.55 / 2.1,
             );
             let pos = pos.map(|x| x as f32) + shift;
             let pos = pos.extend(height);
@@ -159,11 +159,18 @@ impl TileMesh {
         );
     }
     pub fn get_height(&self, pos: Vec2<f32>) -> Option<f32> {
-        self.intersect(camera::Ray {
+        let ray = camera::Ray {
             from: pos.extend(0.0),
             dir: vec3(0.0, 0.0, -1.0),
-        })
-        .map(|pos| pos.z)
+        };
+        let tile = pos.map(|x| x.floor() as i64);
+        let faces = (-1..=1)
+            .flat_map(move |dx| (-1..=1).filter_map(move |dy| self.get_faces(tile + vec2(dx, dy))))
+            .flat_map(|faces| util::iter2(faces));
+        let t = faces
+            .filter_map(|face| intersect(&face, ray))
+            .min_by_key(|&t| r32(t))?;
+        Some((ray.from + ray.dir * t).z)
     }
     pub fn intersect(&self, ray: camera::Ray) -> Option<Vec3<f32>> {
         let mut result: Option<(f32, Vec3<f32>)> = None;
