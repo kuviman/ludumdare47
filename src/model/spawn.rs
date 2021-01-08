@@ -27,11 +27,11 @@ impl Model {
         !self
             .chunked_world
             .items()
-            .any(|item| pos == item.pos.map(|x| x as i64))
+            .any(|item| pos == get_tile_pos(item.pos))
             && !self
                 .players
                 .values()
-                .any(|player| pos == player.pos.map(|x| x as i64))
+                .any(|player| pos == get_tile_pos(player.pos))
     }
     fn is_spawnable(&self, pos: Vec2<i64>) -> bool {
         match self.chunked_world.get_tile(pos) {

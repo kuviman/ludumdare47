@@ -22,7 +22,7 @@ impl ChunkedWorld {
     }
 
     pub fn insert_item(&mut self, item: Item) -> Result<(), Item> {
-        let chunk_pos = self.get_chunk_pos(item.pos.map(|x| x as i64));
+        let chunk_pos = self.get_chunk_pos(get_tile_pos(item.pos));
         if let Some(chunk) = self.chunks.get_mut(&chunk_pos) {
             chunk.items.insert(item.id, item);
             Ok(())
