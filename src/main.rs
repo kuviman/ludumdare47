@@ -61,13 +61,15 @@ fn main() {
             Model::create("new_world").unwrap_or(Model::load("new_world").unwrap()),
         );
         let server_handle = server.handle();
-        ctrlc::set_handler({
-            let server_handle = server_handle.clone();
-            move || {
-                server_handle.shutdown();
-            }
-        })
-        .unwrap();
+        if std::env::var_os("CARGO_MANIFEST_DIR").is_none() {
+            ctrlc::set_handler({
+                let server_handle = server_handle.clone();
+                move || {
+                    server_handle.shutdown();
+                }
+            })
+            .unwrap();
+        }
         (Some(server), Some(server_handle))
     } else {
         (None, None)
