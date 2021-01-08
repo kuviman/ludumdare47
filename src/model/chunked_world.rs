@@ -168,6 +168,7 @@ impl SavedChunk {
 impl ChunkedWorld {
     fn load_chunk(&mut self, chunk_pos: Vec2<i64>, id_generator: &mut IdGenerator) -> &mut Chunk {
         if !self.chunks.contains_key(&chunk_pos) {
+            debug!("Loading chunk {}", chunk_pos);
             let chunk_area = AABB::pos_size(
                 chunk_pos * self.chunk_size.map(|x| x as i64),
                 self.chunk_size.map(|x| x as i64),
@@ -177,6 +178,7 @@ impl ChunkedWorld {
                 .join("chunks")
                 .join(format!("chunk_{}_{}.chunk", chunk_pos.x, chunk_pos.y));
             let saved_chunk = util::Saved::new(chunk_path, || {
+                info!("Generating chunk {}", chunk_pos);
                 SavedChunk::generate(&self.world_gen, id_generator, chunk_area)
             });
             let chunk = Chunk::new(chunk_area, saved_chunk);
