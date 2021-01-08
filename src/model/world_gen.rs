@@ -28,19 +28,19 @@ impl WorldGen {
                 .world_parameters
                 .iter()
                 .map(|(parameter, multi_noise_properties)| {
-                    fn hash<T>(obj: T) -> u64
+                    fn hash<T>(obj: T) -> u32
                     where
                         T: std::hash::Hash,
                     {
                         use std::hash::*;
                         let mut hasher = siphasher::sip::SipHasher::new();
                         obj.hash(&mut hasher);
-                        hasher.finish()
+                        hasher.finish() as u32
                     }
                     (
                         parameter.clone(),
                         MultiNoise::new(
-                            (seed_noise.get([hash(parameter) as f64, 0.0]) * 1000.0) as u32,
+                            (seed_noise.get([hash(parameter) as f64, 0.0]) * 1e5).abs() as u32,
                             multi_noise_properties,
                         ),
                     )
