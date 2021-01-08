@@ -34,6 +34,8 @@ struct Opt {
     no_client: bool,
     #[structopt(long)]
     addr: Option<String>,
+    #[structopt(long)]
+    log_level: Option<log::LevelFilter>,
 }
 
 fn main() {
@@ -41,7 +43,6 @@ fn main() {
         std::env::set_current_dir(std::path::Path::new(&dir).join("static")).unwrap();
     }
 
-    logger::init().unwrap();
     geng::setup_panic_handler();
     let opt: Opt = StructOpt::from_args();
     let addr = opt
@@ -50,6 +51,8 @@ fn main() {
         .map(|s| s.as_str())
         .or(option_env!("DEFAULT_ADDR"))
         .unwrap_or("127.0.0.1:7878");
+
+    logger::init_with_level(opt.log_level.unwrap_or(log::LevelFilter::Info)).unwrap();
 
     #[cfg(not(target_arch = "wasm32"))]
     let (server, server_handle) = if !opt.no_server {
