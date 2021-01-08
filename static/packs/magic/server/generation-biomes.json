@@ -2,8 +2,8 @@
     "MagicForest": {
         "world_parameters": {
             "Height": [
-                2.0,
-                3.0
+                2,
+                9
             ],
             "Magic": [
                 0.8,
