@@ -24,7 +24,7 @@ impl ChunkedWorld {
     pub fn insert_item(&mut self, item: Item) -> Result<(), Item> {
         let chunk_pos = self.get_chunk_pos(get_tile_pos(item.pos));
         if let Some(chunk) = self.chunks.get_mut(&chunk_pos) {
-            chunk.items.insert(item.id, item);
+            chunk.borrow_mut().items.insert(item.id, item);
             Ok(())
         } else {
             Err(item)
@@ -33,8 +33,8 @@ impl ChunkedWorld {
 
     pub fn remove_item(&mut self, id: Id) -> Option<Item> {
         for chunk in self.chunks.values_mut() {
-            if let Some(item) = chunk.items.remove(&id) {
-                return Some(item);
+            if chunk.items.contains_key(&id) {
+                return Some(chunk.borrow_mut().items.remove(&id).unwrap());
             }
         }
         None
@@ -85,11 +85,19 @@ impl ChunkedWorld {
                 chunk.load(loader);
             }
         }
-        self.chunks.retain(|_, chunk| chunk.is_needed());
+        self.chunks.retain(|_, chunk| chunk.has_loaders());
     }
     pub fn get_updates(&mut self, loader: Id, sender: &mut dyn geng::net::Sender<ServerMessage>) {
+        let mut removes = Vec::new();
+        let mut inserts = Vec::new();
         for chunk in self.chunks.values_mut() {
-            chunk.get_updates(loader, sender);
+            chunk.get_updates(loader, &mut removes, &mut inserts);
+        }
+        for message in removes {
+            sender.send(message);
+        }
+        for message in inserts {
+            sender.send(message);
         }
     }
 }
@@ -98,53 +106,34 @@ impl ChunkedWorld {
 struct Chunk {
     #[deref]
     #[deref_mut]
-    saved: util::Saved<SavedChunk>,
+    inner: util::Loaded<util::Saved<SavedChunk>>,
     area: AABB<i64>,
-    version: u64,
-    loaders: HashMap<Id, Option<u64>>,
 }
 
 impl Chunk {
     fn new(area: AABB<i64>, saved: util::Saved<SavedChunk>) -> Self {
         Self {
-            saved,
+            inner: util::Loaded::new(saved),
             area,
-            version: 1,
-            loaders: HashMap::new(),
         }
     }
-    fn is_needed(&self) -> bool {
-        !self.loaders.is_empty()
-    }
-    fn unload(&mut self, loader: Id) {
-        if let Some(version) = self.loaders.get_mut(&loader) {
-            *version = None;
-        }
-    }
-    fn forget(&mut self, loader: Id) {
-        self.loaders.remove(&loader);
-    }
-    fn load(&mut self, loader: Id) {
-        self.loaders.entry(loader).or_insert(Some(0));
-    }
-    fn get_updates(&mut self, loader: Id, sender: &mut dyn geng::net::Sender<ServerMessage>) {
-        match self.loaders.get_mut(&loader) {
-            Some(Some(version)) => {
-                if *version != self.version {
-                    *version = self.version;
-                    sender.send(ServerMessage::UpdateTiles(self.saved.tiles.clone()));
-                }
+    fn get_updates(
+        &mut self,
+        loader: Id,
+        removes: &mut Vec<ServerMessage>,
+        inserts: &mut Vec<ServerMessage>,
+    ) {
+        match self.get_update(loader) {
+            Some(util::LoadedUpdate::Update) => {
+                inserts.push(ServerMessage::UpdateTiles(self.tiles.clone()))
             }
-            Some(None) => {
-                sender.send(ServerMessage::UnloadArea(self.area));
-                self.loaders.remove(&loader);
-            }
+            Some(util::LoadedUpdate::Unload) => removes.push(ServerMessage::UnloadArea(self.area)),
             None => {}
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 struct SavedChunk {
     tiles: HashMap<Vec2<i64>, Tile>,
     items: HashMap<Id, Item>,
