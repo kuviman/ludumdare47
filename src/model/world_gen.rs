@@ -7,7 +7,7 @@ pub struct BiomeGeneration {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemGeneration {
-    pub item_type: Option<ItemType>,
+    pub entity_type: Option<EntityType>,
     pub weight: usize,
 }
 
@@ -17,7 +17,8 @@ pub struct WorldParameter(pub String);
 pub struct WorldGen {
     world_parameters: HashMap<WorldParameter, MultiNoise>,
     biome_generation: HashMap<Biome, BiomeGeneration>,
-    item_generation: HashMap<Biome, Vec<ItemGeneration>>,
+    entity_generation: HashMap<Biome, Vec<ItemGeneration>>,
+    pub entity_properties: HashMap<EntityType, EntityProperties>,
 }
 
 impl WorldGen {
@@ -47,14 +48,11 @@ impl WorldGen {
                 })
                 .collect(),
             biome_generation: resource_pack.biome_generation.clone(),
-            item_generation: resource_pack.item_generation.clone(),
+            entity_generation: resource_pack.entity_generation.clone(),
+            entity_properties: resource_pack.entity_properties.clone(),
         }
     }
-    pub fn generate_tile(
-        &self,
-        id_generator: &mut IdGenerator,
-        pos: Vec2<i64>,
-    ) -> (Tile, Option<Item>) {
+    pub fn generate_tile(&self, pos: Vec2<i64>) -> (Tile, Option<EntityType>) {
         let world_parameters: HashMap<WorldParameter, f32> = self
             .world_parameters
             .iter()
@@ -92,20 +90,15 @@ impl WorldGen {
             world_parameters,
         };
 
-        let item = self
-            .item_generation
+        let entity_type = self
+            .entity_generation
             .get(&biome)
             .map(|gen| {
                 gen.choose_weighted(&mut global_rng(), |item| item.weight)
                     .unwrap()
             })
-            .map(|item| item.item_type.as_ref())
-            .flatten()
-            .map(|item_type| Item {
-                id: id_generator.gen(),
-                pos: pos.map(|x| x as f32 + 0.5),
-                item_type: item_type.clone(),
-            });
-        (tile, item)
+            .map(|item| item.entity_type.clone())
+            .flatten();
+        (tile, entity_type)
     }
 }

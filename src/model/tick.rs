@@ -2,71 +2,63 @@ use super::*;
 
 impl Model {
     pub fn tick(&mut self) {
-        let ids: Vec<Id> = self.players.keys().copied().collect();
+        let ids: Vec<Id> = self.chunked_world.entities().map(|e| e.id).collect();
         for id in ids {
-            let mut player = self.players.get(&id).unwrap().clone();
-            self.player_action(&mut player);
+            if let Some(entity) = self.chunked_world.get_entity(id) {
+                let mut entity = entity.clone();
 
-            // Collide with items
-            for item in self.chunked_world.items() {
-                if !self.resource_pack.item_properties[&item.item_type].traversable {
-                    let dir = player.pos - item.pos;
-                    let distance = dir.len();
-                    if distance
-                        <= player.radius + self.resource_pack.item_properties[&item.item_type].size
-                    {
-                        let penetration = player.radius
-                            + self.resource_pack.item_properties[&item.item_type].size
-                            - distance;
-                        let normal = dir / distance;
-                        player.pos += normal * penetration;
-                    }
-                }
-            }
-
-            // Collide with players
-            if let Some((normal, penetration)) = self.players.values().find_map(|e| {
-                if e.id == player.id {
-                    return None;
+                if entity.components.player.is_some() {
+                    self.player_action(&mut entity);
                 }
 
-                let dir = player.pos - e.pos;
-                let distance = dir.len();
-                if distance <= player.radius {
-                    let penetration = player.radius + e.radius - distance;
-                    let normal = dir / distance;
-                    Some((normal, penetration))
-                } else {
-                    None
-                }
-            }) {
-                player.pos += normal * penetration;
-            }
-
-            // Collide with tiles
-            for x in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
-                for y in (-player.radius.ceil() as i64)..(player.radius.ceil() as i64 + 1) {
-                    let tile_pos = get_tile_pos(vec2(x as f32, y as f32) + player.pos);
-                    if let Some((normal, penetration)) = match self.chunked_world.get_tile(tile_pos)
-                    {
-                        Some(tile) => {
-                            if self.resource_pack.biome_properties[&tile.biome].collidable {
-                                Self::collide(player.pos, player.radius, tile_pos, 1.0)
-                            } else {
-                                None
+                // Collide with entities
+                if entity.components.collidable.is_some() {
+                    for other in self.chunked_world.entities() {
+                        if other.id != id && other.components.collidable.is_some() {
+                            let dir = entity.pos - other.pos;
+                            let distance = dir.len();
+                            if distance
+                                <= entity.size
+                                    + self.resource_pack.entity_properties[&other.entity_type].size
+                            {
+                                let penetration = entity.size
+                                    + self.resource_pack.entity_properties[&other.entity_type].size
+                                    - distance;
+                                let normal = dir / distance;
+                                entity.pos += normal * penetration;
                             }
                         }
-                        None => None,
-                    } {
-                        player.pos += normal * penetration;
                     }
                 }
-            }
 
-            *self.players.get_mut(&id).unwrap() = player;
+                // Collide with tiles
+                for x in (-entity.size.ceil() as i64)..(entity.size.ceil() as i64 + 1) {
+                    for y in (-entity.size.ceil() as i64)..(entity.size.ceil() as i64 + 1) {
+                        let tile_pos = get_tile_pos(vec2(x as f32, y as f32) + entity.pos);
+                        if let Some((normal, penetration)) =
+                            match self.chunked_world.get_tile(tile_pos) {
+                                Some(tile) => {
+                                    if self.resource_pack.biome_properties[&tile.biome].collidable {
+                                        Self::collide_tile(entity.pos, entity.size, tile_pos, 1.0)
+                                    } else {
+                                        None
+                                    }
+                                }
+                                None => None,
+                            }
+                        {
+                            entity.pos += normal * penetration;
+                        }
+                    }
+                }
+
+                *self.chunked_world.get_entity_mut(id).unwrap() = entity;
+                self.chunked_world.update_entity(id);
+            }
         }
     }
-    fn collide(
+
+    fn collide_tile(
         circle_pos: Vec2<f32>,
         circle_radius: f32,
         tile_pos: Vec2<i64>,
@@ -117,20 +109,22 @@ impl Model {
             None
         }
     }
-    fn player_action(&mut self, player: &mut Player) {
-        if let Some(action) = player.action.take() {
+    fn player_action(&mut self, entity: &mut Entity) {
+        if let Some(action) = entity.components.player.as_mut().unwrap().action.take() {
             match action {
                 PlayerAction::MovingTo { pos, finish_action } => {
-                    let finished = (player.pos - pos).len() <= player.interaction_range
-                        && self.finish_action(player, finish_action)
-                        || (player.pos - pos).len()
+                    let finished = (entity.pos - pos).len()
+                        <= entity.components.player.as_ref().unwrap().interaction_range
+                        && self.finish_action(entity, finish_action)
+                        || (entity.pos - pos).len()
                             <= self.rules.player_movement_speed / self.ticks_per_second;
                     if !finished {
-                        let dir = pos - player.pos;
+                        let player = entity.components.player.as_mut().unwrap();
+                        let dir = pos - entity.pos;
                         let dir = dir / dir.len();
-                        let new_pos = player.pos
+                        let new_pos = entity.pos
                             + dir * self.rules.player_movement_speed / self.ticks_per_second;
-                        player.pos = new_pos;
+                        entity.pos = new_pos;
                         player.action = Some(PlayerAction::MovingTo { pos, finish_action });
                     }
                 }
@@ -139,10 +133,11 @@ impl Model {
                     recipe,
                     time_left,
                 } => {
+                    let player = entity.components.player.as_mut().unwrap();
                     let time_left = time_left - 1.0 / self.ticks_per_second;
                     if time_left <= 0.0 {
                         let hand_item = &mut player.item;
-                        let mut item = self.chunked_world.remove_item(item_id);
+                        let mut item = self.chunked_world.remove_entity(item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
                                 Some(
@@ -152,7 +147,7 @@ impl Model {
                                         .biome
                                         .clone(),
                                 ),
-                                Some(item.item_type.clone()),
+                                Some(item.entity_type.clone()),
                             ),
                             None => (None, None),
                         };
@@ -160,12 +155,12 @@ impl Model {
                             *hand_item = recipe.result1;
                             if let Some(item) = item.take() {
                                 if let Some(item_type) = recipe.result2 {
-                                    self.spawn_item(item_type, item.pos);
+                                    self.spawn_entity(item_type, item.pos);
                                 }
                             }
-                            self.play_sound(Sound::Craft, player.pos);
+                            self.play_sound(Sound::Craft, entity.pos);
                         } else if let Some(item) = item {
-                            self.spawn_item(item.item_type, item.pos);
+                            self.spawn_entity(item.entity_type, item.pos);
                         }
                     } else {
                         player.action = Some(PlayerAction::Crafting {
@@ -178,12 +173,13 @@ impl Model {
             }
         }
     }
-    fn finish_action(&mut self, player: &mut Player, finish_action: Option<MomentAction>) -> bool {
+    fn finish_action(&mut self, entity: &mut Entity, finish_action: Option<MomentAction>) -> bool {
+        let player = entity.components.player.as_mut().unwrap();
         if let Some(finish_action) = finish_action {
             match finish_action {
                 MomentAction::Interact { id } => {
                     let ingredient1 = &mut player.item;
-                    let (conditions, ingredient2) = match self.chunked_world.get_item(id) {
+                    let (conditions, ingredient2) = match self.chunked_world.get_entity(id) {
                         Some(item) => (
                             Some(
                                 self.chunked_world
@@ -192,7 +188,7 @@ impl Model {
                                     .biome
                                     .clone(),
                             ),
-                            Some(item.item_type.clone()),
+                            Some(item.entity_type.clone()),
                         ),
                         None => (None, None),
                     };
@@ -214,28 +210,24 @@ impl Model {
                 MomentAction::Drop { pos } => {
                     let hand_item = &mut player.item;
                     if let Some(item_type) = hand_item.take() {
-                        self.spawn_item(item_type, pos);
+                        self.spawn_entity(item_type, pos);
                         self.play_sound(Sound::PutDown, pos);
                     }
                 }
                 MomentAction::PickUp { id } => {
                     let hand_item = &mut player.item;
-                    let mut item = self.chunked_world.remove_item(id);
-                    let ground_item = match &item {
-                        Some(item) => Some(item.item_type.clone()),
-                        None => None,
-                    };
+                    let mut ground_item = self.chunked_world.remove_entity(id);
                     if let None = hand_item {
-                        if let Some(item_type) = ground_item {
-                            if self.resource_pack.item_properties[&item_type].pickable {
-                                item.take();
-                                *hand_item = Some(item_type);
-                                self.play_sound(Sound::PickUp, player.pos);
+                        if let Some(item_type) = &mut ground_item {
+                            if let Some(_) = item_type.components.pickable {
+                                *hand_item = Some(item_type.entity_type.clone());
+                                ground_item.take();
+                                self.play_sound(Sound::PickUp, entity.pos);
                             }
                         }
                     }
-                    if let Some(item) = item {
-                        self.spawn_item(item.item_type, item.pos);
+                    if let Some(item) = ground_item {
+                        self.spawn_entity(item.entity_type, item.pos);
                     }
                 }
             }
@@ -245,12 +237,12 @@ impl Model {
         }
     }
 
-    fn spawn_item(&mut self, item_type: ItemType, pos: Vec2<f32>) {
-        let item = Item {
-            id: self.id_generator.gen(),
+    pub fn spawn_entity(&mut self, entity_type: EntityType, pos: Vec2<f32>) {
+        self.chunked_world.insert_entity(Entity::new(
+            &entity_type,
+            &self.resource_pack.entity_properties[&entity_type],
             pos,
-            item_type,
-        };
-        self.chunked_world.insert_item(item);
+            self.id_generator.gen(),
+        ));
     }
 }

@@ -1,15 +1,15 @@
 {
   "MagicForest": [
     {
-      "item_type": null,
+      "entity_type": null,
       "weight": 300
     },
     {
-      "item_type": "BigMushroom",
+      "entity_type": "BigMushroom",
       "weight": 30
     },
     {
-      "item_type": "MagicCrystal",
+      "entity_type": "MagicCrystal",
       "weight": 10
     }
   ]

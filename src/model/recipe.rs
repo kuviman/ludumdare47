@@ -2,10 +2,10 @@ use super::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Recipe {
-    pub ingredient1: Option<ItemType>,
-    pub ingredient2: Option<ItemType>,
-    pub result1: Option<ItemType>,
-    pub result2: Option<ItemType>,
+    pub ingredient1: Option<EntityType>,
+    pub ingredient2: Option<EntityType>,
+    pub result1: Option<EntityType>,
+    pub result2: Option<EntityType>,
     pub conditions: Option<Biome>,
     pub craft_time: f32,
 }
@@ -13,8 +13,8 @@ pub struct Recipe {
 impl Recipe {
     pub fn ingredients_equal(
         &self,
-        ingredient1: Option<ItemType>,
-        ingredient2: Option<ItemType>,
+        ingredient1: Option<EntityType>,
+        ingredient2: Option<EntityType>,
         conditions: Option<Biome>,
     ) -> bool {
         ingredient1 == self.ingredient1
@@ -27,10 +27,10 @@ impl Recipe {
     pub fn is_relevant(&self, player_id: Id, view: &ClientView) -> bool {
         self.ingredient1.as_ref()
             == view
-                .players
+                .entities
                 .iter()
                 .find(|p| p.id == player_id)
-                .and_then(|p| p.item.as_ref())
+                .and_then(|p| p.components.player.as_ref().unwrap().item.as_ref())
     }
     pub fn to_string(&self) -> String {
         format!(

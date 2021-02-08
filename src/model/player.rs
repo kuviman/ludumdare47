@@ -52,16 +52,10 @@ impl PlayerColors {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Player {
-    pub id: Id,
-    pub pos: Vec2<f32>,
-    pub radius: f32,
-    pub interaction_range: f32,
-    pub item: Option<ItemType>,
-    pub colors: PlayerColors,
-    pub action: Option<PlayerAction>,
-    pub load_area: AABB<f32>,
+impl Default for PlayerColors {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -5,7 +5,7 @@ pub struct BiomeRendering {
     pub color: Color<f32>,
 }
 
-pub struct ItemRendering {
+pub struct EntityRendering {
     pub model: ez3d::Obj,
 }
 
@@ -16,19 +16,19 @@ struct ItemInfo {
 
 pub struct ResourcePack {
     pub biomes: HashMap<model::Biome, BiomeRendering>,
-    pub items: HashMap<model::ItemType, ItemRendering>,
+    pub entities: HashMap<model::EntityType, EntityRendering>,
 }
 
 impl ResourcePack {
     pub fn empty() -> Self {
         Self {
             biomes: HashMap::new(),
-            items: HashMap::new(),
+            entities: HashMap::new(),
         }
     }
     pub fn merge(&mut self, other: ResourcePack) {
         self.biomes.extend(other.biomes);
-        self.items.extend(other.items);
+        self.entities.extend(other.entities);
     }
     async fn load(geng: &Rc<Geng>, name: &str) -> Result<Self, anyhow::Error> {
         let path = format!("packs/{}/client", name);
@@ -39,20 +39,21 @@ impl ResourcePack {
                         .await?;
                 serde_json::from_str(&data)?
             },
-            items: {
+            entities: {
                 let mut items = HashMap::new();
                 if let Ok(data) =
-                    <String as geng::LoadAsset>::load(geng, &format!("{}/items.json", path)).await
+                    <String as geng::LoadAsset>::load(geng, &format!("{}/entities.json", path))
+                        .await
                 {
-                    let items_info: HashMap<model::ItemType, ItemInfo> =
+                    let items_info: HashMap<model::EntityType, ItemInfo> =
                         serde_json::from_str(&data)?;
                     for (item_type, item_info) in items_info {
                         let model = <ez3d::Obj as geng::LoadAsset>::load(
                             geng,
-                            &format!("{}/items/{}", path, item_info.model),
+                            &format!("{}/entities/{}", path, item_info.model),
                         )
                         .await?;
-                        items.insert(item_type, ItemRendering { model });
+                        items.insert(item_type, EntityRendering { model });
                     }
                 }
                 items

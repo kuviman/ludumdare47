@@ -1,0 +1,164 @@
+{
+  "Player": {
+    "size": 0.5,
+    "components": {
+      "player": {
+        "interaction_range": 1.5
+      },
+      "collidable": [],
+      "pickable": null
+    }
+  },
+  "Pebble": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "SharpStone": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Stick": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Axe": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "DoubleStick": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Log": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Planks": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Torch": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Shovel": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Pickaxe": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "GoldPickaxe": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "GoldNugget": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "TreasureMark": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": null
+    }
+  },
+  "TreasureChest": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": null,
+      "pickable": []
+    }
+  },
+  "Tree": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": [],
+      "pickable": null
+    }
+  },
+  "Campfire": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": [],
+      "pickable": null
+    }
+  },
+  "Rock": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": [],
+      "pickable": null
+    }
+  },
+  "GoldRock": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": [],
+      "pickable": null
+    }
+  },
+  "Statue": {
+    "size": 0.5,
+    "components": {
+      "player": null,
+      "collidable": [],
+      "pickable": null
+    }
+  }
+}

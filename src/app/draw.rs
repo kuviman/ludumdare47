@@ -17,49 +17,34 @@ impl App {
                 self.geng.window().mouse_pos().map(|x| x as f32),
             ))
             .map(|pos| pos.xy());
-        let mut selected_item = None;
-        let mut selected_player = None;
+        let mut selected_entity = None;
         if let Some(data) = self.players.get(&self.player_id) {
             self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
         }
         if let Some(pos) = selected_pos {
-            if let Some(item) = self.view.items.iter().find(|item| {
-                (item.pos - pos).len() <= self.view.item_properties[&item.item_type].size
+            if let Some(entity) = self.view.entities.iter().find(|entity| {
+                (entity.pos - pos).len() <= self.view.item_properties[&entity.entity_type].size
             }) {
-                self.draw_circle(
-                    framebuffer,
-                    item.pos,
-                    self.view.item_properties[&item.item_type].size,
-                    Color::rgba(1.0, 1.0, 1.0, 0.5),
-                );
-                selected_item = Some(item);
-            } else if let Some(player) = self
-                .view
-                .players
-                .iter()
-                .find(|e| (e.pos - pos).len() <= e.radius)
-            {
-                if let Some(data) = self.players.get(&player.id) {
-                    if player.id != self.player_id {
-                        self.draw_circle(
-                            framebuffer,
-                            data.pos,
-                            player.radius,
-                            Color::rgba(1.0, 1.0, 1.0, 0.5),
-                        );
-                    }
+                if entity.id != self.player_id {
+                    self.draw_circle(
+                        framebuffer,
+                        entity.pos,
+                        self.view.item_properties[&entity.entity_type].size,
+                        Color::rgba(1.0, 1.0, 1.0, 0.5),
+                    );
                 }
-                selected_player = Some(player);
+                selected_entity = Some(entity);
             }
         }
 
-        let mut instances: HashMap<model::ItemType, Vec<ez3d::Instance>> = HashMap::new();
-        for item in &self.view.items {
+        // Prepare entities' models
+        let mut instances: HashMap<model::EntityType, Vec<ez3d::Instance>> = HashMap::new();
+        for item in &self.view.entities {
             let pos = item.pos;
             let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
             let pos = pos.extend(height);
             instances
-                .entry(item.item_type.clone())
+                .entry(item.entity_type.clone())
                 .or_default()
                 .push(ez3d::Instance {
                     i_pos: pos,
@@ -68,21 +53,35 @@ impl App {
                     i_color: Color::WHITE,
                 });
         }
-        for (item_type, instances) in instances {
-            let obj = &self.resource_pack.items[&item_type].model;
-            self.ez3d.draw(
-                framebuffer,
-                &self.camera,
-                &self.light,
-                obj.vb(),
-                instances.into_iter(),
-            );
+
+        // Draw entities
+        for (entity_type, instances) in instances {
+            match self.resource_pack.entities.get(&entity_type) {
+                Some(rendering) => {
+                    self.ez3d.draw(
+                        framebuffer,
+                        &self.camera,
+                        &self.light,
+                        rendering.model.vb(),
+                        instances.into_iter(),
+                    );
+                }
+                None => (),
+            }
         }
-        for player in &self.view.players {
+
+        // Draw players' details
+        for entity in self
+            .view
+            .entities
+            .iter()
+            .filter(|e| e.components.player.is_some())
+        {
+            let player = entity.components.player.as_ref().unwrap();
             let data = self
                 .players
-                .entry(player.id)
-                .or_insert(PlayerData::new(player));
+                .entry(entity.id)
+                .or_insert(PlayerData::new(entity));
             let mut pos = data.pos.extend(data.step());
             let rotation = data.rotation;
             let height = self.tile_mesh.get_height(pos.xy()).unwrap_or(0.0);
@@ -140,7 +139,7 @@ impl App {
                     framebuffer,
                     &self.camera,
                     &self.light,
-                    self.resource_pack.items[item].model.vb(),
+                    self.resource_pack.entities[item].model.vb(),
                     std::iter::once(ez3d::Instance {
                         i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
                         i_size: 0.5,
@@ -150,10 +149,29 @@ impl App {
                 );
             }
         }
-        if let Some(item) = selected_item {
-            let text = item.item_type.to_string();
-            let pos = item.pos;
-            let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap_or(0.0));
+
+        if let Some(entity) = selected_entity {
+            let mut text;
+            let pos;
+            if let Some(data) = self.players.get(&entity.id) {
+                text = if entity.id == self.player_id {
+                    "Me"
+                } else {
+                    "Player"
+                }
+                .to_owned();
+                if let Some(item) = &entity.components.player.as_ref().unwrap().item {
+                    text = format!("{}, holding {}", text, item);
+                }
+                pos = data
+                    .pos
+                    .extend(self.tile_mesh.get_height(data.pos).unwrap_or(0.0));
+            } else {
+                text = entity.entity_type.to_string();
+                pos = entity
+                    .pos
+                    .extend(self.tile_mesh.get_height(entity.pos).unwrap_or(0.0));
+            }
             self.geng.default_font().draw_aligned(
                 framebuffer,
                 &text,
@@ -162,37 +180,16 @@ impl App {
                 32.0,
                 Color::WHITE,
             );
-        } else if let Some(player) = selected_player {
-            if let Some(data) = self.players.get(&player.id) {
-                let mut text = if player.id == self.player_id {
-                    "Me"
-                } else {
-                    "Player"
-                }
-                .to_owned();
-                if let Some(item) = &player.item {
-                    text = format!("{}, holding {}", text, item);
-                }
-                let pos = data.pos;
-                let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap_or(0.0));
-                self.geng.default_font().draw_aligned(
-                    framebuffer,
-                    &text,
-                    self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
-                    0.5,
-                    32.0,
-                    Color::WHITE,
-                );
-            }
         }
 
-        if let Some(player) = self
+        if let Some(entity) = self
             .view
-            .players
+            .entities
             .iter()
             .find(|player| player.id == self.player_id)
         {
-            let data = &self.players[&player.id];
+            let player = entity.components.player.as_ref().unwrap();
+            let data = &self.players[&entity.id];
             if let Some(action) = &player.action {
                 match action {
                     model::PlayerAction::Crafting { time_left, .. } => {

@@ -3,9 +3,10 @@ use super::*;
 mod biome;
 mod chunked_world;
 mod client_view;
+mod components;
 mod config;
+mod entity;
 mod id;
-mod item;
 mod multi_noise;
 mod player;
 mod recipe;
@@ -19,10 +20,11 @@ mod world_gen;
 pub use biome::*;
 pub use chunked_world::*;
 pub use client_view::*;
+pub use components::*;
 pub use config::*;
+pub use entity::*;
 use geng::prelude::fmt::Formatter;
 pub use id::*;
-pub use item::*;
 pub use multi_noise::*;
 pub use player::*;
 pub use recipe::*;
@@ -40,7 +42,6 @@ pub struct Model {
     rules: Rules,
     resource_pack: ResourcePack,
     chunked_world: ChunkedWorld,
-    players: HashMap<Id, Player>,
     current_time: usize,
     sounds: HashMap<Id, Vec<Sound>>,
 }
@@ -117,7 +118,7 @@ impl Model {
             spawn_area: config.spawn_area,
         };
         let world_gen = WorldGen::new(config.seed, &resource_pack);
-        let mut model = Self {
+        let model = Self {
             id_generator: util::Saved::new(world_path.join("id_gen"), IdGenerator::new),
             world_name: world_name.to_owned(),
             pack_list,
@@ -125,14 +126,13 @@ impl Model {
             resource_pack,
             ticks_per_second: config.ticks_per_second,
             chunked_world: ChunkedWorld::new(world_path, config.chunk_size, world_gen),
-            players: HashMap::new(),
             current_time: 0,
             sounds: HashMap::new(),
         };
         Ok(model)
     }
     pub fn drop_player(&mut self, player_id: Id) {
-        self.players.remove(&player_id);
+        self.chunked_world.remove_entity(player_id);
         self.sounds.remove(&player_id);
         self.chunked_world
             .set_load_area_for(player_id, &mut self.id_generator, None);
@@ -143,7 +143,12 @@ impl Model {
         message: Message,
         sender: &mut dyn geng::net::Sender<ServerMessage>,
     ) {
-        let player = self.players.get_mut(&player_id).unwrap();
+        let mut entity = self
+            .chunked_world
+            .get_entity_mut(player_id)
+            .unwrap()
+            .clone();
+        let mut player = entity.components.player.as_mut().unwrap();
         match message {
             Message::RequestUpdate { load_area } => {
                 if let Some(load_area) = load_area {
@@ -165,7 +170,7 @@ impl Model {
                 });
             }
             Message::Interact { id } => {
-                if let Some(item) = self.chunked_world.get_item(id) {
+                if let Some(item) = self.chunked_world.get_entity(id) {
                     player.action = Some(PlayerAction::MovingTo {
                         pos: item.pos,
                         finish_action: Some(MomentAction::Interact { id }),
@@ -179,7 +184,7 @@ impl Model {
                 });
             }
             Message::PickUp { id } => {
-                if let Some(item) = self.chunked_world.get_item(id) {
+                if let Some(item) = self.chunked_world.get_entity(id) {
                     player.action = Some(PlayerAction::MovingTo {
                         pos: item.pos,
                         finish_action: Some(MomentAction::PickUp { id }),
@@ -187,19 +192,19 @@ impl Model {
                 }
             }
             Message::SayHi => {
-                let pos = player.pos;
+                let pos = entity.pos;
                 self.play_sound(Sound::Hello, pos);
             }
         }
+        *self.chunked_world.get_entity_mut(player_id).unwrap() = entity;
     }
     fn play_sound(&mut self, sound: Sound, pos: Vec2<f32>) {
         let range = self.rules.sound_distance;
-        for (id, player_pos) in self.players.iter().map(|(id, player)| (id, player.pos)) {
-            let dx = pos.x - player_pos.x;
-            let dy = pos.y - player_pos.y;
-            if dx * dx + dy * dy <= range * range {
-                self.sounds.get_mut(id).unwrap().push(sound);
-            }
+        for entity in self
+            .chunked_world
+            .find_range(pos, range, |e| e.components.player.is_some())
+        {
+            self.sounds.get_mut(&entity.id).unwrap().push(sound);
         }
     }
 }

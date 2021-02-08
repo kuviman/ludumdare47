@@ -46,10 +46,10 @@ struct PlayerData {
 }
 
 impl PlayerData {
-    fn new(player: &model::Player) -> Self {
+    fn new(player: &model::Entity) -> Self {
         Self {
             pos: player.pos,
-            size: player.radius,
+            size: player.size,
             speed: 0.0,
             rotation: 0.0,
             target_pos: player.pos,
@@ -60,8 +60,8 @@ impl PlayerData {
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(&mut self, player: &model::Player, delta_time: f32, view: &model::ClientView) {
-        self.size = player.radius;
+    fn update(&mut self, player: &model::Entity, delta_time: f32, view: &model::ClientView) {
+        self.size = player.size;
         self.t += delta_time * 10.0;
         if player.pos != self.target_pos {
             self.target_pos = player.pos;
@@ -280,7 +280,12 @@ impl geng::State for App {
             }
         }
 
-        for player in &self.view.players {
+        for player in self
+            .view
+            .entities
+            .iter()
+            .filter(|e| e.components.player.is_some())
+        {
             if let Some(prev) = self.players.get_mut(&player.id) {
                 prev.update(player, delta_time, &self.view);
             } else {
@@ -301,7 +306,7 @@ impl geng::State for App {
 
         self.players.retain({
             let view = &self.view;
-            move |&id, _| view.players.iter().find(|e| e.id == id).is_some()
+            move |&id, _| view.entities.iter().find(|e| e.id == id).is_some()
         });
 
         let player_pos = self.players.get(&self.player_id).unwrap().pos;
@@ -341,9 +346,9 @@ impl geng::State for App {
                             self.connection.send(ClientMessage::Goto { pos })
                         }
                         geng::MouseButton::Right => {
-                            if let Some(item) = self.view.items.iter().find(|item| {
+                            if let Some(item) = self.view.entities.iter().find(|item| {
                                 (item.pos - pos).len()
-                                    <= self.view.item_properties[&item.item_type].size
+                                    <= self.view.item_properties[&item.entity_type].size
                             }) {
                                 self.connection
                                     .send(ClientMessage::Interact { id: item.id })
@@ -370,8 +375,8 @@ impl geng::State for App {
                         .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
                 ) {
                     let pos = pos.xy();
-                    if let Some(item) = self.view.items.iter().find(|item| {
-                        (item.pos - pos).len() <= self.view.item_properties[&item.item_type].size
+                    if let Some(item) = self.view.entities.iter().find(|item| {
+                        (item.pos - pos).len() <= self.view.item_properties[&item.entity_type].size
                     }) {
                         self.connection.send(ClientMessage::PickUp { id: item.id });
                     }
