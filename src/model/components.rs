@@ -1,7 +1,15 @@
 use super::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CompCollidable();
+pub struct CompCollidable {
+    pub collision_type: CollisionType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CollisionType {
+    Static,
+    Pushable,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompPickable();

@@ -12,8 +12,8 @@ impl Model {
                 }
 
                 // Collide with entities
-                if entity.components.collidable.is_some() {
-                    for other in self.chunked_world.entities() {
+                if let Some(entity_collidable) = &entity.components.collidable {
+                    for other in self.chunked_world.entities_mut() {
                         if other.id != id && other.components.collidable.is_some() {
                             let dir = entity.pos - other.pos;
                             let distance = dir.len();
@@ -25,7 +25,29 @@ impl Model {
                                     + self.resource_pack.entity_properties[&other.entity_type].size
                                     - distance;
                                 let normal = dir / distance;
-                                entity.pos += normal * penetration;
+
+                                match entity_collidable.collision_type {
+                                    CollisionType::Static => {
+                                        other.pos += -normal * penetration;
+                                    }
+                                    CollisionType::Pushable => {
+                                        match other
+                                            .components
+                                            .collidable
+                                            .as_ref()
+                                            .unwrap()
+                                            .collision_type
+                                        {
+                                            CollisionType::Static => {
+                                                entity.pos += normal * penetration;
+                                            }
+                                            CollisionType::Pushable => {
+                                                entity.pos += normal * penetration / 2.0;
+                                                other.pos += -normal * penetration / 2.0;
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

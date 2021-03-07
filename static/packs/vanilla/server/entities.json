@@ -5,7 +5,9 @@
       "player": {
         "interaction_range": 1.5
       },
-      "collidable": []
+      "collidable": {
+        "collision_type": "Pushable"
+      }
     }
   },
   "Pebble": {
@@ -94,31 +96,41 @@
   "Tree": {
     "size": 0.5,
     "components": {
-      "collidable": []
+      "collidable": {
+        "collision_type": "Static"
+      }
     }
   },
   "Campfire": {
     "size": 0.5,
     "components": {
-      "collidable": []
+      "collidable": {
+        "collision_type": "Static"
+      }
     }
   },
   "Rock": {
     "size": 0.5,
     "components": {
-      "collidable": []
+      "collidable": {
+        "collision_type": "Static"
+      }
     }
   },
   "GoldRock": {
     "size": 0.5,
     "components": {
-      "collidable": []
+      "collidable":{
+        "collision_type": "Static"
+      }
     }
   },
   "Statue": {
     "size": 0.5,
     "components": {
-      "collidable": []
+      "collidable": {
+        "collision_type": "Static"
+      }
     }
   }
 }
