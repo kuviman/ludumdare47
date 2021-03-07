@@ -11,8 +11,11 @@ pub struct Entity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EntityComponents {
+    #[serde(default)]
     pub player: Option<CompPlayer>,
+    #[serde(default)]
     pub collidable: Option<CompCollidable>,
+    #[serde(default)]
     pub pickable: Option<CompPickable>,
 }
 
