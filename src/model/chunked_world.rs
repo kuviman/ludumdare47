@@ -43,11 +43,8 @@ impl ChunkedWorld {
                     .entities
                     .remove(&id)
                     .unwrap();
-                if let Some(entity_chunk) = self.chunks.get_mut(&entity_chunk_pos) {
-                    entity_chunk.borrow_mut().entities.insert(entity.id, entity);
-                } else {
-                    unreachable!();
-                }
+                let entity_chunk = self.chunks.get_mut(&entity_chunk_pos).unwrap();
+                entity_chunk.borrow_mut().entities.insert(entity.id, entity);
             }
         }
     }
