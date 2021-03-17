@@ -22,7 +22,7 @@ impl ChunkedWorld {
     }
 
     pub fn insert_entity(&mut self, entity: Entity) -> Result<(), Entity> {
-        let chunk_pos = self.get_chunk_pos(get_tile_pos(entity.pos));
+        let chunk_pos = self.get_chunk_pos(get_tile_pos(entity.pos.unwrap())); //TODO: check that entity actually has a position component
         if let Some(chunk) = self.chunks.get_mut(&chunk_pos) {
             chunk.borrow_mut().entities.insert(entity.id, entity);
             Ok(())
@@ -33,7 +33,7 @@ impl ChunkedWorld {
 
     pub fn update_entity(&mut self, id: Id) {
         if let Some((entity, chunk_pos)) = self.get_entity_chunk_pos(id) {
-            let entity_chunk_pos = self.get_chunk_pos(get_tile_pos(entity.pos));
+            let entity_chunk_pos = self.get_chunk_pos(get_tile_pos(entity.pos.unwrap()));
             if chunk_pos != entity_chunk_pos {
                 let entity = self
                     .chunks
@@ -111,7 +111,7 @@ impl ChunkedWorld {
             for x in chunk_pos.x - chunk_dist.x..chunk_pos.x + chunk_dist.x {
                 if let Some(chunk) = self.chunks.get(&vec2(x, y)) {
                     for entity in chunk.entities.values().filter(|e| predicate(e)) {
-                        let delta = pos - entity.pos;
+                        let delta = pos - entity.pos.unwrap();
                         if delta.x * delta.x + delta.y * delta.y <= range * range {
                             entities.push(entity);
                         }
@@ -222,12 +222,9 @@ impl SavedChunk {
             let (tile, entity_type) = world_gen.generate_tile(pos);
             tiles.insert(pos, tile);
             if let Some(entity_type) = entity_type {
-                let entity = Entity::new(
-                    &entity_type,
-                    &world_gen.entity_properties[&entity_type],
-                    pos.map(|x| x as f32),
-                    id_generator.gen(),
-                );
+                let mut components = world_gen.entity_components[&entity_type].clone();
+                components.pos = Some(pos.map(|x| x as f32));
+                let entity = Entity::new(&entity_type, components, id_generator.gen());
                 entities.insert(entity.id, entity);
             }
         }

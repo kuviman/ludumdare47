@@ -13,38 +13,35 @@ impl Model {
 
                 // Collide with entities
                 if let Some(entity_collidable) = &entity.components.collidable {
-                    for other in self.chunked_world.entities_mut() {
-                        if other.id != id && other.components.collidable.is_some() {
-                            let dir = entity.pos - other.pos;
-                            let distance = dir.len();
-                            if distance
-                                <= entity.size
-                                    + self.resource_pack.entity_properties[&other.entity_type].size
-                            {
-                                let penetration = entity.size
-                                    + self.resource_pack.entity_properties[&other.entity_type].size
-                                    - distance;
-                                let normal = dir / distance;
+                    for other in self
+                        .chunked_world
+                        .entities_mut()
+                        .filter(|other| other.id != id && other.components.collidable.is_some())
+                    {
+                        let dir = entity.pos.unwrap() - other.pos.unwrap();
+                        let distance = dir.len();
+                        if distance <= entity.size.unwrap() + other.size.unwrap() {
+                            let penetration = entity.size.unwrap() + other.size.unwrap() - distance;
+                            let normal = dir / distance;
 
-                                match entity_collidable.collision_type {
-                                    CollisionType::Static => {
-                                        other.pos += -normal * penetration;
-                                    }
-                                    CollisionType::Pushable => {
-                                        match other
-                                            .components
-                                            .collidable
-                                            .as_ref()
-                                            .unwrap()
-                                            .collision_type
-                                        {
-                                            CollisionType::Static => {
-                                                entity.pos += normal * penetration;
-                                            }
-                                            CollisionType::Pushable => {
-                                                entity.pos += normal * penetration / 2.0;
-                                                other.pos += -normal * penetration / 2.0;
-                                            }
+                            match entity_collidable.collision_type {
+                                CollisionType::Static => {
+                                    other.pos.map(|pos| pos - normal * penetration);
+                                }
+                                CollisionType::Pushable => {
+                                    match other
+                                        .components
+                                        .collidable
+                                        .as_ref()
+                                        .unwrap()
+                                        .collision_type
+                                    {
+                                        CollisionType::Static => {
+                                            entity.pos.map(|pos| pos + normal * penetration);
+                                        }
+                                        CollisionType::Pushable => {
+                                            entity.pos.map(|pos| pos + normal * penetration / 2.0);
+                                            other.pos.map(|pos| pos + -normal * penetration / 2.0);
                                         }
                                     }
                                 }
@@ -53,23 +50,27 @@ impl Model {
                     }
                 }
 
-                // Collide with tiles
-                for x in (-entity.size.ceil() as i64)..(entity.size.ceil() as i64 + 1) {
-                    for y in (-entity.size.ceil() as i64)..(entity.size.ceil() as i64 + 1) {
-                        let tile_pos = get_tile_pos(vec2(x as f32, y as f32) + entity.pos);
-                        if let Some((normal, penetration)) =
-                            match self.chunked_world.get_tile(tile_pos) {
+                if let Some(size) = entity.size {
+                    // Collide with tiles
+                    for x in (-size.ceil() as i64)..(size.ceil() as i64 + 1) {
+                        for y in (-size.ceil() as i64)..(size.ceil() as i64 + 1) {
+                            let tile_pos =
+                                get_tile_pos(vec2(x as f32, y as f32) + entity.pos.unwrap());
+                            if let Some((normal, penetration)) = match self
+                                .chunked_world
+                                .get_tile(tile_pos)
+                            {
                                 Some(tile) => {
                                     if self.resource_pack.biome_properties[&tile.biome].collidable {
-                                        Self::collide_tile(entity.pos, entity.size, tile_pos, 1.0)
+                                        Self::collide_tile(entity.pos.unwrap(), size, tile_pos, 1.0)
                                     } else {
                                         None
                                     }
                                 }
                                 None => None,
+                            } {
+                                entity.pos.map(|pos| pos + normal * penetration);
                             }
-                        {
-                            entity.pos += normal * penetration;
                         }
                     }
                 }
@@ -135,19 +136,20 @@ impl Model {
         if let Some(action) = entity.components.player.as_mut().unwrap().action.take() {
             match action {
                 PlayerAction::MovingTo { pos, finish_action } => {
-                    let finished = (entity.pos - pos).len()
+                    let entity_pos = entity.pos.unwrap();
+                    let finished = (entity_pos - pos).len()
                         <= entity.components.player.as_ref().unwrap().interaction_range
                         && self.finish_action(entity, finish_action)
-                        || (entity.pos - pos).len()
+                        || (entity_pos - pos).len()
                             <= self.rules.player_movement_speed / self.ticks_per_second;
                     if !finished {
                         let player = entity.components.player.as_mut().unwrap();
-                        let dir = pos - entity.pos;
+                        let dir = pos - entity_pos;
                         let dir = dir / dir.len();
-                        let new_pos = entity.pos
+                        let new_pos = entity_pos
                             + dir * self.rules.player_movement_speed / self.ticks_per_second;
-                        entity.pos = new_pos;
                         player.action = Some(PlayerAction::MovingTo { pos, finish_action });
+                        entity.pos = Some(new_pos);
                     }
                 }
                 PlayerAction::Crafting {
@@ -164,7 +166,7 @@ impl Model {
                             Some(item) => (
                                 Some(
                                     self.chunked_world
-                                        .get_tile(get_tile_pos(item.pos))
+                                        .get_tile(get_tile_pos(item.pos.unwrap()))
                                         .unwrap()
                                         .biome
                                         .clone(),
@@ -177,12 +179,12 @@ impl Model {
                             *hand_item = recipe.result1;
                             if let Some(item) = item.take() {
                                 if let Some(item_type) = recipe.result2 {
-                                    self.spawn_entity(item_type, item.pos);
+                                    self.spawn_entity(item_type, item.pos.unwrap());
                                 }
                             }
-                            self.play_sound(Sound::Craft, entity.pos);
+                            self.play_sound(Sound::Craft, entity.pos.unwrap());
                         } else if let Some(item) = item {
-                            self.spawn_entity(item.entity_type, item.pos);
+                            self.chunked_world.insert_entity(item);
                         }
                     } else {
                         player.action = Some(PlayerAction::Crafting {
@@ -205,7 +207,7 @@ impl Model {
                         Some(item) => (
                             Some(
                                 self.chunked_world
-                                    .get_tile(get_tile_pos(item.pos))
+                                    .get_tile(get_tile_pos(item.pos.unwrap()))
                                     .unwrap()
                                     .biome
                                     .clone(),
@@ -244,12 +246,12 @@ impl Model {
                             if let Some(_) = item_type.components.pickable {
                                 *hand_item = Some(item_type.entity_type.clone());
                                 ground_item.take();
-                                self.play_sound(Sound::PickUp, entity.pos);
+                                self.play_sound(Sound::PickUp, entity.pos.unwrap());
                             }
                         }
                     }
                     if let Some(item) = ground_item {
-                        self.spawn_entity(item.entity_type, item.pos);
+                        self.chunked_world.insert_entity(item);
                     }
                 }
             }
@@ -260,10 +262,11 @@ impl Model {
     }
 
     pub fn spawn_entity(&mut self, entity_type: EntityType, pos: Vec2<f32>) {
+        let mut components = self.resource_pack.entity_components[&entity_type].clone();
+        components.pos = Some(pos);
         self.chunked_world.insert_entity(Entity::new(
             &entity_type,
-            &self.resource_pack.entity_properties[&entity_type],
-            pos,
+            components,
             self.id_generator.gen(),
         ));
     }

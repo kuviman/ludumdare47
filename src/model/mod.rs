@@ -171,10 +171,12 @@ impl Model {
             }
             Message::Interact { id } => {
                 if let Some(item) = self.chunked_world.get_entity(id) {
-                    player.action = Some(PlayerAction::MovingTo {
-                        pos: item.pos,
-                        finish_action: Some(MomentAction::Interact { id }),
-                    });
+                    if let Some(item_pos) = item.pos {
+                        player.action = Some(PlayerAction::MovingTo {
+                            pos: item_pos,
+                            finish_action: Some(MomentAction::Interact { id }),
+                        });
+                    }
                 }
             }
             Message::Drop { pos } => {
@@ -185,15 +187,18 @@ impl Model {
             }
             Message::PickUp { id } => {
                 if let Some(item) = self.chunked_world.get_entity(id) {
-                    player.action = Some(PlayerAction::MovingTo {
-                        pos: item.pos,
-                        finish_action: Some(MomentAction::PickUp { id }),
-                    });
+                    if let Some(item_pos) = item.pos {
+                        player.action = Some(PlayerAction::MovingTo {
+                            pos: item_pos,
+                            finish_action: Some(MomentAction::PickUp { id }),
+                        });
+                    }
                 }
             }
             Message::SayHi => {
-                let pos = entity.pos;
-                self.play_sound(Sound::Hello, pos);
+                if let Some(pos) = entity.pos {
+                    self.play_sound(Sound::Hello, pos);
+                }
             }
         }
         *self.chunked_world.get_entity_mut(player_id).unwrap() = entity;

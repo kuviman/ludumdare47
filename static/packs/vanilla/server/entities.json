@@ -1,136 +1,96 @@
 {
   "Player": {
     "size": 0.5,
-    "components": {
-      "player": {
-        "interaction_range": 1.5
-      },
-      "collidable": {
-        "collision_type": "Pushable"
-      }
+    "player": {
+      "interaction_range": 1.5
+    },
+    "collidable": {
+      "collision_type": "Pushable"
     }
   },
   "Pebble": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "SharpStone": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Stick": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Axe": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "DoubleStick": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Log": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Planks": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Torch": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Shovel": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Pickaxe": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "GoldPickaxe": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "GoldNugget": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "TreasureMark": {
-    "size": 0.5,
-    "components": {
-    }
+    "size": 0.5
   },
   "TreasureChest": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "Tree": {
     "size": 0.5,
-    "components": {
-      "collidable": {
-        "collision_type": "Static"
-      }
+    "collidable": {
+      "collision_type": "Static"
     }
   },
   "Campfire": {
     "size": 0.5,
-    "components": {
-      "collidable": {
-        "collision_type": "Static"
-      }
+    "collidable": {
+      "collision_type": "Static"
     }
   },
   "Rock": {
     "size": 0.5,
-    "components": {
-      "collidable": {
-        "collision_type": "Static"
-      }
+    "collidable": {
+      "collision_type": "Static"
     }
   },
   "GoldRock": {
     "size": 0.5,
-    "components": {
-      "collidable":{
-        "collision_type": "Static"
-      }
+    "collidable": {
+      "collision_type": "Static"
     }
   },
   "Statue": {
     "size": 0.5,
-    "components": {
-      "collidable": {
-        "collision_type": "Static"
-      }
+    "collidable": {
+      "collision_type": "Static"
     }
   }
 }

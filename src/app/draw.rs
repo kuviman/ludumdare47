@@ -22,14 +22,12 @@ impl App {
             self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
         }
         if let Some(pos) = selected_pos {
-            if let Some(entity) = self.view.entities.iter().find(|entity| {
-                (entity.pos - pos).len() <= self.view.item_properties[&entity.entity_type].size
-            }) {
+            if let Some(entity) = self.view.get_closest_entity(pos) {
                 if entity.id != self.player_id {
                     self.draw_circle(
                         framebuffer,
-                        entity.pos,
-                        self.view.item_properties[&entity.entity_type].size,
+                        entity.pos.unwrap(),
+                        entity.size.unwrap(),
                         Color::rgba(1.0, 1.0, 1.0, 0.5),
                     );
                 }
@@ -39,8 +37,13 @@ impl App {
 
         // Prepare entities' models
         let mut instances: HashMap<model::EntityType, Vec<ez3d::Instance>> = HashMap::new();
-        for item in &self.view.entities {
-            let pos = item.pos;
+        for item in self
+            .view
+            .entities
+            .iter()
+            .filter(|entity| entity.pos.is_some())
+        {
+            let pos = item.pos.unwrap();
             let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
             let pos = pos.extend(height);
             instances
@@ -168,9 +171,11 @@ impl App {
                     .extend(self.tile_mesh.get_height(data.pos).unwrap_or(0.0));
             } else {
                 text = entity.entity_type.to_string();
-                pos = entity
-                    .pos
-                    .extend(self.tile_mesh.get_height(entity.pos).unwrap_or(0.0));
+                pos = entity.pos.unwrap().extend(
+                    self.tile_mesh
+                        .get_height(entity.pos.unwrap())
+                        .unwrap_or(0.0),
+                );
             }
             self.geng.default_font().draw_aligned(
                 framebuffer,

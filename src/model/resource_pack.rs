@@ -5,7 +5,7 @@ pub struct ResourcePack {
     pub biome_properties: HashMap<Biome, BiomeProperties>,
     pub biome_generation: HashMap<Biome, BiomeGeneration>,
     pub world_parameters: HashMap<WorldParameter, MultiNoiseProperties>,
-    pub entity_properties: HashMap<EntityType, EntityProperties>,
+    pub entity_components: HashMap<EntityType, EntityComponents>,
     pub entity_generation: HashMap<Biome, Vec<ItemGeneration>>,
     pub recipes: Vec<Recipe>,
 }
@@ -48,7 +48,7 @@ impl ResourcePack {
             world_parameters: load_or_default(server_path.join("world-parameters.json"))?,
             entity_generation: load_or_default(server_path.join("generation-entities.json"))?,
             recipes: load_or_default(server_path.join("recipes.json"))?,
-            entity_properties: load_or_default(server_path.join("entities.json"))?,
+            entity_components: load_or_default(server_path.join("entities.json"))?,
         })
     }
     pub fn empty() -> Self {
@@ -56,7 +56,7 @@ impl ResourcePack {
             biome_properties: HashMap::new(),
             biome_generation: HashMap::new(),
             world_parameters: HashMap::new(),
-            entity_properties: HashMap::new(),
+            entity_components: HashMap::new(),
             entity_generation: HashMap::new(),
             recipes: Vec::new(),
         }
@@ -65,8 +65,8 @@ impl ResourcePack {
         self.biome_properties.extend(resource_pack.biome_properties);
         self.biome_generation.extend(resource_pack.biome_generation);
         self.world_parameters.extend(resource_pack.world_parameters);
-        self.entity_properties
-            .extend(resource_pack.entity_properties);
+        self.entity_components
+            .extend(resource_pack.entity_components);
         self.entity_generation
             .extend(resource_pack.entity_generation);
         self.recipes.extend(resource_pack.recipes);

@@ -6,12 +6,9 @@ impl Model {
         if let Some(pos) = self.get_spawnable_pos(player_id, vec2(0.0, 0.0), self.rules.spawn_area)
         {
             let entity_type = EntityType("Player".to_owned());
-            let mut entity = Entity::new(
-                &entity_type,
-                &self.resource_pack.entity_properties[&entity_type],
-                pos,
-                player_id,
-            );
+            let mut components = self.resource_pack.entity_components[&entity_type].clone();
+            components.pos = Some(pos);
+            let mut entity = Entity::new(&entity_type, components, player_id);
             let player = entity.components.player.as_mut().unwrap();
             player.colors = PlayerColors::new();
             player.load_area = AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0));
@@ -28,11 +25,11 @@ impl Model {
         !self
             .chunked_world
             .entities()
-            .any(|item| pos == get_tile_pos(item.pos))
+            .any(|entity| entity.pos.is_some() && pos == get_tile_pos(entity.pos.unwrap()))
             && !self
                 .chunked_world
                 .entities() // TODO: don't check every entity
-                .any(|player| pos == get_tile_pos(player.pos))
+                .any(|player| pos == get_tile_pos(player.pos.unwrap()))
     }
     fn is_spawnable(&self, pos: Vec2<i64>) -> bool {
         match self.chunked_world.get_tile(pos) {

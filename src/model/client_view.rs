@@ -9,7 +9,15 @@ pub struct ClientView {
     pub entities: Vec<Entity>,
     pub recipes: Vec<Recipe>,
     pub sounds: Vec<Sound>,
-    pub item_properties: HashMap<EntityType, EntityProperties>,
+}
+
+impl ClientView {
+    pub fn get_closest_entity(&self, pos: Vec2<f32>) -> Option<&Entity> {
+        self.entities
+            .iter()
+            .filter(|entity| entity.pos.is_some() && entity.size.is_some())
+            .find(|entity| (entity.pos.unwrap() - pos).len() <= entity.size.unwrap())
+    }
 }
 
 impl Model {
@@ -29,12 +37,14 @@ impl Model {
             entities: self
                 .chunked_world
                 .entities()
-                .filter(|e| e.id == entity.id || player.load_area.contains(e.pos))
+                .filter(|e| {
+                    e.id == entity.id
+                        || e.pos.is_some() && player.load_area.contains(e.pos.unwrap())
+                })
                 .cloned()
                 .collect(),
             recipes: self.resource_pack.recipes.clone(),
             sounds: mem::replace(self.sounds.get_mut(&player_id).unwrap(), vec![]),
-            item_properties: self.resource_pack.entity_properties.clone(),
         };
         vision
     }

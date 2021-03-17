@@ -1,24 +1,18 @@
 {
   "CrystalShard": {
     "size": 0.5,
-    "components": {
-      "pickable": []
-    }
+    "pickable": []
   },
   "MagicCrystal": {
     "size": 0.5,
-    "components": {
-      "collidable": {
-        "collision_type": "Static"
-      }
+    "collidable": {
+      "collision_type": "Static"
     }
   },
   "BigMushroom": {
     "size": 0.5,
-    "components": {
-      "collidable": {
-        "collision_type": "Static"
-      }
+    "collidable": {
+      "collision_type": "Static"
     }
   }
 }

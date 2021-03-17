@@ -18,7 +18,7 @@ pub struct WorldGen {
     world_parameters: HashMap<WorldParameter, MultiNoise>,
     biome_generation: HashMap<Biome, BiomeGeneration>,
     entity_generation: HashMap<Biome, Vec<ItemGeneration>>,
-    pub entity_properties: HashMap<EntityType, EntityProperties>,
+    pub entity_components: HashMap<EntityType, EntityComponents>,
 }
 
 impl WorldGen {
@@ -49,7 +49,7 @@ impl WorldGen {
                 .collect(),
             biome_generation: resource_pack.biome_generation.clone(),
             entity_generation: resource_pack.entity_generation.clone(),
-            entity_properties: resource_pack.entity_properties.clone(),
+            entity_components: resource_pack.entity_components.clone(),
         }
     }
     pub fn generate_tile(&self, pos: Vec2<i64>) -> (Tile, Option<EntityType>) {
