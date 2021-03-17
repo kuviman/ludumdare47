@@ -12,7 +12,7 @@ impl Model {
                 }
 
                 // Collide with entities
-                if let Some(entity_collidable) = &entity.components.collidable {
+                if let Some(entity_collidable) = entity.components.collidable.clone() {
                     for other in self
                         .chunked_world
                         .entities_mut()
@@ -26,7 +26,7 @@ impl Model {
 
                             match entity_collidable.collision_type {
                                 CollisionType::Static => {
-                                    other.pos.map(|pos| pos - normal * penetration);
+                                    *other.pos.as_mut().unwrap() += -normal * penetration;
                                 }
                                 CollisionType::Pushable => {
                                     match other
@@ -37,11 +37,13 @@ impl Model {
                                         .collision_type
                                     {
                                         CollisionType::Static => {
-                                            entity.pos.map(|pos| pos + normal * penetration);
+                                            *entity.pos.as_mut().unwrap() += normal * penetration;
                                         }
                                         CollisionType::Pushable => {
-                                            entity.pos.map(|pos| pos + normal * penetration / 2.0);
-                                            other.pos.map(|pos| pos + -normal * penetration / 2.0);
+                                            *entity.pos.as_mut().unwrap() +=
+                                                normal * penetration / 2.0;
+                                            *other.pos.as_mut().unwrap() +=
+                                                normal * penetration / 2.0;
                                         }
                                     }
                                 }
@@ -69,7 +71,7 @@ impl Model {
                                 }
                                 None => None,
                             } {
-                                entity.pos.map(|pos| pos + normal * penetration);
+                                *entity.pos.as_mut().unwrap() += normal * penetration;
                             }
                         }
                     }
