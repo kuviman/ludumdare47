@@ -66,11 +66,11 @@ pub enum Sound {
 }
 
 #[derive(Debug, Clone)]
-struct WorldError {
+struct WorldExistsError {
     world_name: String,
 }
 
-impl std::fmt::Display for WorldError {
+impl std::fmt::Display for WorldExistsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -80,31 +80,76 @@ impl std::fmt::Display for WorldError {
     }
 }
 
-impl std::error::Error for WorldError {}
+impl std::error::Error for WorldExistsError {}
+
+#[derive(Debug, Clone)]
+struct WorldPackConflictError {}
+
+impl std::fmt::Display for WorldPackConflictError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Loaded resource packs do not match loaded world's packs."
+        )
+    }
+}
+
+impl std::error::Error for WorldPackConflictError {}
 
 impl Model {
     pub fn create(world_name: &str) -> Result<Self, anyhow::Error> {
-        if std::path::Path::new(&format!("saves/{}", world_name)).exists() {
-            return Err(anyhow::Error::from(WorldError {
+        fn save_to<T: Serialize>(
+            path: impl AsRef<std::path::Path>,
+            value: &T,
+        ) -> Result<(), std::io::Error> {
+            Ok(serde_json::to_writer(
+                std::io::BufWriter::new(std::fs::File::create(path)?),
+                value,
+            )?)
+        }
+
+        let world_path = std::path::Path::new("saves").join(world_name);
+        if world_path.exists() {
+            return Err(anyhow::Error::from(WorldExistsError {
                 world_name: world_name.to_owned(),
             }));
         }
-        std::fs::create_dir_all(format!("saves/{}/chunks", world_name))?;
-        serde_json::to_writer(
-            std::io::BufWriter::new(std::fs::File::create(format!(
-                "saves/{}/config.json",
-                world_name
-            ))?),
-            &Config::default(),
-        )?;
-        Self::load(world_name)
+        let (pack_list, resource_pack) = model::ResourcePack::load_all("packs")?;
+        std::fs::create_dir_all(world_path.join("chunks"))?;
+        save_to(world_path.join("config.json"), &Config::default())?;
+        save_to(world_path.join("pack_list"), &pack_list)?;
+        Ok(Self::new(
+            world_name,
+            Config::default(),
+            pack_list,
+            resource_pack,
+        ))
     }
     pub fn load(world_name: &str) -> Result<Self, anyhow::Error> {
+        fn load_from<T: for<'de> Deserialize<'de>>(
+            path: impl AsRef<std::path::Path>,
+        ) -> Result<T, std::io::Error> {
+            Ok(serde_json::from_reader(std::io::BufReader::new(
+                std::fs::File::open(path)?,
+            ))?)
+        }
+
+        let (pack_list, resource_pack) = model::ResourcePack::load_all("packs")?;
         let world_path = std::path::Path::new("saves").join(world_name);
-        let config: Config = serde_json::from_reader(std::io::BufReader::new(
-            std::fs::File::open(world_path.join("config.json"))?,
-        ))?;
-        let (pack_list, resource_pack) = ResourcePack::load_all("packs").unwrap();
+        let world_pack_list: Vec<String> = load_from(world_path.join("pack_list"))?;
+        if world_pack_list != pack_list {
+            return Err(anyhow::Error::from(WorldPackConflictError {}));
+        }
+        let config: Config = load_from(world_path.join("config.json"))?;
+        Ok(Self::new(world_name, config, pack_list, resource_pack))
+    }
+    fn new(
+        world_name: &str,
+        config: Config,
+        pack_list: Vec<String>,
+        resource_pack: ResourcePack,
+    ) -> Self {
+        let world_path = std::path::Path::new("saves").join(world_name);
         let rules = Rules {
             player_movement_speed: config.player_movement_speed,
             client_view_distance: config.view_distance,
@@ -118,7 +163,7 @@ impl Model {
             spawn_area: config.spawn_area,
         };
         let world_gen = WorldGen::new(config.seed, &resource_pack);
-        let model = Self {
+        Self {
             id_generator: util::Saved::new(world_path.join("id_gen"), IdGenerator::new),
             world_name: world_name.to_owned(),
             pack_list,
@@ -128,8 +173,7 @@ impl Model {
             chunked_world: ChunkedWorld::new(world_path, config.chunk_size, world_gen),
             current_time: 0,
             sounds: HashMap::new(),
-        };
-        Ok(model)
+        }
     }
     pub fn drop_player(&mut self, player_id: Id) {
         self.chunked_world.remove_entity(player_id);
