@@ -61,7 +61,7 @@ impl Default for PlayerColors {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PlayerAction {
     MovingTo {
-        pos: Vec2<f32>,
+        target: MovementTarget,
         finish_action: Option<MomentAction>,
     },
     Crafting {
@@ -69,6 +69,12 @@ pub enum PlayerAction {
         recipe: Recipe,
         time_left: f32,
     },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum MovementTarget {
+    Position { pos: Vec2<f32> },
+    Entity { id: Id },
 }
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]

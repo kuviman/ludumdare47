@@ -99,21 +99,37 @@ impl Model {
     fn player_action(&mut self, entity: &mut Entity) {
         if let Some(action) = entity.components.player.as_mut().unwrap().action.take() {
             match action {
-                PlayerAction::MovingTo { pos, finish_action } => {
-                    let entity_pos = entity.pos.unwrap();
-                    let finished = (entity_pos - pos).len()
-                        <= entity.components.player.as_ref().unwrap().interaction_range
-                        && self.finish_action(entity, finish_action)
-                        || (entity_pos - pos).len()
-                            <= self.rules.player_movement_speed / self.ticks_per_second;
-                    if !finished {
-                        let player = entity.components.player.as_mut().unwrap();
-                        let dir = pos - entity_pos;
-                        let dir = dir / dir.len();
-                        let new_pos = entity_pos
-                            + dir * self.rules.player_movement_speed / self.ticks_per_second;
-                        player.action = Some(PlayerAction::MovingTo { pos, finish_action });
-                        entity.pos = Some(new_pos);
+                PlayerAction::MovingTo {
+                    target,
+                    finish_action,
+                } => {
+                    if let Some((target_pos, target_size)) = match target {
+                        MovementTarget::Position { pos } => Some((pos, 0.0)),
+                        MovementTarget::Entity { id } => match self.chunked_world.get_entity(id) {
+                            Some(target_entity) => {
+                                Some((target_entity.pos.unwrap(), target_entity.size.unwrap()))
+                            }
+                            None => None,
+                        },
+                    } {
+                        let entity_pos = entity.pos.unwrap();
+                        let distance = (entity_pos - target_pos).len();
+                        let finished = distance
+                            <= entity.player.as_ref().unwrap().interaction_range + target_size
+                            && self.finish_action(entity, finish_action)
+                            || distance <= self.rules.player_movement_speed / self.ticks_per_second;
+                        if !finished {
+                            let player = entity.player.as_mut().unwrap();
+                            let dir = target_pos - entity_pos;
+                            let dir = dir / dir.len();
+                            let new_pos = entity_pos
+                                + dir * self.rules.player_movement_speed / self.ticks_per_second;
+                            player.action = Some(PlayerAction::MovingTo {
+                                target,
+                                finish_action,
+                            });
+                            entity.pos = Some(new_pos);
+                        }
                     }
                 }
                 PlayerAction::Crafting {

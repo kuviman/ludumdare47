@@ -211,35 +211,27 @@ impl Model {
             }
             Message::Goto { pos } => {
                 player.action = Some(PlayerAction::MovingTo {
-                    pos,
+                    target: MovementTarget::Position { pos },
                     finish_action: None,
                 });
             }
             Message::Interact { id } => {
-                if let Some(item) = self.chunked_world.get_entity(id) {
-                    if let Some(item_pos) = item.pos {
-                        player.action = Some(PlayerAction::MovingTo {
-                            pos: item_pos,
-                            finish_action: Some(MomentAction::Interact { id }),
-                        });
-                    }
-                }
+                player.action = Some(PlayerAction::MovingTo {
+                    target: MovementTarget::Entity { id },
+                    finish_action: Some(MomentAction::Interact { id }),
+                });
             }
             Message::Drop { pos } => {
                 player.action = Some(PlayerAction::MovingTo {
-                    pos,
+                    target: MovementTarget::Position { pos },
                     finish_action: Some(MomentAction::Drop { pos }),
                 });
             }
             Message::PickUp { id } => {
-                if let Some(item) = self.chunked_world.get_entity(id) {
-                    if let Some(item_pos) = item.pos {
-                        player.action = Some(PlayerAction::MovingTo {
-                            pos: item_pos,
-                            finish_action: Some(MomentAction::PickUp { id }),
-                        });
-                    }
-                }
+                player.action = Some(PlayerAction::MovingTo {
+                    target: MovementTarget::Entity { id },
+                    finish_action: Some(MomentAction::PickUp { id }),
+                });
             }
             Message::SayHi => {
                 if let Some(pos) = entity.pos {
