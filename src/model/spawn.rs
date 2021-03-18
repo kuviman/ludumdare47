@@ -14,7 +14,7 @@ impl Model {
             player.load_area = AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0));
 
             self.sounds.insert(player_id, vec![]);
-            self.chunked_world.insert_entity(entity);
+            self.chunked_world.insert_entity(entity).unwrap();
         } else {
             error!("Did not find spawnable position"); // TODO
         }

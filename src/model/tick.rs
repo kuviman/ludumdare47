@@ -5,7 +5,7 @@ impl Model {
         let ids: Vec<Id> = self.chunked_world.entities().map(|e| e.id).collect();
         for id in ids {
             if let Some(entity) = self.chunked_world.get_entity(id) {
-                let mut entity = entity.clone();
+                let entity = entity.clone();
                 self.update_entity(entity);
             }
         }
@@ -28,8 +28,8 @@ impl Model {
             }
         }
 
+        // Collide with tiles
         if let Some(size) = entity.size {
-            // Collide with tiles
             for x in (-size.ceil() as i64)..(size.ceil() as i64 + 1) {
                 for y in (-size.ceil() as i64)..(size.ceil() as i64 + 1) {
                     let tile_pos = get_tile_pos(vec2(x as f32, y as f32) + entity.pos.unwrap());
@@ -49,7 +49,6 @@ impl Model {
             other.pos.unwrap(),
             other.size.unwrap(),
         ) {
-            CollisionResult::NoCollision => (),
             CollisionResult::Collision {
                 penetration,
                 collision_normal,
@@ -69,6 +68,7 @@ impl Model {
                     }
                 }
             },
+            _ => (),
         }
     }
 
@@ -82,13 +82,13 @@ impl Model {
                         tile_pos,
                         1.0,
                     ) {
-                        CollisionResult::NoCollision => {}
                         CollisionResult::Collision {
                             penetration,
                             collision_normal,
                         } => {
                             *entity.pos.as_mut().unwrap() += collision_normal * penetration;
                         }
+                        _ => (),
                     }
                 }
             }
@@ -148,7 +148,7 @@ impl Model {
                             }
                             self.play_sound(Sound::Craft, entity.pos.unwrap());
                         } else if let Some(item) = item {
-                            self.chunked_world.insert_entity(item);
+                            self.chunked_world.insert_entity(item).unwrap();
                         }
                     } else {
                         player.action = Some(PlayerAction::Crafting {
@@ -215,7 +215,7 @@ impl Model {
                         }
                     }
                     if let Some(item) = ground_item {
-                        self.chunked_world.insert_entity(item);
+                        self.chunked_world.insert_entity(item).unwrap();
                     }
                 }
             }
@@ -228,10 +228,12 @@ impl Model {
     pub fn spawn_entity(&mut self, entity_type: EntityType, pos: Vec2<f32>) {
         let mut components = self.resource_pack.entity_components[&entity_type].clone();
         components.pos = Some(pos);
-        self.chunked_world.insert_entity(Entity::new(
-            &entity_type,
-            components,
-            self.id_generator.gen(),
-        ));
+        self.chunked_world
+            .insert_entity(Entity::new(
+                &entity_type,
+                components,
+                self.id_generator.gen(),
+            ))
+            .unwrap();
     }
 }
