@@ -5,18 +5,16 @@ impl Model {
         let player_id = self.id_generator.gen();
         if let Some(pos) = self.get_spawnable_pos(player_id, vec2(0.0, 0.0), self.rules.spawn_area)
         {
-            let player = Player {
-                id: player_id,
-                pos: pos.map(|x| x as f32),
-                radius: 0.5,
-                interaction_range: self.rules.player_interaction_range,
-                item: None,
-                colors: PlayerColors::new(),
-                action: None,
-                load_area: AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0)),
-            };
-            self.sounds.insert(player.id, vec![]);
-            self.players.insert(player.id, player);
+            let entity_type = EntityType("Player".to_owned());
+            let mut components = self.resource_pack.entity_components[&entity_type].clone();
+            components.pos = Some(pos);
+            let mut entity = Entity::new(&entity_type, components, player_id);
+            let player = entity.components.player.as_mut().unwrap();
+            player.colors = PlayerColors::new();
+            player.load_area = AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0));
+
+            self.sounds.insert(player_id, vec![]);
+            self.chunked_world.insert_entity(entity).unwrap();
         } else {
             error!("Did not find spawnable position"); // TODO
         }
@@ -26,12 +24,12 @@ impl Model {
     fn is_empty_tile(&self, pos: Vec2<i64>) -> bool {
         !self
             .chunked_world
-            .items()
-            .any(|item| pos == get_tile_pos(item.pos))
+            .entities()
+            .any(|entity| entity.pos.is_some() && pos == get_tile_pos(entity.pos.unwrap()))
             && !self
-                .players
-                .values()
-                .any(|player| pos == get_tile_pos(player.pos))
+                .chunked_world
+                .entities() // TODO: don't check every entity
+                .any(|player| pos == get_tile_pos(player.pos.unwrap()))
     }
     fn is_spawnable(&self, pos: Vec2<i64>) -> bool {
         match self.chunked_world.get_tile(pos) {
@@ -47,7 +45,7 @@ impl Model {
         player_id: Id,
         origin: Vec2<f32>,
         search_range: f32,
-    ) -> Option<Vec2<i64>> {
+    ) -> Option<Vec2<f32>> {
         let area = AABB::from_corners(
             origin - vec2(search_range, search_range),
             origin + vec2(search_range, search_range),
@@ -58,5 +56,6 @@ impl Model {
             .points()
             .filter(|&pos| self.is_spawnable(pos))
             .min_by_key(|&pos| r32((pos.map(|x| x as f32 + 0.5) - origin).len()))
+            .map(|x| x.map(|x| x as f32)) //TODO: Allow non-integer coords
     }
 }

@@ -1,0 +1,96 @@
+{
+  "Player": {
+    "size": 0.5,
+    "player": {
+      "interaction_range": 1.5
+    },
+    "collidable": {
+      "collision_type": "Pushable"
+    }
+  },
+  "Pebble": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "SharpStone": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Stick": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Axe": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "DoubleStick": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Log": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Planks": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Torch": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Shovel": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Pickaxe": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "GoldPickaxe": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "GoldNugget": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "TreasureMark": {
+    "size": 0.5
+  },
+  "TreasureChest": {
+    "size": 0.5,
+    "pickable": []
+  },
+  "Tree": {
+    "size": 0.5,
+    "collidable": {
+      "collision_type": "Static"
+    }
+  },
+  "Campfire": {
+    "size": 0.5,
+    "collidable": {
+      "collision_type": "Static"
+    }
+  },
+  "Rock": {
+    "size": 0.5,
+    "collidable": {
+      "collision_type": "Static"
+    }
+  },
+  "GoldRock": {
+    "size": 0.5,
+    "collidable": {
+      "collision_type": "Static"
+    }
+  },
+  "Statue": {
+    "size": 0.5,
+    "collidable": {
+      "collision_type": "Static"
+    }
+  }
+}
