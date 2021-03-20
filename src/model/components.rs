@@ -18,8 +18,6 @@ pub struct CompPickable();
 pub struct CompPlayer {
     pub interaction_range: f32,
     #[serde(default)]
-    pub item: Option<EntityType>,
-    #[serde(default)]
     pub action: Option<PlayerAction>,
     #[serde(skip, default = "CompPlayer::default_load_area")]
     pub load_area: AABB<f32>,
@@ -38,4 +36,15 @@ pub enum CompRenderable {
         #[serde(default)]
         colors: PlayerColors,
     },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CompController {
+    PlayerController,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompHolding {
+    #[serde(default)]
+    pub entity: Option<EntityType>,
 }

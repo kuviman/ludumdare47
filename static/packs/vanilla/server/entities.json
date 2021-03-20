@@ -9,7 +9,8 @@
     },
     "collidable": {
       "collision_type": "Pushable"
-    }
+    },
+    "holding": {}
   },
   "Pebble": {
     "renderable": "Simple",

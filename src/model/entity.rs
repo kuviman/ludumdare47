@@ -18,11 +18,15 @@ pub struct EntityComponents {
     #[serde(default)]
     pub size: Option<f32>,
     #[serde(default)]
+    pub controller: Option<CompController>,
+    #[serde(default)]
     pub player: Option<CompPlayer>,
     #[serde(default)]
     pub collidable: Option<CompCollidable>,
     #[serde(default)]
     pub pickable: Option<CompPickable>,
+    #[serde(default)]
+    pub holding: Option<CompHolding>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]

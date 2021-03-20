@@ -115,7 +115,7 @@ impl App {
                             i_color: colors.pants,
                         }),
                     );
-                    if let Some(item) = &entity.player.as_ref().unwrap().item {
+                    if let Some(item) = &entity.holding.as_ref().unwrap().entity {
                         self.ez3d.draw(
                             framebuffer,
                             &self.camera,
@@ -159,7 +159,7 @@ impl App {
                     "Player"
                 }
                 .to_owned();
-                if let Some(item) = &entity.components.player.as_ref().unwrap().item {
+                if let Some(item) = &entity.holding.as_ref().unwrap().entity {
                     text = format!("{}, holding {}", text, item);
                 }
                 pos = data

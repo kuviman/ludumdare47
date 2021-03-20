@@ -119,12 +119,11 @@ impl Model {
                             && self.finish_action(entity, finish_action)
                             || distance <= self.rules.player_movement_speed / self.ticks_per_second;
                         if !finished {
-                            let player = entity.player.as_mut().unwrap();
                             let dir = target_pos - entity_pos;
                             let dir = dir / dir.len();
                             let new_pos = entity_pos
                                 + dir * self.rules.player_movement_speed / self.ticks_per_second;
-                            player.action = Some(PlayerAction::MovingTo {
+                            entity.player.as_mut().unwrap().action = Some(PlayerAction::MovingTo {
                                 target,
                                 finish_action,
                             });
@@ -137,10 +136,9 @@ impl Model {
                     recipe,
                     time_left,
                 } => {
-                    let player = entity.components.player.as_mut().unwrap();
                     let time_left = time_left - 1.0 / self.ticks_per_second;
                     if time_left <= 0.0 {
-                        let hand_item = &mut player.item;
+                        let hand_item = &mut entity.holding.as_mut().unwrap().entity;
                         let mut item = self.chunked_world.remove_entity(item_id);
                         let (conditions, ingredient2) = match &item {
                             Some(item) => (
@@ -167,7 +165,7 @@ impl Model {
                             self.chunked_world.insert_entity(item).unwrap();
                         }
                     } else {
-                        player.action = Some(PlayerAction::Crafting {
+                        entity.player.as_mut().unwrap().action = Some(PlayerAction::Crafting {
                             item_id,
                             recipe,
                             time_left,
@@ -178,11 +176,10 @@ impl Model {
         }
     }
     fn finish_action(&mut self, entity: &mut Entity, finish_action: Option<MomentAction>) -> bool {
-        let player = entity.components.player.as_mut().unwrap();
         if let Some(finish_action) = finish_action {
             match finish_action {
                 MomentAction::Interact { id } => {
-                    let ingredient1 = &mut player.item;
+                    let ingredient1 = &mut entity.holding.as_mut().unwrap().entity;
                     let (conditions, ingredient2) = match self.chunked_world.get_entity(id) {
                         Some(item) => (
                             Some(
@@ -204,7 +201,7 @@ impl Model {
                         )
                     });
                     if let Some(recipe) = recipe {
-                        player.action = Some(PlayerAction::Crafting {
+                        entity.player.as_mut().unwrap().action = Some(PlayerAction::Crafting {
                             item_id: id,
                             recipe: recipe.clone(),
                             time_left: recipe.craft_time,
@@ -212,14 +209,14 @@ impl Model {
                     }
                 }
                 MomentAction::Drop { pos } => {
-                    let hand_item = &mut player.item;
+                    let hand_item = &mut entity.holding.as_mut().unwrap().entity;
                     if let Some(item_type) = hand_item.take() {
                         self.spawn_entity(item_type, pos);
                         self.play_sound(Sound::PutDown, pos);
                     }
                 }
                 MomentAction::PickUp { id } => {
-                    let hand_item = &mut player.item;
+                    let hand_item = &mut entity.holding.as_mut().unwrap().entity;
                     let mut ground_item = self.chunked_world.remove_entity(id);
                     if let None = hand_item {
                         if let Some(item_type) = &mut ground_item {
