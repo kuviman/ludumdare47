@@ -36,7 +36,6 @@ pub struct Model {
     pub ticks_per_second: f32,
     pub pack_list: Vec<String>,
     id_generator: util::Saved<IdGenerator>,
-    world_name: String,
     rules: Rules,
     resource_pack: ResourcePack,
     chunked_world: ChunkedWorld,
@@ -164,7 +163,6 @@ impl Model {
         let world_gen = WorldGen::new(config.seed, &resource_pack);
         Self {
             id_generator: util::Saved::new(world_path.join("id_gen"), IdGenerator::new),
-            world_name: world_name.to_owned(),
             pack_list,
             rules,
             resource_pack,
