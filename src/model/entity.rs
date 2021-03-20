@@ -83,6 +83,6 @@ pub enum EntityAction {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ActionTarget {
-    Position { pos: Vec2<f32> },
+    Position { pos: Vec2<f32>, target_size: f32 },
     Entity { id: Id },
 }

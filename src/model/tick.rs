@@ -144,7 +144,7 @@ impl Model {
                                     None => (None, None),
                                 }
                             }
-                            ActionTarget::Position { pos } => (
+                            ActionTarget::Position { pos, .. } => (
                                 Some(
                                     self.chunked_world
                                         .get_tile(get_tile_pos(pos))
@@ -197,7 +197,7 @@ impl Model {
                                     None => (None, None),
                                 }
                             }
-                            ActionTarget::Position { pos } => (
+                            ActionTarget::Position { pos, .. } => (
                                 Some(
                                     self.chunked_world
                                         .get_tile(get_tile_pos(pos))
@@ -232,7 +232,10 @@ impl Model {
                     }
                 }
                 EntityAction::Drop { pos } => {
-                    let target = ActionTarget::Position { pos };
+                    let target = ActionTarget::Position {
+                        pos,
+                        target_size: entity.interaction.as_ref().unwrap().interaction_range,
+                    };
                     if self.can_interact(entity, &target) {
                         let hand_item = &mut entity.holding.as_mut().unwrap().entity;
                         if let Some(item_type) = hand_item.take() {
@@ -274,7 +277,7 @@ impl Model {
 
     fn get_target(&self, target: &ActionTarget) -> Option<(Vec2<f32>, f32)> {
         match target {
-            ActionTarget::Position { pos } => Some((*pos, 0.0)),
+            ActionTarget::Position { pos, target_size } => Some((*pos, *target_size)),
             ActionTarget::Entity { id } => match self.chunked_world.get_entity(*id) {
                 Some(target_entity) => {
                     Some((target_entity.pos.unwrap(), target_entity.size.unwrap()))
