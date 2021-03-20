@@ -27,6 +27,10 @@ pub struct EntityComponents {
     pub pickable: Option<CompPickable>,
     #[serde(default)]
     pub holding: Option<CompHolding>,
+    #[serde(default)]
+    pub interaction: Option<CompInteraction>,
+    #[serde(default)]
+    pub action: Option<CompAction>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
@@ -46,4 +50,39 @@ impl Entity {
             components,
         }
     }
+
+    pub fn move_towards(&mut self, target_pos: Vec2<f32>, movement_speed: f32, delta_time: f32) {
+        let entity_pos = self.pos.unwrap();
+        let dir = target_pos - entity_pos;
+        let dir = dir / dir.len();
+        let new_pos = entity_pos + dir * movement_speed * delta_time;
+        self.pos = Some(new_pos);
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum EntityAction {
+    MovingTo {
+        target: ActionTarget,
+    },
+    Crafting {
+        target: ActionTarget,
+        recipe: Recipe,
+        time_left: f32,
+    },
+    Interact {
+        target: ActionTarget,
+    },
+    Drop {
+        pos: Vec2<f32>,
+    },
+    PickUp {
+        id: Id,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum ActionTarget {
+    Position { pos: Vec2<f32> },
+    Entity { id: Id },
 }

@@ -51,7 +51,7 @@ pub struct Model {
 pub enum Message {
     RequestUpdate { load_area: Option<AABB<f32>> },
     Goto { pos: Vec2<f32> },
-    Interact { id: Id },
+    Interact { target: ActionTarget },
     Drop { pos: Vec2<f32> },
     PickUp { id: Id },
     SayHi,
@@ -192,11 +192,10 @@ impl Model {
             .get_entity_mut(player_id)
             .unwrap()
             .clone();
-        let mut player = entity.components.player.as_mut().unwrap();
         match message {
             Message::RequestUpdate { load_area } => {
                 if let Some(load_area) = load_area {
-                    player.load_area = load_area;
+                    entity.player.as_mut().unwrap().load_area = load_area;
                     self.chunked_world.set_load_area_for(
                         player_id,
                         &mut self.id_generator,
@@ -208,28 +207,19 @@ impl Model {
                 self.chunked_world.get_updates(player_id, sender);
             }
             Message::Goto { pos } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Position { pos },
-                    finish_action: None,
+                entity.action.as_mut().unwrap().current_action = Some(EntityAction::MovingTo {
+                    target: ActionTarget::Position { pos },
                 });
             }
-            Message::Interact { id } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Entity { id },
-                    finish_action: Some(MomentAction::Interact { id }),
-                });
+            Message::Interact { target } => {
+                entity.action.as_mut().unwrap().current_action =
+                    Some(EntityAction::Interact { target });
             }
             Message::Drop { pos } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Position { pos },
-                    finish_action: Some(MomentAction::Drop { pos }),
-                });
+                entity.action.as_mut().unwrap().current_action = Some(EntityAction::Drop { pos });
             }
             Message::PickUp { id } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Entity { id },
-                    finish_action: Some(MomentAction::PickUp { id }),
-                });
+                entity.action.as_mut().unwrap().current_action = Some(EntityAction::PickUp { id });
             }
             Message::SayHi => {
                 if let Some(pos) = entity.pos {

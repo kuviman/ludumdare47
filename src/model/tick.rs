@@ -13,8 +13,8 @@ impl Model {
 
     fn update_entity(&mut self, mut entity: Entity) {
         let entity_id = entity.id;
-        if entity.components.player.is_some() {
-            self.player_action(&mut entity);
+        if entity.action.is_some() {
+            self.entity_action(&mut entity);
         }
 
         // Collide with entities
@@ -96,143 +96,201 @@ impl Model {
         }
     }
 
-    fn player_action(&mut self, entity: &mut Entity) {
-        if let Some(action) = entity.components.player.as_mut().unwrap().action.take() {
+    fn entity_action(&mut self, entity: &mut Entity) {
+        if let Some(action) = entity.action.as_mut().unwrap().current_action.take() {
             match action {
-                PlayerAction::MovingTo {
-                    target,
-                    finish_action,
-                } => {
-                    if let Some((target_pos, target_size)) = match target {
-                        MovementTarget::Position { pos } => Some((pos, 0.0)),
-                        MovementTarget::Entity { id } => match self.chunked_world.get_entity(id) {
-                            Some(target_entity) => {
-                                Some((target_entity.pos.unwrap(), target_entity.size.unwrap()))
-                            }
-                            None => None,
-                        },
-                    } {
+                EntityAction::MovingTo { target } => {
+                    if let Some((target_pos, target_size)) = self.get_target(&target) {
                         let entity_pos = entity.pos.unwrap();
                         let distance = (entity_pos - target_pos).len();
-                        let finished = distance
-                            <= entity.player.as_ref().unwrap().interaction_range + target_size
-                            && self.finish_action(entity, finish_action)
-                            || distance <= self.rules.player_movement_speed / self.ticks_per_second;
-                        if !finished {
-                            let dir = target_pos - entity_pos;
-                            let dir = dir / dir.len();
-                            let new_pos = entity_pos
-                                + dir * self.rules.player_movement_speed / self.ticks_per_second;
-                            entity.player.as_mut().unwrap().action = Some(PlayerAction::MovingTo {
-                                target,
-                                finish_action,
-                            });
-                            entity.pos = Some(new_pos);
+                        if distance <= target_size
+                            || distance <= self.rules.player_movement_speed / self.ticks_per_second
+                        {
+                            let entity_action = entity.action.as_mut().unwrap();
+                            entity_action.current_action = entity_action.next_action.take();
+                        } else {
+                            entity.move_towards(
+                                target_pos,
+                                self.rules.player_movement_speed,
+                                1.0 / self.ticks_per_second,
+                            );
+                            let entity_action = entity.action.as_mut().unwrap();
+                            entity_action.current_action = Some(EntityAction::MovingTo { target });
                         }
                     }
                 }
-                PlayerAction::Crafting {
-                    item_id,
+                EntityAction::Crafting {
+                    target,
                     recipe,
                     time_left,
                 } => {
                     let time_left = time_left - 1.0 / self.ticks_per_second;
                     if time_left <= 0.0 {
-                        let hand_item = &mut entity.holding.as_mut().unwrap().entity;
-                        let mut item = self.chunked_world.remove_entity(item_id);
-                        let (conditions, ingredient2) = match &item {
-                            Some(item) => (
+                        let hand_entity = &mut entity.holding.as_mut().unwrap().entity;
+                        let (conditions, mut ground_entity) = match target {
+                            ActionTarget::Entity { id } => {
+                                let entity = self.chunked_world.remove_entity(id);
+                                match entity {
+                                    Some(entity) => (
+                                        Some(
+                                            self.chunked_world
+                                                .get_tile(get_tile_pos(entity.pos.unwrap()))
+                                                .unwrap()
+                                                .biome
+                                                .clone(),
+                                        ),
+                                        Some(entity),
+                                    ),
+                                    None => (None, None),
+                                }
+                            }
+                            ActionTarget::Position { pos } => (
                                 Some(
                                     self.chunked_world
-                                        .get_tile(get_tile_pos(item.pos.unwrap()))
+                                        .get_tile(get_tile_pos(pos))
                                         .unwrap()
                                         .biome
                                         .clone(),
                                 ),
-                                Some(item.entity_type.clone()),
+                                None,
                             ),
-                            None => (None, None),
                         };
-                        if recipe.ingredients_equal(hand_item.take(), ingredient2, conditions) {
-                            *hand_item = recipe.result1;
-                            if let Some(item) = item.take() {
-                                if let Some(item_type) = recipe.result2 {
-                                    self.spawn_entity(item_type, item.pos.unwrap());
+                        let ingredient2 = ground_entity.as_ref().map(|e| e.entity_type.clone());
+                        if recipe.ingredients_equal(hand_entity.take(), ingredient2, conditions) {
+                            *hand_entity = recipe.result1;
+                            if let Some(entity) = ground_entity.take() {
+                                if let Some(entity_type) = recipe.result2 {
+                                    self.spawn_entity(entity_type, entity.pos.unwrap());
                                 }
                             }
                             self.play_sound(Sound::Craft, entity.pos.unwrap());
-                        } else if let Some(item) = item {
-                            self.chunked_world.insert_entity(item).unwrap();
+                        } else if let Some(entity) = ground_entity {
+                            self.chunked_world.insert_entity(entity).unwrap();
                         }
+                        let entity_action = entity.action.as_mut().unwrap();
+                        entity_action.current_action = entity_action.next_action.take();
                     } else {
-                        entity.player.as_mut().unwrap().action = Some(PlayerAction::Crafting {
-                            item_id,
+                        let entity_action = entity.action.as_mut().unwrap();
+                        entity_action.current_action = Some(EntityAction::Crafting {
+                            target,
                             recipe,
                             time_left,
                         });
                     }
                 }
+                EntityAction::Interact { target } => {
+                    if self.can_interact(entity, &target) {
+                        let ingredient1 = &mut entity.holding.as_mut().unwrap().entity;
+                        let (conditions, ingredient2) = match target {
+                            ActionTarget::Entity { id } => {
+                                match self.chunked_world.get_entity(id) {
+                                    Some(item) => (
+                                        Some(
+                                            self.chunked_world
+                                                .get_tile(get_tile_pos(item.pos.unwrap()))
+                                                .unwrap()
+                                                .biome
+                                                .clone(),
+                                        ),
+                                        Some(item.entity_type.clone()),
+                                    ),
+                                    None => (None, None),
+                                }
+                            }
+                            ActionTarget::Position { pos } => (
+                                Some(
+                                    self.chunked_world
+                                        .get_tile(get_tile_pos(pos))
+                                        .unwrap()
+                                        .biome
+                                        .clone(),
+                                ),
+                                None,
+                            ),
+                        };
+                        let recipe = self.resource_pack.recipes.iter().find(|recipe| {
+                            recipe.ingredients_equal(
+                                ingredient1.clone(),
+                                ingredient2.clone(),
+                                conditions.clone(),
+                            )
+                        });
+                        if let Some(recipe) = recipe {
+                            let entity_action = entity.action.as_mut().unwrap();
+                            entity_action.current_action = Some(EntityAction::Crafting {
+                                target,
+                                recipe: recipe.clone(),
+                                time_left: recipe.craft_time,
+                            });
+                        }
+                    } else {
+                        let entity_action = entity.action.as_mut().unwrap();
+                        entity_action.current_action = Some(EntityAction::MovingTo {
+                            target: target.clone(),
+                        });
+                        entity_action.next_action = Some(EntityAction::Interact { target });
+                    }
+                }
+                EntityAction::Drop { pos } => {
+                    let target = ActionTarget::Position { pos };
+                    if self.can_interact(entity, &target) {
+                        let hand_item = &mut entity.holding.as_mut().unwrap().entity;
+                        if let Some(item_type) = hand_item.take() {
+                            self.spawn_entity(item_type, pos);
+                            self.play_sound(Sound::PutDown, pos);
+                        }
+                    } else {
+                        let entity_action = entity.action.as_mut().unwrap();
+                        entity_action.current_action = Some(EntityAction::MovingTo { target });
+                        entity_action.next_action = Some(EntityAction::Drop { pos });
+                    }
+                }
+                EntityAction::PickUp { id } => {
+                    let target = ActionTarget::Entity { id };
+                    if self.can_interact(entity, &target) {
+                        let hand_item = &mut entity.holding.as_mut().unwrap().entity;
+                        let mut ground_entity = self.chunked_world.remove_entity(id);
+                        if let None = hand_item {
+                            if let Some(e) = &mut ground_entity {
+                                if e.pickable.is_some() {
+                                    *hand_item = Some(e.entity_type.clone());
+                                    ground_entity.take();
+                                    self.play_sound(Sound::PickUp, entity.pos.unwrap());
+                                }
+                            }
+                        }
+                        if let Some(item) = ground_entity {
+                            self.chunked_world.insert_entity(item).unwrap();
+                        }
+                    } else {
+                        let entity_action = entity.action.as_mut().unwrap();
+                        entity_action.current_action = Some(EntityAction::MovingTo { target });
+                        entity_action.next_action = Some(EntityAction::PickUp { id });
+                    }
+                }
             }
         }
     }
-    fn finish_action(&mut self, entity: &mut Entity, finish_action: Option<MomentAction>) -> bool {
-        if let Some(finish_action) = finish_action {
-            match finish_action {
-                MomentAction::Interact { id } => {
-                    let ingredient1 = &mut entity.holding.as_mut().unwrap().entity;
-                    let (conditions, ingredient2) = match self.chunked_world.get_entity(id) {
-                        Some(item) => (
-                            Some(
-                                self.chunked_world
-                                    .get_tile(get_tile_pos(item.pos.unwrap()))
-                                    .unwrap()
-                                    .biome
-                                    .clone(),
-                            ),
-                            Some(item.entity_type.clone()),
-                        ),
-                        None => (None, None),
-                    };
-                    let recipe = self.resource_pack.recipes.iter().find(|recipe| {
-                        recipe.ingredients_equal(
-                            ingredient1.clone(),
-                            ingredient2.clone(),
-                            conditions.clone(),
-                        )
-                    });
-                    if let Some(recipe) = recipe {
-                        entity.player.as_mut().unwrap().action = Some(PlayerAction::Crafting {
-                            item_id: id,
-                            recipe: recipe.clone(),
-                            time_left: recipe.craft_time,
-                        });
-                    }
+
+    fn get_target(&self, target: &ActionTarget) -> Option<(Vec2<f32>, f32)> {
+        match target {
+            ActionTarget::Position { pos } => Some((*pos, 0.0)),
+            ActionTarget::Entity { id } => match self.chunked_world.get_entity(*id) {
+                Some(target_entity) => {
+                    Some((target_entity.pos.unwrap(), target_entity.size.unwrap()))
                 }
-                MomentAction::Drop { pos } => {
-                    let hand_item = &mut entity.holding.as_mut().unwrap().entity;
-                    if let Some(item_type) = hand_item.take() {
-                        self.spawn_entity(item_type, pos);
-                        self.play_sound(Sound::PutDown, pos);
-                    }
-                }
-                MomentAction::PickUp { id } => {
-                    let hand_item = &mut entity.holding.as_mut().unwrap().entity;
-                    let mut ground_item = self.chunked_world.remove_entity(id);
-                    if let None = hand_item {
-                        if let Some(item_type) = &mut ground_item {
-                            if let Some(_) = item_type.components.pickable {
-                                *hand_item = Some(item_type.entity_type.clone());
-                                ground_item.take();
-                                self.play_sound(Sound::PickUp, entity.pos.unwrap());
-                            }
-                        }
-                    }
-                    if let Some(item) = ground_item {
-                        self.chunked_world.insert_entity(item).unwrap();
-                    }
-                }
-            }
-            true
+                None => None,
+            },
+        }
+    }
+
+    fn can_interact(&self, entity: &Entity, target: &ActionTarget) -> bool {
+        if let Some((target_pos, target_size)) = self.get_target(target) {
+            let distance = (entity.pos.unwrap() - target_pos).len();
+            distance
+                <= entity.size.unwrap()
+                    + target_size
+                    + entity.interaction.as_ref().unwrap().interaction_range
         } else {
             false
         }

@@ -16,9 +16,6 @@ pub struct CompPickable();
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompPlayer {
-    pub interaction_range: f32,
-    #[serde(default)]
-    pub action: Option<PlayerAction>,
     #[serde(skip, default = "CompPlayer::default_load_area")]
     pub load_area: AABB<f32>,
 }
@@ -47,4 +44,17 @@ pub enum CompController {
 pub struct CompHolding {
     #[serde(default)]
     pub entity: Option<EntityType>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompAction {
+    #[serde(default)]
+    pub current_action: Option<EntityAction>,
+    #[serde(default)]
+    pub next_action: Option<EntityAction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompInteraction {
+    pub interaction_range: f32,
 }

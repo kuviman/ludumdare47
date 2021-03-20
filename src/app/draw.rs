@@ -189,11 +189,10 @@ impl App {
             .iter()
             .find(|player| player.id == self.player_id)
         {
-            let player = entity.components.player.as_ref().unwrap();
             let data = &self.players[&entity.id];
-            if let Some(action) = &player.action {
+            if let Some(action) = &entity.action.as_ref().unwrap().current_action {
                 match action {
-                    model::PlayerAction::Crafting { time_left, .. } => {
+                    model::EntityAction::Crafting { time_left, .. } => {
                         let text = format!("{:.1}", time_left);
                         let pos = data.pos;
                         let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());

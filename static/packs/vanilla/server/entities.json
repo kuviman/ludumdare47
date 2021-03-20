@@ -4,13 +4,15 @@
       "Player": {}
     },
     "size": 0.5,
-    "player": {
-      "interaction_range": 1.5
-    },
+    "player": {},
     "collidable": {
       "collision_type": "Pushable"
     },
-    "holding": {}
+    "holding": {},
+    "action": {},
+    "interaction": {
+      "interaction_range": 1.5
+    }
   },
   "Pebble": {
     "renderable": "Simple",
