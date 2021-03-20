@@ -37,24 +37,100 @@ impl App {
 
         // Prepare entities' models
         let mut instances: HashMap<model::EntityType, Vec<ez3d::Instance>> = HashMap::new();
-        for item in self
+        for entity in self
             .view
             .entities
             .iter()
-            .filter(|entity| entity.pos.is_some())
+            .filter(|entity| entity.renderable.is_some())
         {
-            let pos = item.pos.unwrap();
-            let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
-            let pos = pos.extend(height);
-            instances
-                .entry(item.entity_type.clone())
-                .or_default()
-                .push(ez3d::Instance {
-                    i_pos: pos,
-                    i_size: 0.5,
-                    i_rotation: 0.0,
-                    i_color: Color::WHITE,
-                });
+            match entity.renderable.as_ref().unwrap() {
+                model::CompRenderable::Simple => {
+                    let pos = entity.pos.unwrap();
+                    let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
+                    let pos = pos.extend(height);
+                    instances
+                        .entry(entity.entity_type.clone())
+                        .or_default()
+                        .push(ez3d::Instance {
+                            i_pos: pos,
+                            i_size: 0.5,
+                            i_rotation: 0.0,
+                            i_color: Color::WHITE,
+                        });
+                }
+                model::CompRenderable::Player { colors } => {
+                    let data = self
+                        .players
+                        .entry(entity.id)
+                        .or_insert(PlayerData::new(entity));
+                    let mut pos = data.pos.extend(data.step());
+                    let rotation = data.rotation;
+                    let height = self.tile_mesh.get_height(pos.xy()).unwrap_or(0.0);
+                    pos.z += height;
+                    self.ez3d.draw(
+                        framebuffer,
+                        &self.camera,
+                        &self.light,
+                        self.assets.player.eyes.vb(),
+                        std::iter::once(ez3d::Instance {
+                            i_pos: pos,
+                            i_size: 0.5,
+                            i_rotation: -rotation,
+                            i_color: Color::BLACK,
+                        }),
+                    );
+                    self.ez3d.draw(
+                        framebuffer,
+                        &self.camera,
+                        &self.light,
+                        self.assets.player.skin.vb(),
+                        std::iter::once(ez3d::Instance {
+                            i_pos: pos,
+                            i_size: 0.5,
+                            i_rotation: -rotation,
+                            i_color: colors.skin,
+                        }),
+                    );
+                    self.ez3d.draw(
+                        framebuffer,
+                        &self.camera,
+                        &self.light,
+                        self.assets.player.shirt.vb(),
+                        std::iter::once(ez3d::Instance {
+                            i_pos: pos,
+                            i_size: 0.5,
+                            i_rotation: -rotation,
+                            i_color: colors.shirt,
+                        }),
+                    );
+                    self.ez3d.draw(
+                        framebuffer,
+                        &self.camera,
+                        &self.light,
+                        self.assets.player.pants.vb(),
+                        std::iter::once(ez3d::Instance {
+                            i_pos: pos,
+                            i_size: 0.5,
+                            i_rotation: -rotation,
+                            i_color: colors.pants,
+                        }),
+                    );
+                    if let Some(item) = &entity.player.as_ref().unwrap().item {
+                        self.ez3d.draw(
+                            framebuffer,
+                            &self.camera,
+                            &self.light,
+                            self.resource_pack.entities[item].model.vb(),
+                            std::iter::once(ez3d::Instance {
+                                i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
+                                i_size: 0.5,
+                                i_rotation: -rotation,
+                                i_color: Color::WHITE,
+                            }),
+                        );
+                    }
+                }
+            }
         }
 
         // Draw entities
@@ -70,83 +146,6 @@ impl App {
                     );
                 }
                 None => (),
-            }
-        }
-
-        // Draw players' details
-        for entity in self.view.entities.iter().filter(|e| e.player.is_some()) {
-            let player = entity.player.as_ref().unwrap();
-            if let Some(model::CompRenderable::Player { colors }) = &entity.renderable {
-                let data = self
-                    .players
-                    .entry(entity.id)
-                    .or_insert(PlayerData::new(entity));
-                let mut pos = data.pos.extend(data.step());
-                let rotation = data.rotation;
-                let height = self.tile_mesh.get_height(pos.xy()).unwrap_or(0.0);
-                pos.z += height;
-                self.ez3d.draw(
-                    framebuffer,
-                    &self.camera,
-                    &self.light,
-                    self.assets.player.eyes.vb(),
-                    std::iter::once(ez3d::Instance {
-                        i_pos: pos,
-                        i_size: 0.5,
-                        i_rotation: -rotation,
-                        i_color: Color::BLACK,
-                    }),
-                );
-                self.ez3d.draw(
-                    framebuffer,
-                    &self.camera,
-                    &self.light,
-                    self.assets.player.skin.vb(),
-                    std::iter::once(ez3d::Instance {
-                        i_pos: pos,
-                        i_size: 0.5,
-                        i_rotation: -rotation,
-                        i_color: colors.skin,
-                    }),
-                );
-                self.ez3d.draw(
-                    framebuffer,
-                    &self.camera,
-                    &self.light,
-                    self.assets.player.shirt.vb(),
-                    std::iter::once(ez3d::Instance {
-                        i_pos: pos,
-                        i_size: 0.5,
-                        i_rotation: -rotation,
-                        i_color: colors.shirt,
-                    }),
-                );
-                self.ez3d.draw(
-                    framebuffer,
-                    &self.camera,
-                    &self.light,
-                    self.assets.player.pants.vb(),
-                    std::iter::once(ez3d::Instance {
-                        i_pos: pos,
-                        i_size: 0.5,
-                        i_rotation: -rotation,
-                        i_color: colors.pants,
-                    }),
-                );
-                if let Some(item) = &player.item {
-                    self.ez3d.draw(
-                        framebuffer,
-                        &self.camera,
-                        &self.light,
-                        self.resource_pack.entities[item].model.vb(),
-                        std::iter::once(ez3d::Instance {
-                            i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
-                            i_size: 0.5,
-                            i_rotation: -rotation,
-                            i_color: Color::WHITE,
-                        }),
-                    );
-                }
             }
         }
 
