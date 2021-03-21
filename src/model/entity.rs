@@ -82,7 +82,13 @@ pub enum EntityAction {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum ActionTarget {
-    Position { pos: Vec2<f32>, target_size: f32 },
+pub struct ActionTarget {
+    pub interact: bool,
+    pub target_type: TargetType,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum TargetType {
+    Position { pos: Vec2<f32> },
     Entity { id: Id },
 }

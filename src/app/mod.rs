@@ -349,7 +349,10 @@ impl geng::State for App {
                         geng::MouseButton::Right => {
                             if let Some(entity) = self.view.get_closest_entity(pos) {
                                 self.connection.send(ClientMessage::Interact {
-                                    target: model::ActionTarget::Entity { id: entity.id },
+                                    target: model::ActionTarget {
+                                        interact: true,
+                                        target_type: model::TargetType::Entity { id: entity.id },
+                                    },
                                 })
                             }
                         }
