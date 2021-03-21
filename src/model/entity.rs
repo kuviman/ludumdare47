@@ -20,8 +20,6 @@ pub struct EntityComponents {
     #[serde(default)]
     pub controller: Option<CompController>,
     #[serde(default)]
-    pub player: Option<CompPlayer>,
-    #[serde(default)]
     pub collidable: Option<CompCollidable>,
     #[serde(default)]
     pub pickable: Option<CompPickable>,
@@ -31,6 +29,8 @@ pub struct EntityComponents {
     pub interaction: Option<CompInteraction>,
     #[serde(default)]
     pub action: Option<CompAction>,
+    #[serde(default)]
+    pub load_area: Option<CompLoadArea>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]

@@ -15,18 +15,6 @@ pub enum CollisionType {
 pub struct CompPickable();
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CompPlayer {
-    #[serde(skip, default = "CompPlayer::default_load_area")]
-    pub load_area: AABB<f32>,
-}
-
-impl CompPlayer {
-    fn default_load_area() -> AABB<f32> {
-        AABB::pos_size(vec2(0.0, 0.0), vec2(0.0, 0.0))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CompRenderable {
     Simple,
     Player {
@@ -38,6 +26,7 @@ pub enum CompRenderable {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CompController {
     PlayerController,
+    MobController,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,4 +46,16 @@ pub struct CompAction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompInteraction {
     pub interaction_range: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompLoadArea {
+    #[serde(skip, default = "CompLoadArea::default_load_area")]
+    pub load_area: AABB<f32>,
+}
+
+impl CompLoadArea {
+    fn default_load_area() -> AABB<f32> {
+        AABB::pos_size(vec2(0.0, 0.0), vec2(0.0, 0.0))
+    }
 }

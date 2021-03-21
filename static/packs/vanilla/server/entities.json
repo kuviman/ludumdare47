@@ -4,7 +4,7 @@
       "Player": {}
     },
     "size": 0.5,
-    "player": {},
+    "controller": "PlayerController",
     "collidable": {
       "collision_type": "Pushable"
     },
@@ -12,7 +12,8 @@
     "action": {},
     "interaction": {
       "interaction_range": 1.5
-    }
+    },
+    "load_area": {}
   },
   "Pebble": {
     "renderable": "Simple",

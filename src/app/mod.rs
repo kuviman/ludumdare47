@@ -285,7 +285,10 @@ impl geng::State for App {
             .view
             .entities
             .iter()
-            .filter(|e| e.components.player.is_some())
+            .filter(|e| match &e.components.controller {
+                Some(model::CompController::PlayerController) => true,
+                _ => false,
+            })
         {
             if let Some(prev) = self.players.get_mut(&player.id) {
                 prev.update(player, delta_time, &self.view);

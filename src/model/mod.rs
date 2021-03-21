@@ -195,7 +195,7 @@ impl Model {
         match message {
             Message::RequestUpdate { load_area } => {
                 if let Some(load_area) = load_area {
-                    entity.player.as_mut().unwrap().load_area = load_area;
+                    entity.load_area.as_mut().unwrap().load_area = load_area;
                     self.chunked_world.set_load_area_for(
                         player_id,
                         &mut self.id_generator,
@@ -234,9 +234,12 @@ impl Model {
     }
     fn play_sound(&mut self, sound: Sound, pos: Vec2<f32>) {
         let range = self.rules.sound_distance;
-        for entity in self
-            .chunked_world
-            .find_range(pos, range, |e| e.components.player.is_some())
+        for entity in
+            self.chunked_world
+                .find_range(pos, range, |e| match &e.components.controller {
+                    Some(CompController::PlayerController) => true,
+                    _ => false,
+                })
         {
             self.sounds.get_mut(&entity.id).unwrap().push(sound);
         }
