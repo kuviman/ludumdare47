@@ -16,7 +16,9 @@ impl Model {
             }
 
             self.sounds.insert(player_id, vec![]);
-            self.chunked_world.insert_entity(entity).unwrap();
+            self.chunked_world
+                .insert_entity(entity, &mut self.id_generator)
+                .unwrap();
         } else {
             error!("Did not find spawnable position"); // TODO
         }

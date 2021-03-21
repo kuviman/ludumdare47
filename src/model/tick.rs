@@ -37,7 +37,8 @@ impl Model {
         }
 
         *self.chunked_world.get_entity_mut(entity_id).unwrap() = entity;
-        self.chunked_world.update_entity(entity_id);
+        self.chunked_world
+            .update_entity(entity_id, &mut self.id_generator);
     }
 
     fn check_entity_collision(entity: &mut Entity, other: &mut Entity) {
@@ -244,7 +245,9 @@ impl Model {
                             }
                         }
                         if let Some(item) = ground_entity {
-                            self.chunked_world.insert_entity(item).unwrap();
+                            self.chunked_world
+                                .insert_entity(item, &mut self.id_generator)
+                                .unwrap();
                         }
                     } else {
                         let entity_action = entity.action.as_mut().unwrap();
@@ -336,11 +339,10 @@ impl Model {
         let mut components = self.resource_pack.entity_components[&entity_type].clone();
         components.pos = Some(pos);
         self.chunked_world
-            .insert_entity(Entity::new(
-                &entity_type,
-                components,
-                self.id_generator.gen(),
-            ))
+            .insert_entity(
+                Entity::new(&entity_type, components, self.id_generator.gen()),
+                &mut self.id_generator,
+            )
             .unwrap();
     }
 }
