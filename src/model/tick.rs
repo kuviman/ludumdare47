@@ -62,7 +62,7 @@ impl Model {
                         }
                         CollisionType::Pushable => {
                             *entity.pos.as_mut().unwrap() += collision_normal * penetration / 2.0;
-                            *other.pos.as_mut().unwrap() += collision_normal * penetration / 2.0;
+                            *other.pos.as_mut().unwrap() += -collision_normal * penetration / 2.0;
                         }
                     }
                 }
