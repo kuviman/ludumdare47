@@ -286,7 +286,7 @@ impl geng::State for App {
             .entities
             .iter()
             .filter(|e| match &e.components.controller {
-                Some(model::CompController::PlayerController) => true,
+                Some(model::CompController::Player) => true,
                 _ => false,
             })
         {

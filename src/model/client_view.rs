@@ -29,7 +29,7 @@ impl Model {
                 .chunked_world
                 .entities()
                 .filter(|e| match &e.components.controller {
-                    Some(CompController::PlayerController) => true,
+                    Some(CompController::Player) => true,
                     _ => false,
                 })
                 .count(),

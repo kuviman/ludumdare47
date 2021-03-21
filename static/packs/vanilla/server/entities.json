@@ -4,7 +4,7 @@
       "Player": {}
     },
     "size": 0.5,
-    "controller": "PlayerController",
+    "controller": "Player",
     "collidable": {
       "collision_type": "Pushable"
     },

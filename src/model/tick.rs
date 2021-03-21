@@ -13,9 +13,7 @@ impl Model {
 
     fn update_entity(&mut self, mut entity: Entity) {
         let entity_id = entity.id;
-        if entity.action.is_some() {
-            self.entity_action(&mut entity);
-        }
+        self.entity_action(&mut entity);
 
         // Collide with entities
         if entity.components.collidable.is_some() {
@@ -97,6 +95,38 @@ impl Model {
     }
 
     fn entity_action(&mut self, entity: &mut Entity) {
+        if entity.controller.is_some() {
+            self.entity_action_decide(entity);
+        }
+        if entity.action.is_some() {
+            self.entity_action_perform(entity);
+        }
+    }
+
+    fn entity_action_decide(&self, entity: &mut Entity) {
+        match entity.controller.as_mut().unwrap() {
+            CompController::Player => (),
+            CompController::RandomMob => {
+                let entity_action = entity.action.as_mut().unwrap();
+                if entity_action.current_action.is_none() {
+                    let mut random = global_rng();
+                    let random_pos = entity.pos.unwrap()
+                        + vec2(
+                            random.gen_range(-10.0..=10.0),
+                            random.gen_range(-10.0..=10.0),
+                        );
+                    let target = ActionTarget {
+                        interact: false,
+                        target_type: TargetType::Position { pos: random_pos },
+                    };
+                    let entity_action = entity.action.as_mut().unwrap();
+                    entity_action.current_action = Some(EntityAction::MovingTo { target });
+                }
+            }
+        }
+    }
+
+    fn entity_action_perform(&mut self, entity: &mut Entity) {
         if let Some(action) = entity.action.as_mut().unwrap().current_action.take() {
             match action {
                 EntityAction::MovingTo { target } => {
@@ -223,6 +253,9 @@ impl Model {
                     }
                 }
             }
+        } else {
+            let entity_action = entity.action.as_mut().unwrap();
+            entity_action.current_action = entity_action.next_action.take();
         }
     }
 

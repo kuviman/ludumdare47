@@ -25,8 +25,8 @@ pub enum CompRenderable {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CompController {
-    PlayerController,
-    MobController,
+    Player,
+    RandomMob,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
