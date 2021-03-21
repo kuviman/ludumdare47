@@ -63,6 +63,6 @@
     "model": "rock.obj"
   },
   "Goat": {
-    "model": "tree.obj"
+    "model": "goat.obj"
   }
 }
