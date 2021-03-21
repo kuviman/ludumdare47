@@ -3,7 +3,6 @@ use super::*;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ClientView {
     pub players_online: usize,
-    pub player_movement_speed: f32,
     pub current_time: usize,
     pub ticks_per_second: f32,
     pub entities: Vec<Entity>,
@@ -33,7 +32,6 @@ impl Model {
                     _ => false,
                 })
                 .count(),
-            player_movement_speed: self.rules.player_movement_speed,
             ticks_per_second: self.ticks_per_second,
             current_time: self.current_time,
             entities: self

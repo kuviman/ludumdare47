@@ -4,6 +4,7 @@
       "Player": {}
     },
     "size": 0.5,
+    "movement_speed": 2.0,
     "controller": "Player",
     "collidable": {
       "collision_type": "Pushable"

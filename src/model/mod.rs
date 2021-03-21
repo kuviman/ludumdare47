@@ -152,13 +152,11 @@ impl Model {
     ) -> Self {
         let world_path = std::path::Path::new("saves").join(world_name);
         let rules = Rules {
-            player_movement_speed: config.player_movement_speed,
             client_view_distance: config.view_distance,
             campfire_light: config.campfire_light,
             torch_light: config.torch_light,
             statue_light: config.statue_light,
             regeneration_percent: config.regeneration_percent,
-            player_interaction_range: config.player_interaction_range,
             sound_distance: config.sound_distance,
             generation_distance: config.generation_distance,
             spawn_area: config.spawn_area,

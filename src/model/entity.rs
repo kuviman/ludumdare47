@@ -18,6 +18,8 @@ pub struct EntityComponents {
     #[serde(default)]
     pub size: Option<f32>,
     #[serde(default)]
+    pub movement_speed: Option<f32>,
+    #[serde(default)]
     pub controller: Option<CompController>,
     #[serde(default)]
     pub collidable: Option<CompCollidable>,

@@ -138,7 +138,7 @@ impl Model {
                     } else {
                         entity.move_towards(
                             target_pos,
-                            self.rules.player_movement_speed,
+                            entity.movement_speed.unwrap(),
                             1.0 / self.ticks_per_second,
                         );
                         let entity_action = entity.action.as_mut().unwrap();
@@ -274,7 +274,7 @@ impl Model {
             (
                 target_pos,
                 distance <= target_size + extra_range
-                    || distance <= self.rules.player_movement_speed / self.ticks_per_second,
+                    || distance <= entity.movement_speed.unwrap() / self.ticks_per_second,
             )
         } else {
             (entity.pos.unwrap(), true)
