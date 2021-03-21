@@ -55,5 +55,14 @@
   },
   "Statue": {
     "model": "statue.obj"
+  },
+  "Crab": {
+    "model": "pebble.obj"
+  },
+  "Deer": {
+    "model": "rock.obj"
+  },
+  "Goat": {
+    "model": "tree.obj"
   }
 }

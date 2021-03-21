@@ -105,10 +105,10 @@ impl Model {
     }
 
     fn entity_action_decide(&self, entity: &mut Entity) {
-        match entity.controller.as_mut().unwrap() {
+        match entity.controller.as_ref().unwrap() {
             CompController::Player => (),
-            CompController::RandomMob => {
-                let entity_action = entity.action.as_mut().unwrap();
+            CompController::BiomeRandomWalker { biome } => {
+                let entity_action = entity.action.as_ref().unwrap();
                 if entity_action.current_action.is_none() {
                     let mut random = global_rng();
                     let random_pos = entity.pos.unwrap()
@@ -116,12 +116,16 @@ impl Model {
                             random.gen_range(-10.0..=10.0),
                             random.gen_range(-10.0..=10.0),
                         );
-                    let target = ActionTarget {
-                        interact: false,
-                        target_type: TargetType::Position { pos: random_pos },
-                    };
-                    let entity_action = entity.action.as_mut().unwrap();
-                    entity_action.current_action = Some(EntityAction::MovingTo { target });
+                    if let Some(tile) = self.chunked_world.get_tile(get_tile_pos(random_pos)) {
+                        if tile.biome == *biome {
+                            let target = ActionTarget {
+                                interact: false,
+                                target_type: TargetType::Position { pos: random_pos },
+                            };
+                            let entity_action = entity.action.as_mut().unwrap();
+                            entity_action.current_action = Some(EntityAction::MovingTo { target });
+                        }
+                    }
                 }
             }
         }

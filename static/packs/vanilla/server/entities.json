@@ -119,5 +119,47 @@
     "collidable": {
       "collision_type": "Static"
     }
+  },
+  "Crab": {
+    "renderable": "Simple",
+    "size": 0.5,
+    "movement_speed": 1.0,
+    "collidable": {
+      "collision_type": "Pushable"
+    },
+    "controller": {
+      "BiomeRandomWalker": {
+        "biome": "Beach"
+      }
+    },
+    "action": {}
+  },
+  "Deer": {
+    "renderable": "Simple",
+    "size": 0.5,
+    "movement_speed": 1.0,
+    "collidable": {
+      "collision_type": "Pushable"
+    },
+    "controller": {
+      "BiomeRandomWalker": {
+        "biome": "Forest"
+      }
+    },
+    "action": {}
+  },
+  "Goat": {
+    "renderable": "Simple",
+    "size": 0.5,
+    "movement_speed": 1.0,
+    "collidable": {
+      "collision_type": "Pushable"
+    },
+    "controller": {
+      "BiomeRandomWalker": {
+        "biome": "Hills"
+      }
+    },
+    "action": {}
   }
 }
