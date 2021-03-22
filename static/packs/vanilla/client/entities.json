@@ -60,7 +60,7 @@
     "model": "crab.obj"
   },
   "Deer": {
-    "model": "rock.obj"
+    "model": "deer.obj"
   },
   "Goat": {
     "model": "goat.obj"
