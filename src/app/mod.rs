@@ -1,6 +1,8 @@
 use super::*;
 
 mod camera;
+mod client_entity;
+mod client_view;
 mod draw;
 mod ez3d;
 mod light;
@@ -9,6 +11,7 @@ mod tile_mesh;
 mod traffic;
 
 use camera::Camera;
+use client_view::ClientView;
 use ez3d::Ez3D;
 pub use resource_pack::ResourcePack;
 use tile_mesh::TileMesh;
@@ -60,7 +63,7 @@ impl PlayerData {
     fn step(&self) -> f32 {
         self.ampl * self.t.sin().abs() * 0.1
     }
-    fn update(&mut self, player: &model::Entity, delta_time: f32, view: &model::ClientView) {
+    fn update(&mut self, player: &model::Entity, delta_time: f32, view: &ClientView) {
         let player_pos = player.pos.unwrap();
         self.size = player.size.unwrap();
         self.t += delta_time * 10.0;
@@ -144,7 +147,7 @@ pub struct App {
     circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
-    view: model::ClientView,
+    view: ClientView,
     tile_mesh: TileMesh,
     light: light::Uniforms,
     players: HashMap<Id, PlayerData>,
@@ -165,6 +168,7 @@ impl App {
     ) -> Self {
         let ez3d = Rc::new(Ez3D::new(geng));
         let ez3d = &ez3d;
+        let view = ClientView::from_server_view(view, resource_pack);
         let light = light::Uniforms::new(&view);
         let tile_mesh = TileMesh::new(geng, ez3d, resource_pack);
         connection.send(ClientMessage::RequestUpdate { load_area: None });
@@ -269,7 +273,7 @@ impl geng::State for App {
                         sound.set_volume(self.ui_state.volume());
                         sound.play();
                     }
-                    self.view = view;
+                    self.view = ClientView::from_server_view(view, &self.resource_pack);
                 }
                 ServerMessage::UpdateTiles(tiles) => {
                     self.tile_mesh.update(&tiles);
@@ -285,7 +289,10 @@ impl geng::State for App {
             .view
             .entities
             .iter()
-            .filter(|e| e.components.player.is_some())
+            .filter(|e| match &e.components.controller {
+                Some(model::CompController::Player { .. }) => true,
+                _ => false,
+            })
         {
             if let Some(prev) = self.players.get_mut(&player.id) {
                 prev.update(player, delta_time, &self.view);
@@ -348,8 +355,12 @@ impl geng::State for App {
                         }
                         geng::MouseButton::Right => {
                             if let Some(entity) = self.view.get_closest_entity(pos) {
-                                self.connection
-                                    .send(ClientMessage::Interact { id: entity.id })
+                                self.connection.send(ClientMessage::Interact {
+                                    target: model::ActionTarget {
+                                        interact: true,
+                                        target_type: model::TargetType::Entity { id: entity.id },
+                                    },
+                                })
                             }
                         }
                         _ => {}

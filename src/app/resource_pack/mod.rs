@@ -1,4 +1,5 @@
 use super::*;
+use client_entity::ClientEntityComponents;
 
 #[derive(Serialize, Deserialize)]
 pub struct BiomeRendering {
@@ -10,13 +11,14 @@ pub struct EntityRendering {
 }
 
 #[derive(Serialize, Deserialize)]
-struct ItemInfo {
+struct EntityInfo {
     model: String,
 }
 
 pub struct ResourcePack {
     pub biomes: HashMap<model::Biome, BiomeRendering>,
     pub entities: HashMap<model::EntityType, EntityRendering>,
+    pub entity_components: HashMap<model::EntityType, ClientEntityComponents>,
 }
 
 impl ResourcePack {
@@ -24,11 +26,13 @@ impl ResourcePack {
         Self {
             biomes: HashMap::new(),
             entities: HashMap::new(),
+            entity_components: HashMap::new(),
         }
     }
     pub fn merge(&mut self, other: ResourcePack) {
         self.biomes.extend(other.biomes);
         self.entities.extend(other.entities);
+        self.entity_components.extend(other.entity_components);
     }
     async fn load(geng: &Rc<Geng>, name: &str) -> Result<Self, anyhow::Error> {
         let path = format!("packs/{}/client", name);
@@ -40,23 +44,28 @@ impl ResourcePack {
                 serde_json::from_str(&data)?
             },
             entities: {
-                let mut items = HashMap::new();
+                let mut models = HashMap::new();
                 if let Ok(data) =
-                    <String as geng::LoadAsset>::load(geng, &format!("{}/entities.json", path))
-                        .await
+                    <String as geng::LoadAsset>::load(geng, &format!("{}/models.json", path)).await
                 {
-                    let items_info: HashMap<model::EntityType, ItemInfo> =
+                    let entities_info: HashMap<model::EntityType, EntityInfo> =
                         serde_json::from_str(&data)?;
-                    for (item_type, item_info) in items_info {
+                    for (entity_type, entity_info) in entities_info {
                         let model = <ez3d::Obj as geng::LoadAsset>::load(
                             geng,
-                            &format!("{}/entities/{}", path, item_info.model),
+                            &format!("{}/entities/{}", path, entity_info.model),
                         )
                         .await?;
-                        items.insert(item_type, EntityRendering { model });
+                        models.insert(entity_type.clone(), EntityRendering { model });
                     }
                 }
-                items
+                models
+            },
+            entity_components: {
+                let data =
+                    <String as geng::LoadAsset>::load(geng, &format!("{}/entities.json", path))
+                        .await?;
+                serde_json::from_str(&data)?
             },
         })
     }

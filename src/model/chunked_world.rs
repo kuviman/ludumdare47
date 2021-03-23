@@ -4,7 +4,7 @@ pub struct ChunkedWorld {
     path: std::path::PathBuf,
     world_gen: WorldGen,
     chunk_size: Vec2<usize>,
-    chunks: HashMap<Vec2<i64>, Chunk>,
+    active_chunks: HashMap<Vec2<i64>, Chunk>,
 }
 
 impl ChunkedWorld {
@@ -17,49 +17,53 @@ impl ChunkedWorld {
             path: path.as_ref().to_owned(),
             chunk_size,
             world_gen,
-            chunks: HashMap::new(),
+            active_chunks: HashMap::new(),
         }
     }
 
-    pub fn insert_entity(&mut self, entity: Entity) -> Result<(), Entity> {
-        let chunk_pos = self.get_chunk_pos(get_tile_pos(entity.pos.unwrap())); //TODO: check that entity actually has a position component
-        if let Some(chunk) = self.chunks.get_mut(&chunk_pos) {
-            chunk.borrow_mut().entities.insert(entity.id, entity);
-            Ok(())
+    pub fn insert_entity(
+        &mut self,
+        entity: Entity,
+        id_generator: &mut IdGenerator,
+    ) -> Result<(), Entity> {
+        let chunk_pos = self.get_chunk_pos(get_tile_pos(entity.pos.unwrap()));
+        let chunk = if let Some(chunk) = self.active_chunks.get_mut(&chunk_pos) {
+            chunk
         } else {
-            Err(entity)
-        }
+            self.load_chunk(chunk_pos, id_generator)
+        };
+        chunk.borrow_mut().entities.insert(entity.id, entity);
+        Ok(())
     }
 
-    pub fn update_entity(&mut self, id: Id) {
+    pub fn update_entity(&mut self, id: Id, id_generator: &mut IdGenerator) {
         if let Some((entity, chunk_pos)) = self.get_entity_chunk_pos(id) {
             let entity_chunk_pos = self.get_chunk_pos(get_tile_pos(entity.pos.unwrap()));
             if chunk_pos != entity_chunk_pos {
                 let entity = self
-                    .chunks
+                    .active_chunks
                     .get_mut(&chunk_pos)
                     .unwrap()
                     .borrow_mut()
                     .entities
                     .remove(&id)
                     .unwrap();
-                let entity_chunk = self.chunks.get_mut(&entity_chunk_pos).unwrap();
-                entity_chunk.borrow_mut().entities.insert(entity.id, entity);
+                self.insert_entity(entity, id_generator).unwrap();
             }
         }
     }
 
     pub fn remove_entity(&mut self, id: Id) -> Option<Entity> {
-        for chunk in self.chunks.values_mut() {
-            if chunk.entities.contains_key(&id) {
-                return Some(chunk.borrow_mut().entities.remove(&id).unwrap());
+        for chunk in self.active_chunks.values_mut() {
+            if let Some(entity) = chunk.borrow_mut().entities.remove(&id) {
+                return Some(entity);
             }
         }
         None
     }
 
     pub fn get_entity(&self, id: Id) -> Option<&Entity> {
-        for chunk in self.chunks.values() {
+        for chunk in self.active_chunks.values() {
             if let Some(entity) = chunk.entities.get(&id) {
                 return Some(entity);
             }
@@ -68,7 +72,7 @@ impl ChunkedWorld {
     }
 
     pub fn get_entity_mut(&mut self, id: Id) -> Option<&mut Entity> {
-        for chunk in self.chunks.values_mut() {
+        for chunk in self.active_chunks.values_mut() {
             if let Some(entity) = chunk.borrow_mut().entities.get_mut(&id) {
                 return Some(entity);
             }
@@ -77,7 +81,7 @@ impl ChunkedWorld {
     }
 
     pub fn get_entity_chunk_pos(&self, id: Id) -> Option<(&Entity, Vec2<i64>)> {
-        for (&chunk_pos, chunk) in &self.chunks {
+        for (&chunk_pos, chunk) in &self.active_chunks {
             if let Some(entity) = chunk.entities.get(&id) {
                 return Some((entity, chunk_pos));
             }
@@ -86,13 +90,13 @@ impl ChunkedWorld {
     }
 
     pub fn entities(&self) -> impl Iterator<Item = &Entity> {
-        self.chunks
+        self.active_chunks
             .values()
             .flat_map(|chunk| chunk.entities.values())
     }
 
     pub fn entities_mut(&mut self) -> impl Iterator<Item = &mut Entity> {
-        self.chunks
+        self.active_chunks
             .values_mut()
             .flat_map(|chunk| chunk.borrow_mut().entities.values_mut())
     }
@@ -109,7 +113,7 @@ impl ChunkedWorld {
         let chunk_pos = self.get_chunk_pos(get_tile_pos(pos));
         for y in chunk_pos.y - chunk_dist.y..chunk_pos.y + chunk_dist.y {
             for x in chunk_pos.x - chunk_dist.x..chunk_pos.x + chunk_dist.x {
-                if let Some(chunk) = self.chunks.get(&vec2(x, y)) {
+                if let Some(chunk) = self.active_chunks.get(&vec2(x, y)) {
                     for entity in chunk.entities.values().filter(|e| predicate(e)) {
                         let delta = pos - entity.pos.unwrap();
                         if delta.x * delta.x + delta.y * delta.y <= range * range {
@@ -124,7 +128,9 @@ impl ChunkedWorld {
 
     pub fn get_tile(&self, pos: Vec2<i64>) -> Option<&Tile> {
         let chunk_pos = self.get_chunk_pos(pos);
-        self.chunks.get(&chunk_pos).map(|chunk| &chunk.tiles[&pos])
+        self.active_chunks
+            .get(&chunk_pos)
+            .map(|chunk| &chunk.tiles[&pos])
     }
 
     pub fn set_load_area_for(
@@ -139,7 +145,7 @@ impl ChunkedWorld {
             y_min: util::div_down(area.y_min.floor() as i64, self.chunk_size.y as i64),
             y_max: util::div_up(area.y_max.ceil() as i64 - 1, self.chunk_size.y as i64) + 1,
         });
-        for (&chunk_pos, chunk) in &mut self.chunks {
+        for (&chunk_pos, chunk) in &mut self.active_chunks {
             if let Some(area) = &area {
                 if !area.contains(chunk_pos) {
                     chunk.unload(loader);
@@ -154,12 +160,12 @@ impl ChunkedWorld {
                 chunk.load(loader);
             }
         }
-        self.chunks.retain(|_, chunk| chunk.has_loaders());
+        self.active_chunks.retain(|_, chunk| chunk.has_loaders());
     }
     pub fn get_updates(&mut self, loader: Id, sender: &mut dyn geng::net::Sender<ServerMessage>) {
         let mut removes = Vec::new();
         let mut inserts = Vec::new();
-        for chunk in self.chunks.values_mut() {
+        for chunk in self.active_chunks.values_mut() {
             chunk.get_updates(loader, &mut removes, &mut inserts);
         }
         for message in removes {
@@ -238,7 +244,7 @@ impl SavedChunk {
 
 impl ChunkedWorld {
     fn load_chunk(&mut self, chunk_pos: Vec2<i64>, id_generator: &mut IdGenerator) -> &mut Chunk {
-        if !self.chunks.contains_key(&chunk_pos) {
+        if !self.active_chunks.contains_key(&chunk_pos) {
             debug!("Loading chunk {}", chunk_pos);
             let chunk_area = AABB::pos_size(
                 chunk_pos * self.chunk_size.map(|x| x as i64),
@@ -253,9 +259,9 @@ impl ChunkedWorld {
                 SavedChunk::generate(chunk_pos, &self.world_gen, id_generator, chunk_area)
             });
             let chunk = Chunk::new(chunk_area, saved_chunk);
-            self.chunks.insert(chunk_pos, chunk);
+            self.active_chunks.insert(chunk_pos, chunk);
         }
-        self.chunks.get_mut(&chunk_pos).unwrap()
+        self.active_chunks.get_mut(&chunk_pos).unwrap()
     }
     fn get_chunk_pos(&self, pos: Vec2<i64>) -> Vec2<i64> {
         vec2(

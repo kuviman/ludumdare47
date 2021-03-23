@@ -7,6 +7,10 @@
     {
       "entity_type": "TreasureMark",
       "weight": 1
+    },
+    {
+      "entity_type": "Crab",
+      "weight": 10
     }
   ],
   "Forest": [
@@ -21,6 +25,10 @@
     {
       "entity_type": "Stick",
       "weight": 10
+    },
+    {
+      "entity_type": "Deer",
+      "weight": 5
     }
   ],
   "Hills": [
@@ -39,6 +47,10 @@
     {
       "entity_type": "GoldRock",
       "weight": 1
+    },
+    {
+      "entity_type": "Goat",
+      "weight": 5
     }
   ]
 }

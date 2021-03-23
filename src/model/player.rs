@@ -57,29 +57,3 @@ impl Default for PlayerColors {
         Self::new()
     }
 }
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum PlayerAction {
-    MovingTo {
-        target: MovementTarget,
-        finish_action: Option<MomentAction>,
-    },
-    Crafting {
-        item_id: Id,
-        recipe: Recipe,
-        time_left: f32,
-    },
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum MovementTarget {
-    Position { pos: Vec2<f32> },
-    Entity { id: Id },
-}
-
-#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
-pub enum MomentAction {
-    Interact { id: Id },
-    Drop { pos: Vec2<f32> },
-    PickUp { id: Id },
-}

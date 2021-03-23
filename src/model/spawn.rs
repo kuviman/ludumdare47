@@ -9,12 +9,16 @@ impl Model {
             let mut components = self.resource_pack.entity_components[&entity_type].clone();
             components.pos = Some(pos);
             let mut entity = Entity::new(&entity_type, components, player_id);
-            let player = entity.components.player.as_mut().unwrap();
-            player.colors = PlayerColors::new();
+            let player = entity.load_area.as_mut().unwrap();
             player.load_area = AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0));
+            if let Some(CompController::Player { colors }) = entity.controller.as_mut() {
+                *colors = PlayerColors::new();
+            }
 
             self.sounds.insert(player_id, vec![]);
-            self.chunked_world.insert_entity(entity).unwrap();
+            self.chunked_world
+                .insert_entity(entity, &mut self.id_generator)
+                .unwrap();
         } else {
             error!("Did not find spawnable position"); // TODO
         }

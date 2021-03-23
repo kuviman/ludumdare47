@@ -1,0 +1,68 @@
+{
+  "Pebble": {
+    "model": "pebble.obj"
+  },
+  "SharpStone": {
+    "model": "sharp_stone.obj"
+  },
+  "Stick": {
+    "model": "stick.obj"
+  },
+  "Axe": {
+    "model": "axe.obj"
+  },
+  "DoubleStick": {
+    "model": "double_stick.obj"
+  },
+  "Log": {
+    "model": "log.obj"
+  },
+  "Planks": {
+    "model": "planks.obj"
+  },
+  "Torch": {
+    "model": "torch.obj"
+  },
+  "Shovel": {
+    "model": "shovel.obj"
+  },
+  "Pickaxe": {
+    "model": "pickaxe.obj"
+  },
+  "GoldPickaxe": {
+    "model": "gold_pickaxe.obj"
+  },
+  "GoldNugget": {
+    "model": "gold_nugget.obj"
+  },
+  "TreasureMark": {
+    "model": "treasure_mark.obj"
+  },
+  "TreasureChest": {
+    "model": "treasure_chest.obj"
+  },
+  "Tree": {
+    "model": "tree.obj"
+  },
+  "Campfire": {
+    "model": "campfire.obj"
+  },
+  "Rock": {
+    "model": "rock.obj"
+  },
+  "GoldRock": {
+    "model": "gold_rock.obj"
+  },
+  "Statue": {
+    "model": "statue.obj"
+  },
+  "Crab": {
+    "model": "crab.obj"
+  },
+  "Deer": {
+    "model": "deer.obj"
+  },
+  "Goat": {
+    "model": "goat.obj"
+  }
+}

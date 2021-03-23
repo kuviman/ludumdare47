@@ -3,7 +3,6 @@ use super::*;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ClientView {
     pub players_online: usize,
-    pub player_movement_speed: f32,
     pub current_time: usize,
     pub ticks_per_second: f32,
     pub entities: Vec<Entity>,
@@ -23,15 +22,16 @@ impl ClientView {
 impl Model {
     pub fn get_view(&mut self, player_id: Id) -> ClientView {
         let entity = self.chunked_world.get_entity(player_id).unwrap();
-        let player = entity.components.player.as_ref().unwrap();
 
         let vision = ClientView {
             players_online: self
                 .chunked_world
                 .entities()
-                .filter(|e| e.components.player.is_some())
+                .filter(|e| match &e.components.controller {
+                    Some(CompController::Player { .. }) => true,
+                    _ => false,
+                })
                 .count(),
-            player_movement_speed: self.rules.player_movement_speed,
             ticks_per_second: self.ticks_per_second,
             current_time: self.current_time,
             entities: self
@@ -39,7 +39,13 @@ impl Model {
                 .entities()
                 .filter(|e| {
                     e.id == entity.id
-                        || e.pos.is_some() && player.load_area.contains(e.pos.unwrap())
+                        || e.pos.is_some()
+                            && entity
+                                .load_area
+                                .as_ref()
+                                .unwrap()
+                                .load_area
+                                .contains(e.pos.unwrap())
                 })
                 .cloned()
                 .collect(),

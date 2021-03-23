@@ -51,7 +51,7 @@ pub struct Model {
 pub enum Message {
     RequestUpdate { load_area: Option<AABB<f32>> },
     Goto { pos: Vec2<f32> },
-    Interact { id: Id },
+    Interact { target: ActionTarget },
     Drop { pos: Vec2<f32> },
     PickUp { id: Id },
     SayHi,
@@ -152,13 +152,11 @@ impl Model {
     ) -> Self {
         let world_path = std::path::Path::new("saves").join(world_name);
         let rules = Rules {
-            player_movement_speed: config.player_movement_speed,
             client_view_distance: config.view_distance,
             campfire_light: config.campfire_light,
             torch_light: config.torch_light,
             statue_light: config.statue_light,
             regeneration_percent: config.regeneration_percent,
-            player_interaction_range: config.player_interaction_range,
             sound_distance: config.sound_distance,
             generation_distance: config.generation_distance,
             spawn_area: config.spawn_area,
@@ -192,11 +190,10 @@ impl Model {
             .get_entity_mut(player_id)
             .unwrap()
             .clone();
-        let mut player = entity.components.player.as_mut().unwrap();
         match message {
             Message::RequestUpdate { load_area } => {
                 if let Some(load_area) = load_area {
-                    player.load_area = load_area;
+                    entity.load_area.as_mut().unwrap().load_area = load_area;
                     self.chunked_world.set_load_area_for(
                         player_id,
                         &mut self.id_generator,
@@ -208,28 +205,22 @@ impl Model {
                 self.chunked_world.get_updates(player_id, sender);
             }
             Message::Goto { pos } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Position { pos },
-                    finish_action: None,
+                entity.action.as_mut().unwrap().current_action = Some(EntityAction::MovingTo {
+                    target: ActionTarget {
+                        interact: false,
+                        target_type: TargetType::Position { pos },
+                    },
                 });
             }
-            Message::Interact { id } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Entity { id },
-                    finish_action: Some(MomentAction::Interact { id }),
-                });
+            Message::Interact { target } => {
+                entity.action.as_mut().unwrap().current_action =
+                    Some(EntityAction::Interact { target });
             }
             Message::Drop { pos } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Position { pos },
-                    finish_action: Some(MomentAction::Drop { pos }),
-                });
+                entity.action.as_mut().unwrap().current_action = Some(EntityAction::Drop { pos });
             }
             Message::PickUp { id } => {
-                player.action = Some(PlayerAction::MovingTo {
-                    target: MovementTarget::Entity { id },
-                    finish_action: Some(MomentAction::PickUp { id }),
-                });
+                entity.action.as_mut().unwrap().current_action = Some(EntityAction::PickUp { id });
             }
             Message::SayHi => {
                 if let Some(pos) = entity.pos {
@@ -241,9 +232,12 @@ impl Model {
     }
     fn play_sound(&mut self, sound: Sound, pos: Vec2<f32>) {
         let range = self.rules.sound_distance;
-        for entity in self
-            .chunked_world
-            .find_range(pos, range, |e| e.components.player.is_some())
+        for entity in
+            self.chunked_world
+                .find_range(pos, range, |e| match &e.components.controller {
+                    Some(CompController::Player { .. }) => true,
+                    _ => false,
+                })
         {
             self.sounds.get_mut(&entity.id).unwrap().push(sound);
         }

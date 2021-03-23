@@ -6,7 +6,7 @@ pub struct Uniforms {
 }
 
 impl Uniforms {
-    pub fn new(_view: &model::ClientView) -> Self {
+    pub fn new(_view: &ClientView) -> Self {
         let angle = f32::PI / 3.0;
         Self {
             u_light_direction: vec3(angle.cos(), 0.0, angle.sin()) * angle.sin(),

@@ -1,12 +1,19 @@
 {
   "Player": {
     "size": 0.5,
-    "player": {
-      "interaction_range": 1.5
+    "movement_speed": 2.0,
+    "controller": {
+      "Player": {}
     },
     "collidable": {
       "collision_type": "Pushable"
-    }
+    },
+    "holding": {},
+    "action": {},
+    "interaction": {
+      "interaction_range": 1.5
+    },
+    "load_area": {}
   },
   "Pebble": {
     "size": 0.5,
@@ -92,5 +99,44 @@
     "collidable": {
       "collision_type": "Static"
     }
+  },
+  "Crab": {
+    "size": 0.5,
+    "movement_speed": 1.0,
+    "collidable": {
+      "collision_type": "Pushable"
+    },
+    "controller": {
+      "BiomeRandomWalker": {
+        "biome": "Beach"
+      }
+    },
+    "action": {}
+  },
+  "Deer": {
+    "size": 0.5,
+    "movement_speed": 1.0,
+    "collidable": {
+      "collision_type": "Pushable"
+    },
+    "controller": {
+      "BiomeRandomWalker": {
+        "biome": "Forest"
+      }
+    },
+    "action": {}
+  },
+  "Goat": {
+    "size": 0.5,
+    "movement_speed": 1.0,
+    "collidable": {
+      "collision_type": "Pushable"
+    },
+    "controller": {
+      "BiomeRandomWalker": {
+        "biome": "Hills"
+      }
+    },
+    "action": {}
   }
 }
