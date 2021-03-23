@@ -24,7 +24,7 @@ impl ClientEntity {
     pub fn from_server_entity(server_entity: model::Entity, resource_pack: &ResourcePack) -> Self {
         Self {
             extra_components: {
-                let mut components =
+                let components =
                     resource_pack.entity_components[&server_entity.entity_type].clone();
                 components
             },
