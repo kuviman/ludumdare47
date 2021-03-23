@@ -11,7 +11,7 @@ impl Model {
             let mut entity = Entity::new(&entity_type, components, player_id);
             let player = entity.load_area.as_mut().unwrap();
             player.load_area = AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0));
-            if let Some(CompRenderable::Player { colors }) = entity.renderable.as_mut() {
+            if let Some(CompController::Player { colors }) = entity.controller.as_mut() {
                 *colors = PlayerColors::new();
             }
 

@@ -12,8 +12,6 @@ pub struct Entity {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EntityComponents {
     #[serde(default)]
-    pub renderable: Option<CompRenderable>,
-    #[serde(default)]
     pub pos: Option<Vec2<f32>>,
     #[serde(default)]
     pub size: Option<f32>,

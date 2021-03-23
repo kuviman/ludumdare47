@@ -1,18 +1,15 @@
 {
   "CrystalShard": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "MagicCrystal": {
-    "renderable": "Simple",
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
     }
   },
   "BigMushroom": {
-    "renderable": "Simple",
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"

@@ -28,7 +28,7 @@ impl Model {
                 .chunked_world
                 .entities()
                 .filter(|e| match &e.components.controller {
-                    Some(CompController::Player) => true,
+                    Some(CompController::Player { .. }) => true,
                     _ => false,
                 })
                 .count(),

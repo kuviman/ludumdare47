@@ -15,18 +15,14 @@ pub enum CollisionType {
 pub struct CompPickable();
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum CompRenderable {
-    Simple,
+pub enum CompController {
     Player {
-        #[serde(default)]
+        #[serde(default = "PlayerColors::new")]
         colors: PlayerColors,
     },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum CompController {
-    Player,
-    BiomeRandomWalker { biome: Biome },
+    BiomeRandomWalker {
+        biome: Biome,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

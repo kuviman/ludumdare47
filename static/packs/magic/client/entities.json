@@ -1,11 +1,11 @@
 {
   "CrystalShard": {
-    "model": "crystal_shard.obj"
+    "renderable": "Simple"
   },
   "MagicCrystal": {
-    "model": "magic_crystal.obj"
+    "renderable": "Simple"
   },
   "BigMushroom": {
-    "model": "big_mushroom.obj"
+    "renderable": "Simple"
   }
 }

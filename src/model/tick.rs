@@ -106,7 +106,7 @@ impl Model {
 
     fn entity_action_decide(&self, entity: &mut Entity) {
         match entity.controller.as_ref().unwrap() {
-            CompController::Player => (),
+            CompController::Player { .. } => (),
             CompController::BiomeRandomWalker { biome } => {
                 let entity_action = entity.action.as_ref().unwrap();
                 if entity_action.current_action.is_none() {

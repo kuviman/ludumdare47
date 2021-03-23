@@ -1,4 +1,5 @@
 use super::*;
+use client_entity::CompRenderable;
 
 impl App {
     pub fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
@@ -41,10 +42,10 @@ impl App {
             .view
             .entities
             .iter()
-            .filter(|entity| entity.renderable.is_some())
+            .filter(|entity| entity.extra_components.renderable.is_some())
         {
-            match entity.renderable.as_ref().unwrap() {
-                model::CompRenderable::Simple => {
+            match entity.extra_components.renderable.as_ref().unwrap() {
+                CompRenderable::Simple => {
                     let pos = entity.pos.unwrap();
                     let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
                     let pos = pos.extend(height);
@@ -58,7 +59,14 @@ impl App {
                             i_color: Color::WHITE,
                         });
                 }
-                model::CompRenderable::Player { colors } => {
+                CompRenderable::Player => {
+                    let colors = if let Some(model::CompController::Player { colors }) =
+                        entity.controller.as_ref()
+                    {
+                        colors
+                    } else {
+                        unreachable!()
+                    };
                     let data = self
                         .players
                         .entry(entity.id)

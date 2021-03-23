@@ -235,7 +235,7 @@ impl Model {
         for entity in
             self.chunked_world
                 .find_range(pos, range, |e| match &e.components.controller {
-                    Some(CompController::Player) => true,
+                    Some(CompController::Player { .. }) => true,
                     _ => false,
                 })
         {

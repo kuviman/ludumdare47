@@ -1,11 +1,10 @@
 {
   "Player": {
-    "renderable": {
-      "Player": {}
-    },
     "size": 0.5,
     "movement_speed": 2.0,
-    "controller": "Player",
+    "controller": {
+      "Player": {}
+    },
     "collidable": {
       "collision_type": "Pushable"
     },
@@ -17,111 +16,91 @@
     "load_area": {}
   },
   "Pebble": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "SharpStone": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Stick": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Axe": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "DoubleStick": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Log": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Planks": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Torch": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Shovel": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Pickaxe": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "GoldPickaxe": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "GoldNugget": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "TreasureMark": {
-    "renderable": "Simple",
     "size": 0.5
   },
   "TreasureChest": {
-    "renderable": "Simple",
     "size": 0.5,
     "pickable": []
   },
   "Tree": {
-    "renderable": "Simple",
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
     }
   },
   "Campfire": {
-    "renderable": "Simple",
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
     }
   },
   "Rock": {
-    "renderable": "Simple",
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
     }
   },
   "GoldRock": {
-    "renderable": "Simple",
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
     }
   },
   "Statue": {
-    "renderable": "Simple",
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
     }
   },
   "Crab": {
-    "renderable": "Simple",
     "size": 0.5,
     "movement_speed": 1.0,
     "collidable": {
@@ -135,7 +114,6 @@
     "action": {}
   },
   "Deer": {
-    "renderable": "Simple",
     "size": 0.5,
     "movement_speed": 1.0,
     "collidable": {
@@ -149,7 +127,6 @@
     "action": {}
   },
   "Goat": {
-    "renderable": "Simple",
     "size": 0.5,
     "movement_speed": 1.0,
     "collidable": {

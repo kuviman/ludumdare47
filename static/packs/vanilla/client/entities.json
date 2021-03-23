@@ -1,68 +1,71 @@
 {
+  "Player": {
+    "renderable": "Player"
+  },
   "Pebble": {
-    "model": "pebble.obj"
+    "renderable": "Simple"
   },
   "SharpStone": {
-    "model": "sharp_stone.obj"
+    "renderable": "Simple"
   },
   "Stick": {
-    "model": "stick.obj"
+    "renderable": "Simple"
   },
   "Axe": {
-    "model": "axe.obj"
+    "renderable": "Simple"
   },
   "DoubleStick": {
-    "model": "double_stick.obj"
+    "renderable": "Simple"
   },
   "Log": {
-    "model": "log.obj"
+    "renderable": "Simple"
   },
   "Planks": {
-    "model": "planks.obj"
+    "renderable": "Simple"
   },
   "Torch": {
-    "model": "torch.obj"
+    "renderable": "Simple"
   },
   "Shovel": {
-    "model": "shovel.obj"
+    "renderable": "Simple"
   },
   "Pickaxe": {
-    "model": "pickaxe.obj"
+    "renderable": "Simple"
   },
   "GoldPickaxe": {
-    "model": "gold_pickaxe.obj"
+    "renderable": "Simple"
   },
   "GoldNugget": {
-    "model": "gold_nugget.obj"
+    "renderable": "Simple"
   },
   "TreasureMark": {
-    "model": "treasure_mark.obj"
+    "renderable": "Simple"
   },
   "TreasureChest": {
-    "model": "treasure_chest.obj"
+    "renderable": "Simple"
   },
   "Tree": {
-    "model": "tree.obj"
+    "renderable": "Simple"
   },
   "Campfire": {
-    "model": "campfire.obj"
+    "renderable": "Simple"
   },
   "Rock": {
-    "model": "rock.obj"
+    "renderable": "Simple"
   },
   "GoldRock": {
-    "model": "gold_rock.obj"
+    "renderable": "Simple"
   },
   "Statue": {
-    "model": "statue.obj"
+    "renderable": "Simple"
   },
   "Crab": {
-    "model": "crab.obj"
+    "renderable": "Simple"
   },
   "Deer": {
-    "model": "deer.obj"
+    "renderable": "Simple"
   },
   "Goat": {
-    "model": "goat.obj"
+    "renderable": "Simple"
   }
 }
