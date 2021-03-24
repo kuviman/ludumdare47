@@ -19,12 +19,23 @@ impl App {
             ))
             .map(|pos| pos.xy());
         let mut selected_entity = None;
-        if let Some(data) = self.players.get(&self.player_id) {
-            self.draw_circle(framebuffer, data.pos, data.size, Color::GREEN);
+        if let Some(entity) = self.entities.get(&self.player_id) {
+            let pos = if let Some(interpolate) = &entity.extra_components.interpolate {
+                interpolate.current_pos
+            } else {
+                entity.pos.unwrap()
+            };
+            self.draw_circle(
+                framebuffer,
+                pos,
+                entity.size.unwrap(),
+                Color::GREEN,
+            );
         }
         if let Some(pos) = selected_pos {
             if let Some(entity) = self.view.get_closest_entity(pos) {
                 if entity.id != self.player_id {
+                    let entity = self.entities.get(&entity.id).unwrap();
                     self.draw_circle(
                         framebuffer,
                         entity.pos.unwrap(),
@@ -32,30 +43,38 @@ impl App {
                         Color::rgba(1.0, 1.0, 1.0, 0.5),
                     );
                 }
-                selected_entity = Some(entity);
+                selected_entity = Some(entity.id);
             }
         }
 
         // Prepare entities' models
         let mut instances: HashMap<model::EntityType, Vec<ez3d::Instance>> = HashMap::new();
         for entity in self
-            .view
             .entities
-            .iter()
+            .values()
             .filter(|entity| entity.extra_components.renderable.is_some())
         {
+            let pos = if let Some(interpolate) = &entity.extra_components.interpolate {
+                interpolate.current_pos
+            } else {
+                entity.pos.unwrap()
+            };
+            let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
+            let pos = if let Some(_) = &entity.extra_components.hopping {
+                pos.extend(entity.step() + height)
+            } else {
+                pos.extend(height)
+            };
+            let rotation = entity.extra_components.rotation.unwrap_or(0.0);
             match entity.extra_components.renderable.as_ref().unwrap() {
                 CompRenderable::Simple => {
-                    let pos = entity.pos.unwrap();
-                    let height = self.tile_mesh.get_height(pos).unwrap_or(0.0);
-                    let pos = pos.extend(height);
                     instances
                         .entry(entity.entity_type.clone())
                         .or_default()
                         .push(ez3d::Instance {
                             i_pos: pos,
                             i_size: 0.5,
-                            i_rotation: 0.0,
+                            i_rotation: -rotation,
                             i_color: Color::WHITE,
                         });
                 }
@@ -67,14 +86,6 @@ impl App {
                     } else {
                         unreachable!()
                     };
-                    let data = self
-                        .players
-                        .entry(entity.id)
-                        .or_insert(PlayerData::new(entity));
-                    let mut pos = data.pos.extend(data.step());
-                    let rotation = data.rotation;
-                    let height = self.tile_mesh.get_height(pos.xy()).unwrap_or(0.0);
-                    pos.z += height;
                     self.ez3d.draw(
                         framebuffer,
                         &self.camera,
@@ -157,10 +168,11 @@ impl App {
             }
         }
 
-        if let Some(entity) = selected_entity {
+        if let Some(entity_id) = selected_entity {
+            let entity = self.entities.get_mut(&entity_id).unwrap();
             let mut text;
             let pos;
-            if let Some(data) = self.players.get(&entity.id) {
+            if let Some(CompRenderable::Player { .. }) = entity.extra_components.renderable {
                 text = if entity.id == self.player_id {
                     "Me"
                 } else {
@@ -170,9 +182,11 @@ impl App {
                 if let Some(item) = &entity.holding.as_ref().unwrap().entity {
                     text = format!("{}, holding {}", text, item);
                 }
-                pos = data
-                    .pos
-                    .extend(self.tile_mesh.get_height(data.pos).unwrap_or(0.0));
+                pos = entity.pos.unwrap().extend(
+                    self.tile_mesh
+                        .get_height(entity.pos.unwrap())
+                        .unwrap_or(0.0),
+                );
             } else {
                 text = entity.entity_type.to_string();
                 pos = entity.pos.unwrap().extend(
@@ -191,18 +205,12 @@ impl App {
             );
         }
 
-        if let Some(entity) = self
-            .view
-            .entities
-            .iter()
-            .find(|player| player.id == self.player_id)
-        {
-            let data = &self.players[&entity.id];
+        if let Some(entity) = self.entities.get(&self.player_id) {
             if let Some(action) = &entity.action.as_ref().unwrap().current_action {
                 match action {
                     model::EntityAction::Crafting { time_left, .. } => {
                         let text = format!("{:.1}", time_left);
-                        let pos = data.pos;
+                        let pos = entity.pos.unwrap();
                         let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                         self.geng.default_font().draw_aligned(
                             framebuffer,

@@ -2,7 +2,6 @@ use super::*;
 
 mod camera;
 mod client_entity;
-mod client_view;
 mod draw;
 mod ez3d;
 mod light;
@@ -11,7 +10,7 @@ mod tile_mesh;
 mod traffic;
 
 use camera::Camera;
-use client_view::ClientView;
+use client_entity::ClientEntity;
 use ez3d::Ez3D;
 pub use resource_pack::ResourcePack;
 use tile_mesh::TileMesh;
@@ -36,50 +35,6 @@ pub struct Assets {
     hi: geng::Sound,
     hello: geng::Sound,
     heyo: geng::Sound,
-}
-
-struct PlayerData {
-    pos: Vec2<f32>,
-    size: f32,
-    target_pos: Vec2<f32>,
-    speed: f32,
-    rotation: f32,
-    ampl: f32,
-    t: f32,
-}
-
-impl PlayerData {
-    fn new(player: &model::Entity) -> Self {
-        Self {
-            pos: player.pos.unwrap(),
-            size: player.size.unwrap(),
-            speed: 0.0,
-            rotation: 0.0,
-            target_pos: player.pos.unwrap(),
-            ampl: 0.0,
-            t: 0.0,
-        }
-    }
-    fn step(&self) -> f32 {
-        self.ampl * self.t.sin().abs() * 0.1
-    }
-    fn update(&mut self, player: &model::Entity, delta_time: f32, view: &ClientView) {
-        let player_pos = player.pos.unwrap();
-        self.size = player.size.unwrap();
-        self.t += delta_time * 10.0;
-        if player_pos != self.target_pos {
-            self.target_pos = player_pos;
-            self.speed = (player_pos - self.pos).len() / (2.0 / view.ticks_per_second);
-        }
-        let dpos = player_pos - self.pos;
-        self.pos += dpos.clamp(self.speed * delta_time);
-        if dpos.len() > 1e-9 {
-            self.rotation = dpos.arg();
-            self.ampl = (self.ampl + delta_time * 20.0).min(1.0);
-        } else {
-            self.ampl = (self.ampl - delta_time * 20.0).max(0.0);
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -147,10 +102,10 @@ pub struct App {
     circle: ugli::VertexBuffer<ez3d::Vertex>,
     connection: Connection,
     player_id: Id,
-    view: ClientView,
+    view: model::ClientView,
+    entities: HashMap<Id, ClientEntity>,
     tile_mesh: TileMesh,
     light: light::Uniforms,
-    players: HashMap<Id, PlayerData>,
     music: Option<geng::SoundEffect>,
     walk_sound: Option<geng::SoundEffect>,
     ui_state: UiState,
@@ -168,7 +123,6 @@ impl App {
     ) -> Self {
         let ez3d = Rc::new(Ez3D::new(geng));
         let ez3d = &ez3d;
-        let view = ClientView::from_server_view(view, resource_pack);
         let light = light::Uniforms::new(&view);
         let tile_mesh = TileMesh::new(geng, ez3d, resource_pack);
         connection.send(ClientMessage::RequestUpdate { load_area: None });
@@ -184,6 +138,7 @@ impl App {
             connection,
             player_id,
             view,
+            entities: HashMap::new(),
             tile_mesh,
             circle: ugli::VertexBuffer::new_static(geng.ugli(), {
                 const N: usize = 25;
@@ -203,7 +158,6 @@ impl App {
                     .collect()
             }),
             light,
-            players: HashMap::new(),
             music: None,
             walk_sound: None,
             ui_state: UiState::new(geng),
@@ -247,7 +201,16 @@ impl geng::State for App {
             music.set_volume(self.ui_state.volume() * 0.3);
         }
         if let Some(sound) = &mut self.walk_sound {
-            sound.set_volume(self.ui_state.volume() * self.players[&self.player_id].ampl as f64);
+            let mut play = false;
+            if let Some(entity) = self.entities.get(&self.player_id) {
+                if let Some(hopping) = &entity.extra_components.hopping {
+                    sound.set_volume(self.ui_state.volume() * hopping.ampl as f64);
+                    play = true;
+                }
+            }
+            if !play {
+                sound.set_volume(0.0);
+            }
         }
         let delta_time = delta_time as f32;
 
@@ -273,7 +236,7 @@ impl geng::State for App {
                         sound.set_volume(self.ui_state.volume());
                         sound.play();
                     }
-                    self.view = ClientView::from_server_view(view, &self.resource_pack);
+                    self.view = view;
                 }
                 ServerMessage::UpdateTiles(tiles) => {
                     self.tile_mesh.update(&tiles);
@@ -285,39 +248,35 @@ impl geng::State for App {
             }
         }
 
-        for player in self
-            .view
-            .entities
-            .iter()
-            .filter(|e| match &e.components.controller {
-                Some(model::CompController::Player { .. }) => true,
-                _ => false,
-            })
-        {
-            if let Some(prev) = self.players.get_mut(&player.id) {
-                prev.update(player, delta_time, &self.view);
+        for server_entity in &self.view.entities {
+            if let Some(entity) = self.entities.get_mut(&server_entity.id) {
+                entity.update_client(server_entity.clone());
+                entity.update(delta_time, self.view.ticks_per_second);
             } else {
-                self.players.insert(player.id, PlayerData::new(player));
+                self.entities.insert(
+                    server_entity.id,
+                    ClientEntity::new(server_entity.clone(), &self.resource_pack),
+                );
             }
         }
 
+        let player_pos = self.entities[&self.player_id].pos.unwrap();
+
         if request_update {
-            let player = self.players.get(&self.player_id).unwrap();
             let load_radius = self.camera.distance;
             self.connection.send(ClientMessage::RequestUpdate {
                 load_area: Some(AABB::from_corners(
-                    player.pos - vec2(load_radius, load_radius),
-                    player.pos + vec2(load_radius, load_radius),
+                    player_pos - vec2(load_radius, load_radius),
+                    player_pos + vec2(load_radius, load_radius),
                 )),
             });
         }
 
-        self.players.retain({
+        self.entities.retain({
             let view = &self.view;
             move |&id, _| view.entities.iter().find(|e| e.id == id).is_some()
         });
 
-        let player_pos = self.players.get(&self.player_id).unwrap().pos;
         self.camera.center += (player_pos
             .extend(self.tile_mesh.get_height(player_pos).unwrap_or(0.0))
             - self.camera.center)

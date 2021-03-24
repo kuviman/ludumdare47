@@ -1,6 +1,9 @@
 {
   "Player": {
-    "renderable": "Player"
+    "renderable": "Player",
+    "rotation": 0,
+    "interpolate": {},
+    "hopping": {}
   },
   "Pebble": {
     "renderable": "Simple"
@@ -60,12 +63,18 @@
     "renderable": "Simple"
   },
   "Crab": {
-    "renderable": "Simple"
+    "renderable": "Simple",
+    "rotation": 0,
+    "interpolate": {}
   },
   "Deer": {
-    "renderable": "Simple"
+    "renderable": "Simple",
+    "rotation": 0,
+    "interpolate": {}
   },
   "Goat": {
-    "renderable": "Simple"
+    "renderable": "Simple",
+    "rotation": 0,
+    "interpolate": {}
   }
 }
