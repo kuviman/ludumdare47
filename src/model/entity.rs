@@ -74,6 +74,10 @@ pub enum EntityAction {
         recipe: Recipe,
         time_left: f32,
     },
+    Attacking {
+        target_entity_id: Id,
+        time_left: f32,
+    },
     Interact {
         target: ActionTarget,
     },
@@ -87,8 +91,15 @@ pub enum EntityAction {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActionTarget {
-    pub interact: bool,
+    pub interaction_type: InteractionType,
     pub target_type: TargetType,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum InteractionType {
+    None,
+    Interact,
+    Attack,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

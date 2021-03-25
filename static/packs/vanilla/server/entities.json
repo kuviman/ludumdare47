@@ -13,7 +13,11 @@
     "interaction": {
       "interaction_range": 1.5
     },
-    "load_area": {}
+    "load_area": {},
+    "hp": {
+      "max_hp": 100.0,
+      "current_hp": 100.0
+    }
   },
   "Pebble": {
     "size": 0.5,
@@ -29,7 +33,12 @@
   },
   "Axe": {
     "size": 0.5,
-    "pickable": []
+    "pickable": [],
+    "weapon": {
+      "attack_time": 0.5,
+      "damage": 10.0,
+      "attack_distance": 2.0
+    }
   },
   "DoubleStick": {
     "size": 0.5,
@@ -74,6 +83,10 @@
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
+    },
+    "hp": {
+      "max_hp": 20.0,
+      "current_hp": 20.0
     }
   },
   "Campfire": {

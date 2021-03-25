@@ -316,13 +316,32 @@ impl geng::State for App {
                             if let Some(entity) = self.view.get_closest_entity(pos) {
                                 self.connection.send(ClientMessage::Interact {
                                     target: model::ActionTarget {
-                                        interact: true,
+                                        interaction_type: model::InteractionType::Interact,
                                         target_type: model::TargetType::Entity { id: entity.id },
                                     },
                                 })
                             }
                         }
                         _ => {}
+                    }
+                }
+            }
+            geng::Event::KeyDown {
+                key: geng::Key::Space,
+            } => {
+                let position = self.geng.window().mouse_pos();
+                if let Some(pos) = self.tile_mesh.intersect(
+                    self.camera
+                        .pixel_ray(self.framebuffer_size, position.map(|x| x as f32)),
+                ) {
+                    let pos = pos.xy();
+                    if let Some(entity) = self.view.get_closest_entity(pos) {
+                        self.connection.send(ClientMessage::Interact {
+                            target: model::ActionTarget {
+                                interaction_type: model::InteractionType::Attack,
+                                target_type: model::TargetType::Entity { id: entity.id },
+                            },
+                        });
                     }
                 }
             }

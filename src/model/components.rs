@@ -59,11 +59,12 @@ impl CompLoadArea {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompHP {
     pub max_hp: f32,
-    pub hp: f32,
+    pub current_hp: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompWeapon {
     pub attack_time: f32,
     pub damage: f32,
+    pub attack_distance: f32,
 }

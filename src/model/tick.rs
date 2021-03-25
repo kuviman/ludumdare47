@@ -119,7 +119,7 @@ impl Model {
                     if let Some(tile) = self.chunked_world.get_tile(get_tile_pos(random_pos)) {
                         if tile.biome == *biome {
                             let target = ActionTarget {
-                                interact: false,
+                                interaction_type: InteractionType::None,
                                 target_type: TargetType::Position { pos: random_pos },
                             };
                             let entity_action = entity.action.as_mut().unwrap();
@@ -195,31 +195,72 @@ impl Model {
                         });
                     }
                 }
-                EntityAction::Interact { target } => {
-                    if self.can_interact(entity, &target) {
-                        let ingredient1 = entity
-                            .holding
-                            .as_ref()
-                            .unwrap()
-                            .entity
-                            .as_ref()
-                            .map(|e| e.entity_type.clone());
-                        let (conditions, ingredient2) =
-                            self.get_target_conditions(&target.target_type);
-                        let recipe = self.resource_pack.recipes.iter().find(|recipe| {
-                            recipe.ingredients_equal(
-                                ingredient1.clone(),
-                                ingredient2.clone(),
-                                conditions.clone(),
-                            )
+                EntityAction::Attacking {
+                    target_entity_id,
+                    time_left,
+                } => {
+                    let time_left = time_left - 1.0 / self.ticks_per_second;
+                    if time_left <= 0.0 {
+                        let weapon = entity.holding.as_ref().unwrap().entity.as_ref().unwrap();
+                        if let Some(weapon) = weapon.weapon.as_ref() {
+                            self.damage_entity(target_entity_id, weapon);
+                        }
+                    } else {
+                        let entity_action = entity.action.as_mut().unwrap();
+                        entity_action.current_action = Some(EntityAction::Attacking {
+                            target_entity_id,
+                            time_left,
                         });
-                        if let Some(recipe) = recipe {
-                            let entity_action = entity.action.as_mut().unwrap();
-                            entity_action.current_action = Some(EntityAction::Crafting {
-                                target,
-                                recipe: recipe.clone(),
-                                time_left: recipe.craft_time,
-                            });
+                    }
+                }
+                EntityAction::Interact { target } => {
+                    let (_, reached) = self.reached_target(entity, &target);
+                    if reached {
+                        match &target.interaction_type {
+                            InteractionType::Interact => {
+                                let ingredient1 = entity
+                                    .holding
+                                    .as_ref()
+                                    .unwrap()
+                                    .entity
+                                    .as_ref()
+                                    .map(|e| e.entity_type.clone());
+                                let (conditions, ingredient2) =
+                                    self.get_target_conditions(&target.target_type);
+                                let recipe = self.resource_pack.recipes.iter().find(|recipe| {
+                                    recipe.ingredients_equal(
+                                        ingredient1.clone(),
+                                        ingredient2.clone(),
+                                        conditions.clone(),
+                                    )
+                                });
+                                if let Some(recipe) = recipe {
+                                    let entity_action = entity.action.as_mut().unwrap();
+                                    entity_action.current_action = Some(EntityAction::Crafting {
+                                        target,
+                                        recipe: recipe.clone(),
+                                        time_left: recipe.craft_time,
+                                    });
+                                }
+                            }
+                            InteractionType::Attack => {
+                                if let TargetType::Entity { id } = &target.target_type {
+                                    if let Some(holding) = entity.holding.as_ref() {
+                                        if let Some(holding) = &holding.entity {
+                                            if let Some(weapon) = holding.weapon.as_ref() {
+                                                let time_left = weapon.attack_time;
+                                                let entity_action = entity.action.as_mut().unwrap();
+                                                entity_action.current_action =
+                                                    Some(EntityAction::Attacking {
+                                                        target_entity_id: *id,
+                                                        time_left,
+                                                    });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            InteractionType::None => (),
                         }
                     } else {
                         let entity_action = entity.action.as_mut().unwrap();
@@ -231,10 +272,11 @@ impl Model {
                 }
                 EntityAction::Drop { pos } => {
                     let target = ActionTarget {
-                        interact: true,
+                        interaction_type: InteractionType::Interact,
                         target_type: TargetType::Position { pos },
                     };
-                    if self.can_interact(entity, &target) {
+                    let (_, reached) = self.reached_target(entity, &target);
+                    if reached {
                         let hand_entity = &mut entity.holding.as_mut().unwrap().entity;
                         if let Some(mut hand_entity) = hand_entity.take() {
                             hand_entity.pos = Some(pos);
@@ -251,10 +293,11 @@ impl Model {
                 }
                 EntityAction::PickUp { id } => {
                     let target = ActionTarget {
-                        interact: true,
+                        interaction_type: InteractionType::Interact,
                         target_type: TargetType::Entity { id },
                     };
-                    if self.can_interact(entity, &target) {
+                    let (_, reached) = self.reached_target(entity, &target);
+                    if reached {
                         let hand_item = &mut entity.holding.as_mut().unwrap().entity;
                         let mut ground_entity = self.chunked_world.remove_entity(id);
                         if let None = hand_item {
@@ -283,15 +326,29 @@ impl Model {
         }
     }
 
+    fn get_extra_range(entity: &Entity, interaction_type: &InteractionType) -> f32 {
+        match interaction_type {
+            InteractionType::None => 0.0,
+            InteractionType::Interact => {
+                entity.size.unwrap() + entity.interaction.as_ref().unwrap().interaction_range
+            }
+            InteractionType::Attack => {
+                entity.size.unwrap()
+                    + match &entity.holding.as_ref().unwrap().entity {
+                        Some(weapon_entity) => {
+                            weapon_entity.weapon.as_ref().unwrap().attack_distance
+                        }
+                        None => 0.0,
+                    }
+            }
+        }
+    }
+
     fn reached_target(&self, entity: &Entity, target: &ActionTarget) -> (Vec2<f32>, bool) {
         if let Some((target_pos, target_size)) = self.get_target(&target.target_type) {
             let entity_pos = entity.pos.unwrap();
             let distance = (entity_pos - target_pos).len();
-            let extra_range = if target.interact {
-                entity.size.unwrap() + entity.interaction.as_ref().unwrap().interaction_range
-            } else {
-                0.0
-            };
+            let extra_range = Self::get_extra_range(entity, &target.interaction_type);
             (
                 target_pos,
                 distance <= target_size + extra_range
@@ -301,6 +358,7 @@ impl Model {
             (entity.pos.unwrap(), true)
         }
     }
+
     fn get_target(&self, target_type: &TargetType) -> Option<(Vec2<f32>, f32)> {
         match target_type {
             TargetType::Position { pos } => Some((*pos, 0.0)),
@@ -310,18 +368,6 @@ impl Model {
                 }
                 None => None,
             },
-        }
-    }
-
-    fn can_interact(&self, entity: &Entity, target: &ActionTarget) -> bool {
-        if let Some((target_pos, target_size)) = self.get_target(&target.target_type) {
-            let distance = (entity.pos.unwrap() - target_pos).len();
-            distance
-                <= entity.size.unwrap()
-                    + target_size
-                    + entity.interaction.as_ref().unwrap().interaction_range
-        } else {
-            false
         }
     }
 
@@ -367,5 +413,20 @@ impl Model {
         self.chunked_world
             .insert_entity(entity, &mut self.id_generator)
             .unwrap();
+    }
+
+    fn damage_entity(&mut self, entity_id: Id, weapon: &CompWeapon) {
+        if let Some(entity) = self.chunked_world.get_entity_mut(entity_id) {
+            if let Some(hp) = entity.hp.as_mut() {
+                hp.current_hp -= weapon.damage;
+                if hp.current_hp <= 0.0 {
+                    self.kill_entity(entity_id);
+                }
+            }
+        }
+    }
+
+    fn kill_entity(&mut self, entity_id: Id) {
+        self.chunked_world.remove_entity(entity_id);
     }
 }
