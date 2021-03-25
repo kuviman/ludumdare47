@@ -28,7 +28,7 @@ pub enum CompController {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompHolding {
     #[serde(default)]
-    pub entity: Option<EntityType>,
+    pub entity: Option<Box<Entity>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

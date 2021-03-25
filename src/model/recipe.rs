@@ -30,7 +30,7 @@ impl Recipe {
                 .entities
                 .iter()
                 .find(|p| p.id == player_id)
-                .and_then(|p| p.holding.as_ref().unwrap().entity.as_ref())
+                .and_then(|p| p.holding.as_ref().unwrap().entity.as_ref().map(|e| &e.entity_type))
     }
     pub fn to_string(&self) -> String {
         format!(

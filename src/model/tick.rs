@@ -159,8 +159,17 @@ impl Model {
                         let hand_entity = &mut entity.holding.as_mut().unwrap().entity;
                         let (conditions, ingredient2) =
                             self.get_target_conditions(&target.target_type);
-                        if recipe.ingredients_equal(hand_entity.take(), ingredient2, conditions) {
-                            *hand_entity = recipe.result1;
+                        if recipe.ingredients_equal(
+                            hand_entity.take().map(|e| e.entity_type),
+                            ingredient2,
+                            conditions,
+                        ) {
+                            *hand_entity = match &recipe.result1 {
+                                Some(entity_type) => {
+                                    Some(Box::new(self.new_entity(entity_type, None)))
+                                }
+                                None => None,
+                            };
                             let target_pos = match &target.target_type {
                                 TargetType::Entity { id } => {
                                     let entity = self.chunked_world.remove_entity(*id);
@@ -170,7 +179,7 @@ impl Model {
                             };
                             if let Some(target_pos) = target_pos {
                                 if let Some(entity_type) = recipe.result2 {
-                                    self.spawn_entity(entity_type, target_pos);
+                                    self.spawn_entity(&entity_type, target_pos);
                                 }
                             }
                             self.play_sound(Sound::Craft, entity.pos.unwrap());
@@ -188,7 +197,13 @@ impl Model {
                 }
                 EntityAction::Interact { target } => {
                     if self.can_interact(entity, &target) {
-                        let ingredient1 = &mut entity.holding.as_mut().unwrap().entity;
+                        let ingredient1 = entity
+                            .holding
+                            .as_ref()
+                            .unwrap()
+                            .entity
+                            .as_ref()
+                            .map(|e| e.entity_type.clone());
                         let (conditions, ingredient2) =
                             self.get_target_conditions(&target.target_type);
                         let recipe = self.resource_pack.recipes.iter().find(|recipe| {
@@ -220,9 +235,12 @@ impl Model {
                         target_type: TargetType::Position { pos },
                     };
                     if self.can_interact(entity, &target) {
-                        let hand_item = &mut entity.holding.as_mut().unwrap().entity;
-                        if let Some(item_type) = hand_item.take() {
-                            self.spawn_entity(item_type, pos);
+                        let hand_entity = &mut entity.holding.as_mut().unwrap().entity;
+                        if let Some(mut hand_entity) = hand_entity.take() {
+                            hand_entity.pos = Some(pos);
+                            self.chunked_world
+                                .insert_entity(*hand_entity, &mut self.id_generator)
+                                .unwrap();
                             self.play_sound(Sound::PutDown, pos);
                         }
                     } else {
@@ -240,10 +258,9 @@ impl Model {
                         let hand_item = &mut entity.holding.as_mut().unwrap().entity;
                         let mut ground_entity = self.chunked_world.remove_entity(id);
                         if let None = hand_item {
-                            if let Some(e) = &mut ground_entity {
+                            if let Some(e) = &ground_entity {
                                 if e.pickable.is_some() {
-                                    *hand_item = Some(e.entity_type.clone());
-                                    ground_entity.take();
+                                    *hand_item = Some(Box::new(ground_entity.take().unwrap()));
                                     self.play_sound(Sound::PickUp, entity.pos.unwrap());
                                 }
                             }
@@ -339,14 +356,16 @@ impl Model {
         }
     }
 
-    pub fn spawn_entity(&mut self, entity_type: EntityType, pos: Vec2<f32>) {
-        let mut components = self.resource_pack.entity_components[&entity_type].clone();
-        components.pos = Some(pos);
+    fn new_entity(&mut self, entity_type: &EntityType, pos: Option<Vec2<f32>>) -> Entity {
+        let mut components = self.resource_pack.entity_components[entity_type].clone();
+        components.pos = pos;
+        Entity::new(entity_type, components, self.id_generator.gen())
+    }
+
+    pub fn spawn_entity(&mut self, entity_type: &EntityType, pos: Vec2<f32>) {
+        let entity = self.new_entity(entity_type, Some(pos));
         self.chunked_world
-            .insert_entity(
-                Entity::new(&entity_type, components, self.id_generator.gen()),
-                &mut self.id_generator,
-            )
+            .insert_entity(entity, &mut self.id_generator)
             .unwrap();
     }
 }
