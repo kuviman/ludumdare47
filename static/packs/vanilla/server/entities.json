@@ -15,8 +15,7 @@
     },
     "load_area": {},
     "hp": {
-      "max_hp": 100.0,
-      "current_hp": 100.0
+      "max_hp": 100.0
     }
   },
   "Pebble": {
@@ -83,10 +82,6 @@
     "size": 0.5,
     "collidable": {
       "collision_type": "Static"
-    },
-    "hp": {
-      "max_hp": 20.0,
-      "current_hp": 20.0
     }
   },
   "Campfire": {

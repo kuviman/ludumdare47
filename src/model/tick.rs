@@ -405,6 +405,9 @@ impl Model {
     fn new_entity(&mut self, entity_type: &EntityType, pos: Option<Vec2<f32>>) -> Entity {
         let mut components = self.resource_pack.entity_components[entity_type].clone();
         components.pos = pos;
+        if let Some(hp) = &mut components.hp {
+            hp.current_hp = hp.max_hp;
+        }
         Entity::new(entity_type, components, self.id_generator.gen())
     }
 

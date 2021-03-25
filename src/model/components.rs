@@ -59,6 +59,7 @@ impl CompLoadArea {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompHP {
     pub max_hp: f32,
+    #[serde(default)]
     pub current_hp: f32,
 }
 
