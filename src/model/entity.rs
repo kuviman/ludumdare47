@@ -31,6 +31,10 @@ pub struct EntityComponents {
     pub action: Option<CompAction>,
     #[serde(default)]
     pub load_area: Option<CompLoadArea>,
+    #[serde(default)]
+    pub hp: Option<CompHP>,
+    #[serde(default)]
+    pub weapon: Option<CompWeapon>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
