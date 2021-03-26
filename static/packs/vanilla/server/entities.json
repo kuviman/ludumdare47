@@ -119,7 +119,10 @@
         "biome": "Beach"
       }
     },
-    "action": {}
+    "action": {},
+    "hp": {
+      "max_hp": 20.0
+    }
   },
   "Deer": {
     "size": 0.5,
@@ -132,7 +135,10 @@
         "biome": "Forest"
       }
     },
-    "action": {}
+    "action": {},
+    "hp": {
+      "max_hp": 50.0
+    }
   },
   "Goat": {
     "size": 0.5,
@@ -145,6 +151,9 @@
         "biome": "Hills"
       }
     },
-    "action": {}
+    "action": {},
+    "hp": {
+      "max_hp": 50.0
+    }
   }
 }

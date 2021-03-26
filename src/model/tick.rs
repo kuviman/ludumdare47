@@ -165,9 +165,12 @@ impl Model {
                             conditions,
                         ) {
                             *hand_entity = match &recipe.result1 {
-                                Some(entity_type) => {
-                                    Some(Box::new(self.new_entity(entity_type, None)))
-                                }
+                                Some(entity_type) => Some(Box::new(Entity::new(
+                                    self.id_generator.gen(),
+                                    entity_type,
+                                    None,
+                                    &self.resource_pack.entity_components,
+                                ))),
                                 None => None,
                             };
                             let target_pos = match &target.target_type {
@@ -202,7 +205,7 @@ impl Model {
                     let time_left = time_left - 1.0 / self.ticks_per_second;
                     if time_left <= 0.0 {
                         let weapon = entity.holding.as_ref().unwrap().entity.as_ref().unwrap();
-                        if let Some(weapon) = weapon.weapon.as_ref() {
+                        if let Some(weapon) = &weapon.weapon {
                             self.damage_entity(target_entity_id, weapon);
                         }
                     } else {
@@ -245,9 +248,9 @@ impl Model {
                             }
                             InteractionType::Attack => {
                                 if let TargetType::Entity { id } = &target.target_type {
-                                    if let Some(holding) = entity.holding.as_ref() {
+                                    if let Some(holding) = &entity.holding {
                                         if let Some(holding) = &holding.entity {
-                                            if let Some(weapon) = holding.weapon.as_ref() {
+                                            if let Some(weapon) = &holding.weapon {
                                                 let time_left = weapon.attack_time;
                                                 let entity_action = entity.action.as_mut().unwrap();
                                                 entity_action.current_action =
@@ -336,7 +339,11 @@ impl Model {
                 entity.size.unwrap()
                     + match &entity.holding.as_ref().unwrap().entity {
                         Some(weapon_entity) => {
-                            weapon_entity.weapon.as_ref().unwrap().attack_distance
+                            if let Some(weapon) = &weapon_entity.weapon {
+                                weapon.attack_distance
+                            } else {
+                                0.0
+                            }
                         }
                         None => 0.0,
                     }
@@ -402,17 +409,13 @@ impl Model {
         }
     }
 
-    fn new_entity(&mut self, entity_type: &EntityType, pos: Option<Vec2<f32>>) -> Entity {
-        let mut components = self.resource_pack.entity_components[entity_type].clone();
-        components.pos = pos;
-        if let Some(hp) = &mut components.hp {
-            hp.current_hp = hp.max_hp;
-        }
-        Entity::new(entity_type, components, self.id_generator.gen())
-    }
-
     pub fn spawn_entity(&mut self, entity_type: &EntityType, pos: Vec2<f32>) {
-        let entity = self.new_entity(entity_type, Some(pos));
+        let entity = Entity::new(
+            self.id_generator.gen(),
+            entity_type,
+            Some(pos),
+            &self.resource_pack.entity_components,
+        );
         self.chunked_world
             .insert_entity(entity, &mut self.id_generator)
             .unwrap();

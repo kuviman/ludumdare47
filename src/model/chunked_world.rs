@@ -228,9 +228,12 @@ impl SavedChunk {
             let (tile, entity_type) = world_gen.generate_tile(pos);
             tiles.insert(pos, tile);
             if let Some(entity_type) = entity_type {
-                let mut components = world_gen.entity_components[&entity_type].clone();
-                components.pos = Some(pos.map(|x| x as f32));
-                let entity = Entity::new(&entity_type, components, id_generator.gen());
+                let entity = Entity::new(
+                    id_generator.gen(),
+                    &entity_type,
+                    Some(pos.map(|x| x as f32)),
+                    &world_gen.entity_components,
+                );
                 entities.insert(entity.id, entity);
             }
         }

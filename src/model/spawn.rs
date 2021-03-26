@@ -6,9 +6,12 @@ impl Model {
         if let Some(pos) = self.get_spawnable_pos(player_id, vec2(0.0, 0.0), self.rules.spawn_area)
         {
             let entity_type = EntityType("Player".to_owned());
-            let mut components = self.resource_pack.entity_components[&entity_type].clone();
-            components.pos = Some(pos);
-            let mut entity = Entity::new(&entity_type, components, player_id);
+            let mut entity = Entity::new(
+                player_id,
+                &entity_type,
+                Some(pos),
+                &self.resource_pack.entity_components,
+            );
             let player = entity.load_area.as_mut().unwrap();
             player.load_area = AABB::pos_size(pos.map(|x| x as f32), vec2(0.0, 0.0));
             if let Some(CompController::Player { colors }) = entity.controller.as_mut() {
