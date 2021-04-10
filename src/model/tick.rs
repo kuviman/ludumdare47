@@ -433,6 +433,23 @@ impl Model {
     }
 
     fn kill_entity(&mut self, entity_id: Id) {
-        self.chunked_world.remove_entity(entity_id);
+        if let Some(entity) = self.chunked_world.remove_entity(entity_id) {
+            if let Some(loot) = &entity.loot_table {
+                match loot.loot_type {
+                    LootType::Kill => {
+                        let mut random = global_rng();
+                        if random.gen_range(0.0..=1.0) <= loot.chance {
+                            if let Ok(entry) = loot
+                                .entries
+                                .choose_weighted(&mut random, |entry| entry.weight)
+                            {
+                                self.spawn_entity(&entry.entity_type, entity.pos.unwrap());
+                            }
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
     }
 }
