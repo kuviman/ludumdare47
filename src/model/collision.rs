@@ -1,6 +1,7 @@
 use super::*;
 
 pub enum CollisionResult {
+    Undefined,
     NoCollision,
     Collision {
         penetration: f32,
@@ -16,7 +17,9 @@ pub fn entities_collision(
 ) -> CollisionResult {
     let dir = entity_pos - other_pos;
     let distance = dir.len();
-    if distance <= entity_size + other_size {
+    if distance == 0.0 {
+        CollisionResult::Undefined
+    } else if distance <= entity_size + other_size {
         CollisionResult::Collision {
             penetration: entity_size + other_size - distance,
             collision_normal: dir / distance,
