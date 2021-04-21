@@ -273,6 +273,9 @@ impl Model {
                         entity_action.next_action = Some(EntityAction::Interact { target });
                     }
                 }
+                EntityAction::Use => {
+                    self.entity_use(entity);
+                }
                 EntityAction::Drop { pos } => {
                     let target = ActionTarget {
                         interaction_type: InteractionType::Interact,
@@ -326,6 +329,21 @@ impl Model {
         } else {
             let entity_action = entity.action.as_mut().unwrap();
             entity_action.current_action = entity_action.next_action.take();
+        }
+    }
+
+    fn entity_use(&mut self, entity: &mut Entity) {
+        if let Some(hand_entity) = &entity.holding.as_ref().unwrap().entity {
+            if let Some(usable) = &hand_entity.usable {
+                match &usable.effect {
+                    Effect::Spawn { entity_type } => {
+                        self.spawn_entity(entity_type, entity.pos.unwrap());
+                    }
+                }
+                if usable.consumable {
+                    entity.holding.as_mut().unwrap().entity.take();
+                }
+            }
         }
     }
 

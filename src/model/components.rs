@@ -69,3 +69,9 @@ pub struct CompWeapon {
     pub damage: f32,
     pub attack_distance: f32,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompUsable {
+    pub consumable: bool,
+    pub effect: Effect,
+}
