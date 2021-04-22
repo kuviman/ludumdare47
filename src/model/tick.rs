@@ -435,19 +435,27 @@ impl Model {
     fn kill_entity(&mut self, entity_id: Id) {
         if let Some(entity) = self.chunked_world.remove_entity(entity_id) {
             if let Some(loot) = &entity.loot_table {
-                match loot.loot_type {
-                    LootType::Kill => {
-                        let mut random = global_rng();
-                        if random.gen_range(0.0..=1.0) <= loot.chance {
-                            if let Ok(entry) = loot
-                                .entries
-                                .choose_weighted(&mut random, |entry| entry.weight)
-                            {
-                                self.spawn_entity(&entry.entity_type, entity.pos.unwrap());
-                            }
-                        }
-                    }
-                    _ => (),
+                #[allow(irrefutable_let_patterns)]
+                if let LootType::Kill = loot.loot_type {
+                    self.generate_loot(loot, entity.pos.unwrap());
+                }
+            }
+        }
+    }
+
+    fn generate_loot(&mut self, loot: &CompLootTable, pos: Vec2<f32>) {
+        let mut random = global_rng();
+        for entry in &loot.entries {
+            if random.gen_range(0.0..=1.0) <= entry.chance {
+                let amount = match entry.amount {
+                    LootAmount::Constant { amount } => amount,
+                    LootAmount::Range {
+                        min_amount,
+                        max_amount,
+                    } => random.gen_range(min_amount..max_amount),
+                };
+                for _ in 0..amount {
+                    self.spawn_entity(&entry.entity_type, pos);
                 }
             }
         }
