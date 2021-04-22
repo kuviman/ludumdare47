@@ -69,3 +69,32 @@ pub struct CompWeapon {
     pub damage: f32,
     pub attack_distance: f32,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompLootTable {
+    pub loot_type: LootType,
+    pub entries: Vec<LootEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LootEntry {
+    pub entity_type: EntityType,
+    pub chance: f32,
+    pub amount: LootAmount,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LootType {
+    Kill,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LootAmount {
+    Constant {
+        amount: usize,
+    },
+    Range {
+        min_amount: usize,
+        max_amount: usize,
+    },
+}

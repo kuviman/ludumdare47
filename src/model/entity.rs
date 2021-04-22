@@ -35,6 +35,8 @@ pub struct EntityComponents {
     pub hp: Option<CompHP>,
     #[serde(default)]
     pub weapon: Option<CompWeapon>,
+    #[serde(default)]
+    pub loot_table: Option<CompLootTable>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
