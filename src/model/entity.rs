@@ -35,6 +35,8 @@ pub struct EntityComponents {
     pub hp: Option<CompHP>,
     #[serde(default)]
     pub weapon: Option<CompWeapon>,
+    #[serde(default)]
+    pub usable: Option<CompUsable>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
@@ -91,6 +93,7 @@ pub enum EntityAction {
     Interact {
         target: ActionTarget,
     },
+    Use,
     Drop {
         pos: Vec2<f32>,
     },

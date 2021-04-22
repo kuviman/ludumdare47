@@ -36,7 +36,9 @@ impl Model {
             }
         }
 
-        *self.chunked_world.get_entity_mut(entity_id).unwrap() = entity;
+        if let Some(e) = self.chunked_world.get_entity_mut(entity_id) {
+            *e = entity;
+        }
         self.chunked_world
             .update_entity(entity_id, &mut self.id_generator);
     }
@@ -273,6 +275,9 @@ impl Model {
                         entity_action.next_action = Some(EntityAction::Interact { target });
                     }
                 }
+                EntityAction::Use => {
+                    self.entity_use(entity);
+                }
                 EntityAction::Drop { pos } => {
                     let target = ActionTarget {
                         interaction_type: InteractionType::Interact,
@@ -326,6 +331,35 @@ impl Model {
         } else {
             let entity_action = entity.action.as_mut().unwrap();
             entity_action.current_action = entity_action.next_action.take();
+        }
+    }
+
+    fn entity_use(&mut self, entity: &mut Entity) {
+        if let Some(hand_entity) = &entity.holding.as_ref().unwrap().entity {
+            if let Some(usable) = &hand_entity.usable {
+                let consumable = usable.consumable;
+                match &usable.effect {
+                    Effect::Spawn { entity_type } => {
+                        self.spawn_entity(entity_type, entity.pos.unwrap());
+                    }
+                    Effect::Heal { heal_points } => {
+                        let hp = *heal_points;
+                        self.entity_change_hp(entity, hp);
+                    }
+                }
+                if consumable {
+                    entity.holding.as_mut().unwrap().entity.take();
+                }
+            }
+        }
+    }
+
+    fn entity_change_hp(&mut self, entity: &mut Entity, heal_points: f32) {
+        if let Some(hp) = &mut entity.hp {
+            hp.current_hp = (hp.current_hp + heal_points).clamp(0.0, hp.max_hp);
+            if hp.current_hp <= 0.0 {
+                self.kill_entity(entity.id);
+            }
         }
     }
 

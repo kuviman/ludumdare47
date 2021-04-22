@@ -6,6 +6,7 @@ mod client_view;
 mod collision;
 mod components;
 mod config;
+mod effect;
 mod entity;
 mod id;
 mod multi_noise;
@@ -24,6 +25,7 @@ pub use client_view::*;
 pub use collision::*;
 pub use components::*;
 pub use config::*;
+pub use effect::*;
 pub use entity::*;
 use geng::prelude::fmt::Formatter;
 pub use id::*;
@@ -52,6 +54,7 @@ pub enum Message {
     RequestUpdate { load_area: Option<AABB<f32>> },
     Goto { pos: Vec2<f32> },
     Interact { target: ActionTarget },
+    UseItem,
     Drop { pos: Vec2<f32> },
     PickUp { id: Id },
     SayHi,
@@ -215,6 +218,9 @@ impl Model {
             Message::Interact { target } => {
                 entity.action.as_mut().unwrap().current_action =
                     Some(EntityAction::Interact { target });
+            }
+            Message::UseItem => {
+                entity.action.as_mut().unwrap().current_action = Some(EntityAction::Use);
             }
             Message::Drop { pos } => {
                 entity.action.as_mut().unwrap().current_action = Some(EntityAction::Drop { pos });

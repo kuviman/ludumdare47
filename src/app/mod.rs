@@ -326,6 +326,9 @@ impl geng::State for App {
                     }
                 }
             }
+            geng::Event::KeyDown { key: geng::Key::R } => {
+                self.connection.send(ClientMessage::UseItem);
+            }
             geng::Event::KeyDown {
                 key: geng::Key::Space,
             } => {
@@ -368,7 +371,7 @@ impl geng::State for App {
                     }
                 }
             }
-            geng::Event::KeyDown { key: geng::Key::R } => {
+            geng::Event::KeyDown { key: geng::Key::T } => {
                 self.connection.send(ClientMessage::SayHi)
             }
             geng::Event::KeyDown { key: geng::Key::F } => self.geng.window().toggle_fullscreen(),
