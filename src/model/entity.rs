@@ -31,6 +31,10 @@ pub struct EntityComponents {
     pub action: Option<CompAction>,
     #[serde(default)]
     pub load_area: Option<CompLoadArea>,
+    #[serde(default)]
+    pub hp: Option<CompHP>,
+    #[serde(default)]
+    pub weapon: Option<CompWeapon>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
@@ -43,11 +47,21 @@ impl Display for EntityType {
 }
 
 impl Entity {
-    pub fn new(entity_type: &EntityType, components: EntityComponents, id: Id) -> Self {
+    pub fn new(
+        id: Id,
+        entity_type: &EntityType,
+        pos: Option<Vec2<f32>>,
+        components: &HashMap<EntityType, EntityComponents>,
+    ) -> Self {
+        let mut components = components[entity_type].clone();
+        components.pos = pos;
+        if let Some(hp) = &mut components.hp {
+            hp.current_hp = hp.max_hp;
+        }
         Self {
             entity_type: entity_type.clone(),
-            id,
             components,
+            id,
         }
     }
 
@@ -70,6 +84,10 @@ pub enum EntityAction {
         recipe: Recipe,
         time_left: f32,
     },
+    Attacking {
+        target_entity_id: Id,
+        time_left: f32,
+    },
     Interact {
         target: ActionTarget,
     },
@@ -83,8 +101,15 @@ pub enum EntityAction {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActionTarget {
-    pub interact: bool,
+    pub interaction_type: InteractionType,
     pub target_type: TargetType,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum InteractionType {
+    None,
+    Interact,
+    Attack,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

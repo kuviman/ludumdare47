@@ -28,7 +28,7 @@ pub enum CompController {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompHolding {
     #[serde(default)]
-    pub entity: Option<EntityType>,
+    pub entity: Option<Box<Entity>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,4 +54,18 @@ impl CompLoadArea {
     fn default_load_area() -> AABB<f32> {
         AABB::pos_size(vec2(0.0, 0.0), vec2(0.0, 0.0))
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompHP {
+    pub max_hp: f32,
+    #[serde(default)]
+    pub current_hp: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompWeapon {
+    pub attack_time: f32,
+    pub damage: f32,
+    pub attack_distance: f32,
 }

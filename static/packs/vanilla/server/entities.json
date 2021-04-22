@@ -13,7 +13,10 @@
     "interaction": {
       "interaction_range": 1.5
     },
-    "load_area": {}
+    "load_area": {},
+    "hp": {
+      "max_hp": 100.0
+    }
   },
   "Pebble": {
     "size": 0.5,
@@ -29,7 +32,12 @@
   },
   "Axe": {
     "size": 0.5,
-    "pickable": []
+    "pickable": [],
+    "weapon": {
+      "attack_time": 0.5,
+      "damage": 10.0,
+      "attack_distance": 2.0
+    }
   },
   "DoubleStick": {
     "size": 0.5,
@@ -111,7 +119,10 @@
         "biome": "Beach"
       }
     },
-    "action": {}
+    "action": {},
+    "hp": {
+      "max_hp": 20.0
+    }
   },
   "Deer": {
     "size": 0.5,
@@ -124,7 +135,10 @@
         "biome": "Forest"
       }
     },
-    "action": {}
+    "action": {},
+    "hp": {
+      "max_hp": 50.0
+    }
   },
   "Goat": {
     "size": 0.5,
@@ -137,6 +151,9 @@
         "biome": "Hills"
       }
     },
-    "action": {}
+    "action": {},
+    "hp": {
+      "max_hp": 50.0
+    }
   }
 }

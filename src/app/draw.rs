@@ -25,12 +25,7 @@ impl App {
             } else {
                 entity.pos.unwrap()
             };
-            self.draw_circle(
-                framebuffer,
-                pos,
-                entity.size.unwrap(),
-                Color::GREEN,
-            );
+            self.draw_circle(framebuffer, pos, entity.size.unwrap(), Color::GREEN);
         }
         if let Some(pos) = selected_pos {
             if let Some(entity) = self.view.get_closest_entity(pos) {
@@ -134,12 +129,12 @@ impl App {
                             i_color: colors.pants,
                         }),
                     );
-                    if let Some(item) = &entity.holding.as_ref().unwrap().entity {
+                    if let Some(entity) = &entity.holding.as_ref().unwrap().entity {
                         self.ez3d.draw(
                             framebuffer,
                             &self.camera,
                             &self.light,
-                            self.resource_pack.entities[item].model.vb(),
+                            self.resource_pack.entities[&entity.entity_type].model.vb(),
                             std::iter::once(ez3d::Instance {
                                 i_pos: pos + Vec2::rotated(vec2(0.45, 0.0), rotation).extend(0.6),
                                 i_size: 0.5,
@@ -179,8 +174,8 @@ impl App {
                     "Player"
                 }
                 .to_owned();
-                if let Some(item) = &entity.holding.as_ref().unwrap().entity {
-                    text = format!("{}, holding {}", text, item);
+                if let Some(entity) = &entity.holding.as_ref().unwrap().entity {
+                    text = format!("{}, holding {}", text, entity.entity_type);
                 }
                 pos = entity.pos.unwrap().extend(
                     self.tile_mesh

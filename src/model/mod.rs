@@ -207,7 +207,7 @@ impl Model {
             Message::Goto { pos } => {
                 entity.action.as_mut().unwrap().current_action = Some(EntityAction::MovingTo {
                     target: ActionTarget {
-                        interact: false,
+                        interaction_type: InteractionType::None,
                         target_type: TargetType::Position { pos },
                     },
                 });
