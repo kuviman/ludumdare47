@@ -8,10 +8,21 @@ jobs:
     env:
       WSS: wss
       DEFAULT_ADDR: island.kuviman.com
-    container: kuviman/geng
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-unknown-unknown
+
+      - name: Install cargo-geng
+        run: |
+          cargo install cargo-geng --git https://github.com/kuviman/geng
+          cargo install wasm-bindgen-cli
 
       - name: Build Linux
         run: |
