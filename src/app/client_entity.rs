@@ -12,7 +12,8 @@ impl ClientEntity {
     pub fn new(server_entity: model::Entity, resource_pack: &ResourcePack) -> Self {
         Self {
             extra_components: {
-                let mut components = resource_pack.entity_components[&server_entity.entity_type].clone();
+                let mut components =
+                    resource_pack.entity_components[&server_entity.entity_type].clone();
                 if let Some(interpolate) = &mut components.interpolate {
                     interpolate.current_pos = server_entity.pos.unwrap();
                 }
