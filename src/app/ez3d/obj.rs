@@ -12,7 +12,7 @@ impl Obj {
 
 impl geng::LoadAsset for Obj {
     const DEFAULT_EXT: Option<&'static str> = Some("obj");
-    fn load(geng: &Rc<Geng>, path: &str) -> geng::AssetFuture<Self> {
+    fn load(geng: &Geng, path: &str) -> geng::AssetFuture<Self> {
         let geng = geng.clone();
         let path = path.to_owned();
         Box::pin(async move {

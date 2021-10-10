@@ -192,6 +192,7 @@ impl App {
             }
             self.geng.default_font().draw_aligned(
                 framebuffer,
+                &geng::PixelPerfectCamera,
                 &text,
                 self.camera.world_to_screen(self.framebuffer_size, pos) + vec2(0.0, 20.0),
                 0.5,
@@ -209,6 +210,7 @@ impl App {
                         let pos = pos.extend(self.tile_mesh.get_height(pos).unwrap());
                         self.geng.default_font().draw_aligned(
                             framebuffer,
+                            &geng::PixelPerfectCamera,
                             &text,
                             self.camera.world_to_screen(self.framebuffer_size, pos)
                                 + vec2(0.0, 50.0),
@@ -223,6 +225,7 @@ impl App {
         }
         self.geng.default_font().draw_aligned(
             framebuffer,
+            &geng::PixelPerfectCamera,
             &format!("Players online: {}", self.view.players_online),
             vec2(
                 self.framebuffer_size.x as f32 / 2.0,
@@ -234,6 +237,7 @@ impl App {
         );
         self.geng.default_font().draw(
             framebuffer,
+            &geng::PixelPerfectCamera,
             self.traffic_counter.text(),
             vec2(32.0, 32.0),
             24.0,

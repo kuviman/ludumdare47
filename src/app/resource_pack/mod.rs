@@ -34,7 +34,7 @@ impl ResourcePack {
         self.entities.extend(other.entities);
         self.entity_components.extend(other.entity_components);
     }
-    async fn load(geng: &Rc<Geng>, name: &str) -> Result<Self, anyhow::Error> {
+    async fn load(geng: &Geng, name: &str) -> Result<Self, anyhow::Error> {
         let path = format!("packs/{}/client", name);
         Ok(Self {
             biomes: {
@@ -69,7 +69,7 @@ impl ResourcePack {
             },
         })
     }
-    pub async fn load_all(geng: Rc<Geng>, pack_list: Vec<String>) -> Result<Self, anyhow::Error> {
+    pub async fn load_all(geng: Geng, pack_list: Vec<String>) -> Result<Self, anyhow::Error> {
         let mut result = Self::empty();
         for pack in pack_list {
             result.merge(Self::load(&geng, &pack).await?);

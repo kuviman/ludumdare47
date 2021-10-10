@@ -1,7 +1,7 @@
 use super::*;
 
 pub struct TileMesh {
-    geng: Rc<Geng>,
+    geng: Geng,
     chunk_size: i64,
     ez3d: Rc<Ez3D>,
     noise: Rc<::noise::OpenSimplex>,
@@ -98,7 +98,7 @@ fn intersect(face: &[Vec3<f32>; 3], ray: camera::Ray) -> Option<f32> {
 }
 
 impl TileMesh {
-    pub fn new(geng: &Rc<Geng>, ez3d: &Rc<Ez3D>, resource_pack: &Rc<ResourcePack>) -> Self {
+    pub fn new(geng: &Geng, ez3d: &Rc<Ez3D>, resource_pack: &Rc<ResourcePack>) -> Self {
         Self {
             geng: geng.clone(),
             chunk_size: 16,

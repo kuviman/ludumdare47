@@ -49,13 +49,13 @@ impl Default for Settings {
 }
 
 struct UiState {
-    geng: Rc<Geng>,
+    geng: Geng,
     settings: AutoSave<Settings>,
     volume_slider: geng::ui::Slider,
 }
 
 impl UiState {
-    fn new(geng: &Rc<Geng>) -> Self {
+    fn new(geng: &Geng) -> Self {
         let ui_theme = Rc::new(geng::ui::Theme::default(geng));
         Self {
             geng: geng.clone(),
@@ -92,7 +92,7 @@ impl UiState {
 
 pub struct App {
     traffic_counter: traffic::Counter,
-    geng: Rc<Geng>,
+    geng: Geng,
     resource_pack: Rc<ResourcePack>,
     assets: Assets,
     framebuffer_size: Vec2<usize>,
@@ -114,7 +114,7 @@ pub struct App {
 
 impl App {
     pub fn new(
-        geng: &Rc<Geng>,
+        geng: &Geng,
         assets: Assets,
         resource_pack: &Rc<ResourcePack>,
         player_id: Id,

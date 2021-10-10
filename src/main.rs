@@ -26,15 +26,15 @@ pub enum ServerMessage {
 
 type Connection = geng::net::client::Connection<ServerMessage, ClientMessage>;
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 struct Opt {
-    #[structopt(long)]
+    #[clap(long)]
     no_server: bool,
-    #[structopt(long)]
+    #[clap(long)]
     no_client: bool,
-    #[structopt(long)]
+    #[clap(long)]
     addr: Option<String>,
-    #[structopt(long)]
+    #[clap(long)]
     log_level: Option<log::LevelFilter>,
 }
 
@@ -44,7 +44,7 @@ fn main() {
     }
 
     geng::setup_panic_handler();
-    let opt: Opt = StructOpt::from_args();
+    let opt: Opt = Clap::parse();
     let addr = opt
         .addr
         .as_ref()
@@ -90,13 +90,10 @@ fn main() {
     };
 
     if !opt.no_client {
-        let geng = Rc::new(Geng::new(geng::ContextOptions {
-            title: "LudumDare 47".to_owned(),
-            ..default()
-        }));
+        let geng = Geng::new("LudumDare 47");
         let geng = &geng;
         geng::run(
-            geng.clone(),
+            geng,
             geng::LoadingScreen::new(
                 geng,
                 geng::EmptyLoadingScreen,

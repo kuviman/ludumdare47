@@ -22,7 +22,7 @@ uniform vec3 u_light_direction;
 void main()
 {
     vec3 pos = a_pos;
-    pos.xy = rotate(pos.xy, i_rotation);
+    pos.xy = rotate(pos.xy, -i_rotation);
     vec3 normal = a_normal;
     normal.xy = rotate(normal.xy, i_rotation);
     vec3 light = AMBIENT + max(0.0, dot(a_normal, vec3(0.0, 0.0, 1.0))) * AMBIENT2 + max(0.0, dot(a_normal, u_light_direction)) * (vec3(1.0) - AMBIENT - AMBIENT2);

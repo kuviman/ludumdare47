@@ -1,7 +1,7 @@
 use super::*;
 
 pub struct Controls {
-    geng: Rc<Geng>,
+    geng: Geng,
     framebuffer_size: Vec2<usize>,
     previous_mouse: Vec2<f32>,
     rotating: Option<Vec2<f32>>,
@@ -10,7 +10,7 @@ pub struct Controls {
 impl Controls {
     pub const ATTACK_RANGE: RangeInclusive<f32> = 0.2..=f32::PI / 2.0;
     pub const DISTANCE_RANGE: RangeInclusive<f32> = 4.0..=1024.0;
-    pub fn new(geng: &Rc<Geng>) -> Self {
+    pub fn new(geng: &Geng) -> Self {
         Self {
             geng: geng.clone(),
             framebuffer_size: vec2(1, 1),

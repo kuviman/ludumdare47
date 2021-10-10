@@ -31,12 +31,12 @@ pub struct Instance {
 }
 
 pub struct Ez3D {
-    geng: Rc<Geng>,
+    geng: Geng,
     program: ugli::Program,
 }
 
 impl Ez3D {
-    pub fn new(geng: &Rc<Geng>) -> Self {
+    pub fn new(geng: &Geng) -> Self {
         Self {
             geng: geng.clone(),
             program: geng
